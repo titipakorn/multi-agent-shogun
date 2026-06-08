@@ -24,6 +24,7 @@ files:
   dashboard: dashboard.md              # Human-readable summary (secondary data)
   daily_log: "logs/daily/YYYY-MM-DD.md" # Karo appends cmd summary on completion. Shogun reads for daily reports.
   ntfy_inbox: queue/ntfy_inbox.yaml    # Incoming ntfy messages from Lord's phone
+  current_question: queue/current_question.json # Active Telegram question blocked and waiting for user input
 
 cmd_format:
   required_fields: [id, timestamp, purpose, acceptance_criteria, command, project, priority, status]
@@ -217,7 +218,8 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t multiagent:0.0 -p | tail -20`
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ashigaru reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
-7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨Action Required section. ALWAYS. Even if also written elsewhere. Forgetting = Lord gets angry.
+7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → if Telegram is configured in `config/telegram.env`, delegate to Telegram chat using `scripts/telegram_ask.py` for interactive response. Otherwise, fall back to writing to dashboard.md 🚨Action Required section and sending an ntfy notification.
+8. **Blocker Feedback**: While waiting for Karo, Shogun must check for `queue/current_question.json` and display any active Telegram blocker questions in the terminal panel.
 
 # Test Rules (all agents)
 

@@ -176,7 +176,8 @@ When a message arrives, you'll be woken with "ntfy received".
 1. Read `queue/ntfy_inbox.yaml` — find `status: pending` entries
 2. Process each message:
    - **Task command** ("create XX", "investigate XX") → Write cmd to shogun_to_karo.yaml → Delegate to Karo
-   - **Status check** ("status?", "dashboard") → Read dashboard.md → Reply via ntfy
+   - **Status check** ("status?", "status", "dashboard", "/status", "/dashboard") → Read `dashboard.md` and run `bash scripts/agent_status.sh` → Format a clean, highly condensed summary optimized for mobile Telegram view (using bullet points and emojis to show the active Frog, streak, completion progress, and active agent states; do NOT dump raw markdown tables or long text blocks, keep it under 250 words). Send this formatted summary as a reply via ntfy (Telegram).
+   - **Help query** ("help", "/help") → Reply directly via ntfy with usage instructions: list of slash commands (/status, /dashboard, /help) and how to command Shogun (e.g. prefixing commands with 'create', 'search', etc. for AI tasks, or 'do', 'buy' for personal tasks).
    - **VF task** ("do XX", "reserve XX") → Register in saytask/tasks.yaml (future)
    - **Simple query** → Reply directly via ntfy
 3. Update inbox entry: `status: pending` → `status: processed`
@@ -192,6 +193,22 @@ When a message arrives, you'll be woken with "ntfy received".
 - Input from ntfy → Reply via ntfy + echo the same content in Claude
 - Input from Claude → Reply in Claude only
 - Karo's notification behavior remains unchanged
+
+## Active Blocker Feedback (Telegram Questions)
+
+When checking status or waiting for a report:
+1. **Scan for pending questions**: Check if `queue/current_question.json` exists.
+2. **Display question feedback**: If the file exists, read its contents and immediately display the active question and its options to the Lord in the terminal (Shogun panel) using a warning block.
+   Example:
+   ```
+   ⚠️ ATTENTION REQUIRED (Blocked on Telegram):
+   Question: <question_text>
+   Options:
+     - Option A
+     - Option B
+   [Please respond directly in your Telegram chat to unblock the agent]
+   ```
+3. **Clear on completion**: The file is removed automatically when the user replies on Telegram. Do not show the block once `queue/current_question.json` is gone.
 
 ## SayTask Task Management Routing
 

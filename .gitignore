@@ -86,6 +86,7 @@
 # Config (sample files only, no secrets)
 !config/
 !config/ntfy_auth.env.sample
+!config/telegram.env.sample
 !config/opencode-tui.json
 !config/opencode-permissions.yaml
 
@@ -118,6 +119,8 @@ scripts/seo_qc.sh
 !scripts/ratelimit_check.sh
 !scripts/switch_cli.sh
 !scripts/dashboard-viewer.py
+!scripts/telegram_ask.py
+!scripts/telegram_listener.py
 !scripts/mcp_health_check.sh
 
 

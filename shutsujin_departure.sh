@@ -973,17 +973,35 @@ print(f'Archived {len(old)} entries, kept {len(recent)} entries')
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 6.8: Start ntfy input listener
+# STEP 6.8: Start Input Listener (Telegram / ntfy)
 # ═══════════════════════════════════════════════════════════════════════════════
-NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
-if [ -n "$NTFY_TOPIC" ]; then
-    pkill -f "ntfy_listener.sh" 2>/dev/null || true
+TELEGRAM_ENV="./config/telegram.env"
+TELEGRAM_CONFIGURED=false
+
+if [ -f "$TELEGRAM_ENV" ]; then
+    # Simple check if token is filled
+    if grep -q "TELEGRAM_BOT_TOKEN=" "$TELEGRAM_ENV" && ! grep -q "your_bot_token_here" "$TELEGRAM_ENV"; then
+        TELEGRAM_CONFIGURED=true
+    fi
+fi
+
+if [ "$TELEGRAM_CONFIGURED" = true ]; then
+    pkill -f "telegram_listener.py" 2>/dev/null || true
     [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
-    nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>/dev/null &
+    nohup "$SCRIPT_DIR/.venv/bin/python3" "$SCRIPT_DIR/scripts/telegram_listener.py" &>/dev/null &
     disown
-    log_info "📱 Started ntfy input listener (topic: $NTFY_TOPIC)"
+    log_info "📱 Started Telegram input listener (polling updates)"
 else
-    log_info "📱 Listener skipped due to ntfy not being configured"
+    NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
+    if [ -n "$NTFY_TOPIC" ]; then
+        pkill -f "ntfy_listener.sh" 2>/dev/null || true
+        [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
+        nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>/dev/null &
+        disown
+        log_info "📱 Started ntfy input listener (topic: $NTFY_TOPIC)"
+    else
+        log_info "📱 Listener skipped: Neither Telegram nor ntfy configured"
+    fi
 fi
 echo ""
 

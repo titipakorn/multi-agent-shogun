@@ -552,10 +552,21 @@ today:
 
 ### Action Needed Notification (Step 11)
 
-When updating dashboard.md's 🚨 section:
-1. Count 🚨 section lines before update
-2. Count after update
-3. If increased → send ntfy: `🚨 Action Required: {first new heading}`
+When the Lord needs to make a decision, approve a choice, or solve a blocker:
+1. **Check if Telegram is configured**: Verify if `config/telegram.env` exists (or if `TELEGRAM_BOT_TOKEN` is set).
+2. **If configured (Preferred)**: Run the interactive Telegram question script directly. This blocks execution until the user responds on Telegram:
+   ```bash
+   # For multiple-choice questions:
+   ANSWER=$(python3 scripts/telegram_ask.py --question "Blocker details" --options "Choice A" "Choice B")
+   # For open-ended questions:
+   ANSWER=$(python3 scripts/telegram_ask.py --question "Blocker details")
+   ```
+   Capture the `ANSWER`, log it to the task report, and proceed immediately with the chosen response.
+3. **If not configured (Fallback)**:
+   - Add the item to the 🚨 Action Required section in `dashboard.md`.
+   - Count 🚨 section lines before update.
+   - Count after update.
+   - If increased → send ntfy: `🚨 Action Required: {first new heading}`
 
 ### ntfy Not Configured
 
