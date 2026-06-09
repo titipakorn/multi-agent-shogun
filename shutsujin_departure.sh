@@ -979,9 +979,21 @@ TELEGRAM_ENV="./config/telegram.env"
 TELEGRAM_CONFIGURED=false
 
 if [ -f "$TELEGRAM_ENV" ]; then
-    # Simple check if token is filled
-    if grep -q "TELEGRAM_BOT_TOKEN=" "$TELEGRAM_ENV" && ! grep -q "your_bot_token_here" "$TELEGRAM_ENV"; then
-        TELEGRAM_CONFIGURED=true
+    # Sourcing the env file to check if credentials are set in it
+    # shellcheck disable=SC1090
+    source "$TELEGRAM_ENV"
+fi
+
+if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ "$TELEGRAM_BOT_TOKEN" != "your_bot_token_here" ] && \
+   [ -n "${TELEGRAM_CHAT_ID:-}" ] && [ "$TELEGRAM_CHAT_ID" != "your_chat_id_here" ]; then
+    TELEGRAM_CONFIGURED=true
+    # Auto-populate telegram.env from env variables if file contains placeholders or is missing
+    if [ ! -f "$TELEGRAM_ENV" ] || grep -q "your_bot_token_here" "$TELEGRAM_ENV"; then
+        log_info "📱 Auto-populating $TELEGRAM_ENV from environment variables..."
+        cat > "$TELEGRAM_ENV" <<EOF
+TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID
+EOF
     fi
 fi
 
