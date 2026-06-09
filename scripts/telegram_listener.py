@@ -254,7 +254,28 @@ def main():
                     
                     # Check if it is a slash command or status/dashboard/help/btw keywords
                     lower_msg = msg_text.lower()
-                    if msg_text.startswith("/") or lower_msg in ["status", "status?", "dashboard", "help", "btw"] or lower_msg.startswith("btw "):
+                    if lower_msg == "/help" or lower_msg == "help":
+                        help_text = (
+                            "🏯 *multi-agent-shogun Command Help* ⚔️\n\n"
+                            "You can control your Shogun AI team directly from this chat.\n\n"
+                            "*Slash Commands:*\n"
+                            "• `/status` - Query the live status of all active agent panes.\n"
+                            "• `/dashboard` - Show a summary of the current project tasks.\n"
+                            "• `/help` - Display this help guide.\n\n"
+                            "*How to order your Shogun:*\n"
+                            "Simply send any natural language command here. Shogun will receive it, decompose it, and delegate it to the Karo and Ashigaru workers in the background.\n\n"
+                            "Example:\n"
+                            "`Implement a user authentication endpoint in python`"
+                        )
+                        res = make_telegram_request(token, "sendMessage", {
+                            "chat_id": chat_id,
+                            "text": help_text,
+                            "parse_mode": "Markdown"
+                        })
+                        print(f"[telegram_listener] sendMessage (/help) response: {res}")
+                        continue
+
+                    if msg_text.startswith("/") or lower_msg in ["status", "status?", "dashboard", "btw"] or lower_msg.startswith("btw "):
                         print(f"[telegram_listener] Routing side command to Telegram agent: {msg_text}")
                         # Signal Telegram agent to wake up
                         inbox_write_path = os.path.join(script_dir, "inbox_write.sh")

@@ -300,11 +300,22 @@ if [ -f "$VENV_DIR/bin/python3" ] && "$VENV_DIR/bin/python3" -c "import yaml" 2>
 else
     log_info "Setting up Python venv..."
     if command -v python3 &> /dev/null; then
-        if command -v apt-get &> /dev/null; then
-            sudo apt-get update -qq 2>/dev/null
-            sudo apt-get install -y python3-venv 2>/dev/null
-        fi
+        VENV_CREATED=false
         if python3 -m venv "$VENV_DIR" 2>/dev/null; then
+            VENV_CREATED=true
+        else
+            # Try installing python3-venv via apt-get only if sudo works non-interactively
+            if command -v apt-get &> /dev/null; then
+                log_info "Attempting to install python3-venv..."
+                if sudo -n apt-get update -qq 2>/dev/null && sudo -n apt-get install -y python3-venv 2>/dev/null; then
+                    if python3 -m venv "$VENV_DIR" 2>/dev/null; then
+                        VENV_CREATED=true
+                    fi
+                fi
+            fi
+        fi
+
+        if [ "$VENV_CREATED" = true ]; then
             log_success "venv creation complete: $VENV_DIR"
             if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
                 if "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" 2>/dev/null; then

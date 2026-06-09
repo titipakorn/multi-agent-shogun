@@ -53,10 +53,8 @@ if [ "${__INBOX_WATCHER_TESTING__:-}" != "1" ]; then
 
     # Fix: CLI starts at welcome screen = idle. Create idle flag so watcher
     # doesn't false-busy deadlock waiting for a stop_hook that never fires.
-    if [[ "$CLI_TYPE" == "claude" ]]; then
-        touch "${IDLE_FLAG_DIR:-/tmp}/shogun_idle_${AGENT_ID}"
-        echo "[$(date)] Created initial idle flag for $AGENT_ID (CLI starts idle)" >&2
-    fi
+    touch "${IDLE_FLAG_DIR:-/tmp}/shogun_idle_${AGENT_ID}"
+    echo "[$(date)] Created initial idle flag for $AGENT_ID (CLI starts idle)" >&2
 
     # Source cli_adapter for get_startup_prompt() (Codex needs startup prompt after /new)
     _cli_adapter="${SCRIPT_DIR}/lib/cli_adapter.sh"
@@ -1286,10 +1284,11 @@ for s in data.get('specials', []):
             fi
         fi
     fi
+    return 0
 }
 
 process_unread_once() {
-    process_unread "startup"
+    process_unread "startup" || true
 }
 
 # ─── Startup & Main loop (skipped in testing mode) ───

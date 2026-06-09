@@ -277,7 +277,7 @@ fi
 # "all files and scripts in this repo are released CC0 / kopimi!"
 # ═══════════════════════════════════════════════════════════════════════════════
 show_battle_cry() {
-    clear
+    clear || true
 
     # Title banner (colored)
     echo ""
@@ -864,6 +864,25 @@ NINJA_EOF
     # ═══════════════════════════════════════════════════════════════════
     log_info "📬 Launching mailbox monitoring..."
 
+    # Helper to launch watcher persistently inside a tmux session
+    start_watcher_in_tmux() {
+        local agent_id="$1"
+        local pane_target="$2"
+        local cli_type="$3"
+        local env_vars="${4:-}"
+        
+        if ! tmux has-session -t shogun-watchers 2>/dev/null; then
+            tmux new-session -d -s shogun-watchers -n "watchers"
+            tmux set-option -t shogun-watchers status off
+        fi
+        
+        tmux new-window -t shogun-watchers -n "$agent_id" 2>/dev/null || true
+        
+        local log_file="$SCRIPT_DIR/logs/inbox_watcher_${agent_id}.log"
+        local cmd="cd \"$SCRIPT_DIR\" && exec env $env_vars bash \"$SCRIPT_DIR/scripts/inbox_watcher.sh\" \"$agent_id\" \"$pane_target\" \"$cli_type\" >> \"$log_file\" 2>&1"
+        tmux send-keys -t "shogun-watchers:$agent_id" "$cmd" Enter
+    }
+
     # Initialize inbox directory (create on the Linux FS mapped via symlink)
     mkdir -p "$SCRIPT_DIR/logs"
     for agent in shogun karo $_ASHIGARU_IDS_STR gunshi; do
@@ -874,37 +893,29 @@ NINJA_EOF
     pkill -f "inbox_watcher.sh" 2>/dev/null || true
     pkill -f "inotifywait.*queue/inbox" 2>/dev/null || true
     pkill -f "fswatch.*queue/inbox" 2>/dev/null || true
+    tmux kill-session -t shogun-watchers 2>/dev/null || true
     sleep 1
 
     # Shogun's watcher (required for auto-wake-up on receiving ntfy)
     # Safety mode: phase2/phase3 escalations are disabled, timeout periodic processing is also disabled (event-driven only)
     _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 ASW_DISABLE_NORMAL_NUDGE=0 \
-        bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_shogun_watcher_cli" \
-        >> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" 2>&1 &
-    disown
+    start_watcher_in_tmux shogun "shogun:main" "$_shogun_watcher_cli" "ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 ASW_DISABLE_NORMAL_NUDGE=0"
 
     # Karo's watcher
     _karo_watcher_cli=$(tmux show-options -p -t "multiagent:agents.${PANE_BASE}" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" karo "multiagent:agents.${PANE_BASE}" "$_karo_watcher_cli" \
-        >> "$SCRIPT_DIR/logs/inbox_watcher_karo.log" 2>&1 &
-    disown
+    start_watcher_in_tmux karo "multiagent:agents.${PANE_BASE}" "$_karo_watcher_cli"
 
     # Ashigaru's watcher
     for i in $(seq 1 "$_ASHIGARU_COUNT"); do
         p=$((PANE_BASE + i))
         _ashi_watcher_cli=$(tmux show-options -p -t "multiagent:agents.${p}" -v @agent_cli 2>/dev/null || echo "claude")
-        nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "ashigaru${i}" "multiagent:agents.${p}" "$_ashi_watcher_cli" \
-            >> "$SCRIPT_DIR/logs/inbox_watcher_ashigaru${i}.log" 2>&1 &
-        disown
+        start_watcher_in_tmux "ashigaru${i}" "multiagent:agents.${p}" "$_ashi_watcher_cli"
     done
 
     # Gunshi's watcher
     p=$((PANE_BASE + _ASHIGARU_COUNT + 1))
     _gunshi_watcher_cli=$(tmux show-options -p -t "multiagent:agents.${p}" -v @agent_cli 2>/dev/null || echo "claude")
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "gunshi" "multiagent:agents.${p}" "$_gunshi_watcher_cli" \
-        >> "$SCRIPT_DIR/logs/inbox_watcher_gunshi.log" 2>&1 &
-    disown
+    start_watcher_in_tmux gunshi "multiagent:agents.${p}" "$_gunshi_watcher_cli"
 
     log_success "  └─ inbox_watcher started for $((_ASHIGARU_COUNT + 3)) agents (Shogun + Karo + Ashigaru ${_ASHIGARU_COUNT} + Gunshi)"
 
@@ -1001,18 +1012,21 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     pkill -f "telegram_listener.py" 2>/dev/null || true
     [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
     
-    # Start Telegram Listener daemon in the background
-    nohup "$SCRIPT_DIR/.venv/bin/python3" "$SCRIPT_DIR/scripts/telegram_listener.py" >> "$SCRIPT_DIR/logs/telegram_listener.log" 2>&1 &
-    disown
-    
     # Split shogun:main to create the telegram agent pane (takes 25% height)
     tmux split-window -v -p 25 -t shogun:main
     
     PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
     TELEGRAM_PANE="shogun:main.$((PANE_BASE + 1))"
     
+    # Split the new telegram pane horizontally to run the background listener in the second half
+    tmux split-window -h -t "$TELEGRAM_PANE"
+    TELEGRAM_LISTENER_PANE="shogun:main.$((PANE_BASE + 2))"
+    
     tmux select-pane -t "$TELEGRAM_PANE" -T "Telegram Agent"
     tmux set-option -p -t "$TELEGRAM_PANE" @agent_id "telegram"
+    
+    tmux select-pane -t "$TELEGRAM_LISTENER_PANE" -T "Telegram Listener"
+    tmux set-option -p -t "$TELEGRAM_LISTENER_PANE" @agent_id "tg-listener"
     
     # Set CLI type and model display name dynamically from settings.yaml
     _telegram_cli_type=$(get_cli_type "telegram" 2>/dev/null || echo "claude")
@@ -1025,11 +1039,12 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     # Summon the Telegram CLI Agent
     tmux send-keys -t "$TELEGRAM_PANE" "$_telegram_cmd" Enter
     
+    # Start Telegram Listener inside the listener pane
+    tmux send-keys -t "$TELEGRAM_LISTENER_PANE" "cd \"$SCRIPT_DIR\" && \"$SCRIPT_DIR/.venv/bin/python3\" \"$SCRIPT_DIR/scripts/telegram_listener.py\"" Enter
+    
     # Launch inbox_watcher for the telegram agent
     [ -f "$SCRIPT_DIR/queue/inbox/telegram.yaml" ] || echo "messages:" > "$SCRIPT_DIR/queue/inbox/telegram.yaml"
-    nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" telegram "$TELEGRAM_PANE" "$_telegram_cli_type" \
-        >> "$SCRIPT_DIR/logs/inbox_watcher_telegram.log" 2>&1 &
-    disown
+    start_watcher_in_tmux telegram "$TELEGRAM_PANE" "$_telegram_cli_type"
     
     # Switch active pane back to Shogun main pane
     tmux select-pane -t "shogun:main.${PANE_BASE}"
@@ -1038,7 +1053,7 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     tmux set-option -t shogun -w pane-border-status top
     tmux set-option -t shogun -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] #{?@model_name,(#{@model_name}),}'
     
-    log_info "📱 Started Telegram background listener and summoned Telegram agent (${_telegram_display}) in shogun:main pane $((PANE_BASE + 1))"
+    log_info "📱 Started Telegram listener pane and summoned Telegram agent (${_telegram_display}) in shogun:main"
 else
     NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
     if [ -n "$NTFY_TOPIC" ]; then
