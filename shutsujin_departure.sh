@@ -338,6 +338,7 @@ echo ""
 log_info "🧹 Clearing existing camps..."
 tmux kill-session -t multiagent 2>/dev/null && log_info "  └─ multiagent session cleared" || log_info "  └─ multiagent session not found"
 tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun session cleared" || log_info "  └─ shogun session not found"
+sleep 1
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 1.5: Backup previous records (only during --clean, if content exists)
@@ -1013,7 +1014,7 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
     
     # Split shogun:main to create the telegram agent pane (takes 25% height)
-    tmux split-window -v -p 25 -t shogun:main
+    tmux split-window -v -l 25% -t shogun:main
     
     PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
     TELEGRAM_PANE="shogun:main.$((PANE_BASE + 1))"
