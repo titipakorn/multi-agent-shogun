@@ -34,6 +34,18 @@ def get_telegram_model(script_dir):
         pass
     return "haiku"
 
+def get_system_language(script_dir):
+    try:
+        import yaml
+        settings_path = os.path.join(script_dir, "../config/settings.yaml")
+        if os.path.exists(settings_path):
+            with open(settings_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            return cfg.get("language", "en")
+    except Exception:
+        pass
+    return "en"
+
 def make_telegram_request(token, method, payload=None):
     url = f"https://api.telegram.org/bot{token}/{method}"
     headers = {"Content-Type": "application/json"}
@@ -320,6 +332,23 @@ def main():
                         print(f"[telegram_listener] Forwarding to Shogun: {msg_text}")
                         # Write to the inbox file
                         append_to_inbox(inbox_path, msg_id, msg_text)
+                        
+                        # Send instant feedback to user
+                        msg_preview = msg_text
+                        if len(msg_preview) > 60:
+                            msg_preview = msg_preview[:60] + "..."
+                        
+                        lang = get_system_language(script_dir)
+                        if lang == "ja":
+                            feedback_text = f"📱 *受信:* \"{msg_preview}\"\n\n🏯 *将軍:* ハッ、承知いたしました。ただちに将軍に伝達し、指示を分析中..."
+                        else:
+                            feedback_text = f"📱 *Received:* \"{msg_preview}\"\n\n🏯 *Shogun:* Ha! (Yes!) Conveying directive to Shogun. Analyzing..."
+                            
+                        make_telegram_request(token, "sendMessage", {
+                            "chat_id": chat_id,
+                            "text": feedback_text,
+                            "parse_mode": "Markdown"
+                        })
                         
                         # Signal Shogun to wake up
                         inbox_write_path = os.path.join(script_dir, "inbox_write.sh")

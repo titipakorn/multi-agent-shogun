@@ -118,7 +118,12 @@ agent_registry_pane_for_agent() {
     local pane_base="${2:-0}"
 
     if [ "$agent" = "shogun" ]; then
-        printf '%s\n' "shogun:main.0"
+        printf 'shogun:main.%s\n' "$pane_base"
+        return 0
+    fi
+
+    if [ "$agent" = "telegram" ]; then
+        printf 'telegram:main.%s\n' "$pane_base"
         return 0
     fi
 

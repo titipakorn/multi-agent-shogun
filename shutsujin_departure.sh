@@ -338,6 +338,7 @@ echo ""
 log_info "🧹 Clearing existing camps..."
 tmux kill-session -t multiagent 2>/dev/null && log_info "  └─ multiagent session cleared" || log_info "  └─ multiagent session not found"
 tmux kill-session -t shogun 2>/dev/null && log_info "  └─ shogun session cleared" || log_info "  └─ shogun session not found"
+tmux kill-session -t telegram 2>/dev/null && log_info "  └─ telegram session cleared" || log_info "  └─ telegram session not found"
 sleep 1
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -899,8 +900,8 @@ NINJA_EOF
 
     # Shogun's watcher (required for auto-wake-up on receiving ntfy)
     # Safety mode: phase2/phase3 escalations are disabled, timeout periodic processing is also disabled (event-driven only)
-    _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
-    start_watcher_in_tmux shogun "shogun:main" "$_shogun_watcher_cli" "ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 ASW_DISABLE_NORMAL_NUDGE=0"
+    _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main.${PANE_BASE}" -v @agent_cli 2>/dev/null || echo "claude")
+    start_watcher_in_tmux shogun "shogun:main.${PANE_BASE}" "$_shogun_watcher_cli" "ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 ASW_DISABLE_NORMAL_NUDGE=0"
 
     # Karo's watcher
     _karo_watcher_cli=$(tmux show-options -p -t "multiagent:agents.${PANE_BASE}" -v @agent_cli 2>/dev/null || echo "claude")
@@ -1013,15 +1014,16 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     pkill -f "telegram_listener.py" 2>/dev/null || true
     [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
     
-    # Split shogun:main to create the telegram agent pane (takes 25% height)
-    tmux split-window -v -l 25% -t shogun:main
+    # Kill any existing telegram session and start a new one
+    tmux kill-session -t telegram 2>/dev/null || true
+    tmux new-session -d -s telegram -n main
     
     PANE_BASE=$(tmux show-options -gv pane-base-index 2>/dev/null || echo 0)
-    TELEGRAM_PANE="shogun:main.$((PANE_BASE + 1))"
+    TELEGRAM_PANE="telegram:main.${PANE_BASE}"
     
     # Split the new telegram pane horizontally to run the background listener in the second half
     tmux split-window -h -t "$TELEGRAM_PANE"
-    TELEGRAM_LISTENER_PANE="shogun:main.$((PANE_BASE + 2))"
+    TELEGRAM_LISTENER_PANE="telegram:main.$((PANE_BASE + 1))"
     
     tmux select-pane -t "$TELEGRAM_PANE" -T "Telegram Agent"
     tmux set-option -p -t "$TELEGRAM_PANE" @agent_id "telegram"
@@ -1038,7 +1040,7 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     tmux set-option -p -t "$TELEGRAM_PANE" @model_name "$_telegram_display" 2>/dev/null || true
     
     # Summon the Telegram CLI Agent
-    tmux send-keys -t "$TELEGRAM_PANE" "$_telegram_cmd" Enter
+    tmux send-keys -t "$TELEGRAM_PANE" "cd \"$SCRIPT_DIR\" && $_telegram_cmd" Enter
     
     # Start Telegram Listener inside the listener pane
     tmux send-keys -t "$TELEGRAM_LISTENER_PANE" "cd \"$SCRIPT_DIR\" && \"$SCRIPT_DIR/.venv/bin/python3\" \"$SCRIPT_DIR/scripts/telegram_listener.py\"" Enter
@@ -1047,14 +1049,11 @@ if [ "$TELEGRAM_CONFIGURED" = true ]; then
     [ -f "$SCRIPT_DIR/queue/inbox/telegram.yaml" ] || echo "messages:" > "$SCRIPT_DIR/queue/inbox/telegram.yaml"
     start_watcher_in_tmux telegram "$TELEGRAM_PANE" "$_telegram_cli_type"
     
-    # Switch active pane back to Shogun main pane
-    tmux select-pane -t "shogun:main.${PANE_BASE}"
+    # Enable borders on telegram session so we see agent pane names clearly
+    tmux set-option -t telegram -w pane-border-status top
+    tmux set-option -t telegram -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] #{?@model_name,(#{@model_name}),}'
     
-    # Enable borders on shogun session so we see agent pane names clearly
-    tmux set-option -t shogun -w pane-border-status top
-    tmux set-option -t shogun -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] #{?@model_name,(#{@model_name}),}'
-    
-    log_info "📱 Started Telegram listener pane and summoned Telegram agent (${_telegram_display}) in shogun:main"
+    log_info "📱 Started Telegram listener pane and summoned Telegram agent (${_telegram_display}) in telegram:main"
 else
     NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
     if [ -n "$NTFY_TOPIC" ]; then
@@ -1102,6 +1101,14 @@ echo "     ┌──────────────────────
 echo "     │  Pane 0: Shogun (SHOGUN)    │  ← Commander-in-Chief / Project Overseer"
 echo "     └─────────────────────────────┘"
 echo ""
+if [ "$TELEGRAM_CONFIGURED" = true ]; then
+    echo "     [telegram session] Telegram Camp"
+    echo "     ┌─────────────────────────────┐"
+    echo "     │  Pane 0: Telegram Agent     │  ← Low-cost Assistant"
+    echo "     │  Pane 1: Telegram Listener  │  ← Background Telegram Webhook Listener"
+    echo "     └─────────────────────────────┘"
+    echo ""
+fi
 echo "     [multiagent session] Karo, Ashigaru, and Gunshi Camp (3x3 = 9 panes)"
 echo "     ┌─────────┬─────────┬─────────┐"
 echo "     │  karo   │ashigaru3│ashigaru6│"
@@ -1146,6 +1153,11 @@ echo "  │     tmux attach-session -t shogun   (or: css)            │"
 echo "  │                                                          │"
 echo "  │  Check the Karo and Ashigaru camp:                       │"
 echo "  │     tmux attach-session -t multiagent   (or: csm)        │"
+if [ "$TELEGRAM_CONFIGURED" = true ]; then
+    echo "  │                                                          │"
+    echo "  │  Check the Telegram camp:                                │"
+    echo "  │     tmux attach-session -t telegram                      │"
+fi
 echo "  │                                                          │"
 echo "  │  * Each agent has already loaded their instructions.    │"
 echo "  │    You can start commanding immediately.                 │"
@@ -1164,7 +1176,11 @@ if [ "$OPEN_TERMINAL" = true ]; then
 
     # Check if Windows Terminal is available
     if command -v wt.exe &> /dev/null; then
-        wt.exe -w 0 new-tab wsl.exe -e bash -c "tmux attach-session -t shogun" \; new-tab wsl.exe -e bash -c "tmux attach-session -t multiagent"
+        if [ "$TELEGRAM_CONFIGURED" = true ]; then
+            wt.exe -w 0 new-tab wsl.exe -e bash -c "tmux attach-session -t shogun" \; new-tab wsl.exe -e bash -c "tmux attach-session -t multiagent" \; new-tab wsl.exe -e bash -c "tmux attach-session -t telegram"
+        else
+            wt.exe -w 0 new-tab wsl.exe -e bash -c "tmux attach-session -t shogun" \; new-tab wsl.exe -e bash -c "tmux attach-session -t multiagent"
+        fi
         log_success "  └─ Terminal tabs successfully launched"
     else
         log_info "  └─ wt.exe not found. Please attach manually."

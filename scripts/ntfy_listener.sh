@@ -165,7 +165,20 @@ while true; do
             continue
         fi
 
-        # Auto-reply removed — shogun replies directly after processing.
+        # Send instant feedback
+        MSG_PREVIEW="$MSG"
+        if [ "${#MSG_PREVIEW}" -gt 60 ]; then
+            MSG_PREVIEW="${MSG_PREVIEW:0:60}..."
+        fi
+        
+        LANGUAGE=$(grep '^language:' "$SETTINGS" 2>/dev/null | awk '{print $2}' | tr -d '"')
+        if [ "$LANGUAGE" = "ja" ]; then
+            FEEDBACK_TEXT="📱 受信: \"$MSG_PREVIEW\""$'\n\n'"🏯 将軍: ハッ、承知いたしました。ただちに将軍へ伝達し、指示を分析中..."
+        else
+            FEEDBACK_TEXT="📱 Received: \"$MSG_PREVIEW\""$'\n\n'"🏯 Shogun: Ha! (Yes!) Conveying directive to Shogun. Analyzing..."
+        fi
+        
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "$FEEDBACK_TEXT"
 
         # Wake shogun via inbox (Shogun directly receives and processes ntfy)
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \

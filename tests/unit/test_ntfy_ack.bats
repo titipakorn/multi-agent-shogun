@@ -138,14 +138,16 @@ JSON
 # T-ACK-003: No auto-ACK sent (shogun replies directly)
 # ═══════════════════════════════════════════════════════════════
 
-@test "T-ACK-003: No auto-ACK sent (shogun replies directly)" {
+@test "T-ACK-003: Instant feedback sent to acknowledge message" {
     cat > "$MOCK_CURL_OUTPUT" << 'JSON'
 {"event":"message","id":"msg003","time":1234567890,"message":"test notification","tags":[]}
 JSON
     run_listener
-    # Auto-ACK removed — ACK_LOG should be empty
-    [ ! -s "$ACK_LOG" ]
-    # But inbox_write to shogun should still fire
+    # Instant feedback sent — ACK_LOG should contain feedback
+    [ -s "$ACK_LOG" ]
+    grep -q "Received: \"test notification\"" "$ACK_LOG"
+    grep -q "Conveying directive to Shogun" "$ACK_LOG"
+    # And inbox_write to shogun should still fire
     [ -s "$INBOX_LOG" ]
 }
 
@@ -217,8 +219,10 @@ JSON
 {"event":"message","id":"msg008","time":1234567890,"message":"Hello 'world' & <test>","tags":[]}
 JSON
     run_listener
-    # Auto-ACK removed — verify inbox_write still fires for special characters
-    [ ! -s "$ACK_LOG" ]
+    # Instant feedback sent — verify it contains preserved characters
+    [ -s "$ACK_LOG" ]
+    grep -q "Hello 'world' & <test>" "$ACK_LOG"
+    # verify inbox_write still fires for special characters
     [ -s "$INBOX_LOG" ]
     grep -q "shogun" "$INBOX_LOG"
 }
