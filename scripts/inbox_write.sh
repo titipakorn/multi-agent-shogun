@@ -77,54 +77,77 @@ max_attempts=3
 while [ $attempt -lt $max_attempts ]; do
     if _acquire_lock; then
         trap _release_lock EXIT
-        if "$SCRIPT_DIR/.venv/bin/python3" -c "
-import yaml, sys
+        if INBOX_FILE="$INBOX" \
+           MSG_ID="$MSG_ID" \
+           FROM_AGENT="$FROM" \
+           TIMESTAMP="$TIMESTAMP" \
+           MSG_TYPE="$TYPE" \
+           CONTENT="$CONTENT" \
+           "$SCRIPT_DIR/.venv/bin/python3" -c '
+import yaml, sys, os
 
 try:
+    inbox_path = os.environ["INBOX_FILE"]
+    
     # Load existing inbox
-    with open('$INBOX') as f:
-        data = yaml.safe_load(f)
+    data = None
+    if os.path.exists(inbox_path):
+        try:
+            with open(inbox_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        except Exception as e:
+            # Auto-repair/self-heal if corrupted
+            print(f"[inbox_write] WARNING: {inbox_path} is corrupted ({e}). Backing up and resetting.", file=sys.stderr)
+            import shutil
+            try:
+                shutil.copy2(inbox_path, inbox_path + ".corrupt")
+            except Exception:
+                pass
+            data = {"messages": []}
 
     # Initialize if needed
     if not data:
         data = {}
-    if not data.get('messages'):
-        data['messages'] = []
+    if not data.get("messages"):
+        data["messages"] = []
 
     # Add new message
     new_msg = {
-        'id': '$MSG_ID',
-        'from': '$FROM',
-        'timestamp': '$TIMESTAMP',
-        'type': '$TYPE',
-        'content': '''$CONTENT''',
-        'read': False
+        "id": os.environ["MSG_ID"],
+        "from": os.environ["FROM_AGENT"],
+        "timestamp": os.environ["TIMESTAMP"],
+        "type": os.environ["MSG_TYPE"],
+        "content": os.environ["CONTENT"],
+        "read": False
     }
-    data['messages'].append(new_msg)
+    data["messages"].append(new_msg)
 
     # Overflow protection: keep max 50 messages
-    if len(data['messages']) > 50:
-        msgs = data['messages']
-        unread = [m for m in msgs if not m.get('read', False)]
-        read = [m for m in msgs if m.get('read', False)]
+    if len(data["messages"]) > 50:
+        msgs = data["messages"]
+        unread = [m for m in msgs if not m.get("read", False)]
+        read = [m for m in msgs if m.get("read", False)]
         # Keep all unread + newest 30 read messages
-        data['messages'] = unread + read[-30:]
+        data["messages"] = unread + read[-30:]
 
     # Atomic write: tmp file + rename (prevents partial reads)
-    import tempfile, os
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname('$INBOX'), suffix='.tmp')
+    import tempfile
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(inbox_path), suffix=".tmp")
     try:
-        with os.fdopen(tmp_fd, 'w') as f:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-        os.replace(tmp_path, '$INBOX')
-    except:
-        os.unlink(tmp_path)
-        raise
+        os.replace(tmp_path, inbox_path)
+    except Exception as write_err:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+        raise write_err
 
 except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
+    print(f"ERROR: {e}", file=sys.stderr)
     sys.exit(1)
-"; then
+'; then
             STATUS=0
         else
             STATUS=$?

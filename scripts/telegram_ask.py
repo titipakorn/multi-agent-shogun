@@ -43,6 +43,9 @@ def main():
     parser.add_argument("--question", required=True, help="The question text to ask.")
     parser.add_argument("--options", nargs="+", help="Multiple-choice options. If omitted, waits for a text reply.")
     parser.add_argument("--timeout", type=int, default=3600, help="Timeout in seconds (default: 3600).")
+    parser.add_argument("--no-wait", action="store_true", help="Send the question and exit immediately without waiting for a response.")
+    parser.add_argument("--no-other", action="store_true", help="Do not append the 'Other (free text)' option to multiple-choice questions.")
+    parser.add_argument("--info", action="store_true", help="Send as an informational message. Exits immediately, does not write to current_question.json, and does not block.")
     args = parser.parse_args()
 
     # Load credentials
@@ -57,31 +60,34 @@ def main():
         print("ERROR: Telegram credentials not configured. Please create config/telegram.env or set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.", file=sys.stderr)
         sys.exit(1)
 
-    # Write to current_question.json for Shogun panel feedback
     question_file = os.path.join(script_dir, "../queue/current_question.json")
-    question_data = {
-        "question": args.question,
-        "options": args.options or [],
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "status": "pending"
-    }
-    try:
-        with open(question_file, "w", encoding="utf-8") as f:
-            json.dump(question_data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"WARNING: Failed to write to {question_file}: {e}", file=sys.stderr)
+
+    # Only write current_question.json if this is NOT an informational message
+    if not args.info:
+        question_data = {
+            "question": args.question,
+            "options": args.options or [],
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "status": "pending"
+        }
+        try:
+            with open(question_file, "w", encoding="utf-8") as f:
+                json.dump(question_data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"WARNING: Failed to write to {question_file}: {e}", file=sys.stderr)
 
     def cleanup_question_file():
-        try:
-            if os.path.exists(question_file):
-                os.remove(question_file)
-        except Exception:
-            pass
+        if not args.info:
+            try:
+                if os.path.exists(question_file):
+                    os.remove(question_file)
+            except Exception:
+                pass
 
     # 1. Send the question
     payload = {
         "chat_id": chat_id,
-        "text": f"❓ *Question:*\n{args.question}",
+        "text": f"❓ *Question:*\n{args.question}" if not args.info else f"ℹ️ *Notice:*\n{args.question}",
         "parse_mode": "Markdown"
     }
 
@@ -89,8 +95,9 @@ def main():
         keyboard = []
         for idx, opt in enumerate(args.options):
             keyboard.append([{"text": opt, "callback_data": f"opt_{idx}"}])
-        # Append "Other (free text)" option as the last choice
-        keyboard.append([{"text": "✏️ Other (free text)", "callback_data": "opt_other"}])
+        # Append "Other (free text)" option as the last choice unless suppressed or informational
+        if not args.no_other and not args.info:
+            keyboard.append([{"text": "✏️ Other (free text)", "callback_data": "opt_other"}])
         payload["reply_markup"] = {"inline_keyboard": keyboard}
 
     send_res = make_telegram_request(token, "sendMessage", payload)
@@ -101,13 +108,21 @@ def main():
 
     sent_message_id = send_res["result"]["message_id"]
     
-    # Update current_question.json with sent_message_id
-    question_data["message_id"] = sent_message_id
-    try:
-        with open(question_file, "w", encoding="utf-8") as f:
-            json.dump(question_data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"WARNING: Failed to update {question_file}: {e}", file=sys.stderr)
+    # Update current_question.json with sent_message_id if not informational
+    if not args.info:
+        question_data["message_id"] = sent_message_id
+        try:
+            with open(question_file, "w", encoding="utf-8") as f:
+                json.dump(question_data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"WARNING: Failed to update {question_file}: {e}", file=sys.stderr)
+
+    if args.info or args.no_wait:
+        if args.info:
+            print(f"Informational message sent. Message ID: {sent_message_id}")
+        else:
+            print(f"Question sent asynchronously. Message ID: {sent_message_id}")
+        sys.exit(0)
 
     start_time = time.time()
 

@@ -200,6 +200,27 @@ def main():
                                     json.dump(active_question, qf, indent=2, ensure_ascii=False)
                             except Exception:
                                 pass
+                            
+                            # Wake up Karo via inbox
+                            try:
+                                inbox_write_path = os.path.join(script_dir, "inbox_write.sh")
+                                subprocess.run([
+                                    "bash", inbox_write_path, "karo",
+                                    f"Telegram question answered: {selected_option}",
+                                    "telegram_answer", "telegram_listener"
+                                ], check=True)
+                            except Exception as e:
+                                print(f"[telegram_listener] Error nudging Karo: {e}", file=sys.stderr)
+                    else:
+                        # Clear loading spinner for informational callback queries
+                        make_telegram_request(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Acknowledged"})
+                        
+                        # Remove inline keyboard from the informational message
+                        make_telegram_request(token, "editMessageReplyMarkup", {
+                            "chat_id": chat_id,
+                            "message_id": cb_msg.get("message_id"),
+                            "reply_markup": {"inline_keyboard": []}
+                        })
                     continue
                 
                 # B. Handle Messages
@@ -239,6 +260,17 @@ def main():
                                     json.dump(active_question, qf, indent=2, ensure_ascii=False)
                             except Exception:
                                 pass
+                            
+                            # Wake up Karo via inbox
+                            try:
+                                inbox_write_path = os.path.join(script_dir, "inbox_write.sh")
+                                subprocess.run([
+                                    "bash", inbox_write_path, "karo",
+                                    f"Telegram question answered: {reply_text}",
+                                    "telegram_answer", "telegram_listener"
+                                ], check=True)
+                            except Exception as e:
+                                print(f"[telegram_listener] Error nudging Karo: {e}", file=sys.stderr)
                         continue
                         
                     # Ignore replies (handled by reply check above)

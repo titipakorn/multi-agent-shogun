@@ -464,3 +464,66 @@ PYFAIL
 
     [ ! -d "$TEST_INBOX_DIR/test_agent.yaml.lock.d" ]
 }
+
+# =============================================================================
+# T-015: Complex shell quoting and escaping
+# =============================================================================
+
+@test "T-015: complex shell quoting and escaping handled safely" {
+    # Message containing all sorts of tricky quoting combinations
+    COMPLEX_CONTENT="Hello \"world\"! Let's do 'single quotes' and triple '''quotes'''.
+Colons: they are everywhere. Backslashes \\ too.
+\$variables should not expand. \`backticks\` should not execute."
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "$COMPLEX_CONTENT" "test_type" "other_sender"
+    [ "$status" -eq 0 ]
+
+    # Verification: everything is correctly saved and restored
+    "$VENV_PYTHON" <<EOF
+import yaml
+
+with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
+    data = yaml.safe_load(f)
+
+msg = data['messages'][0]
+
+expected_content = r"""Hello "world"! Let's do 'single quotes' and triple '''quotes'''.
+Colons: they are everywhere. Backslashes \\ too.
+\$variables should not expand. \`backticks\` should not execute."""
+
+assert msg['content'] == expected_content, f"Content mismatch:\nActual: {repr(msg['content'])}\nExpected: {repr(expected_content)}"
+print('T-015: PASS')
+EOF
+}
+
+# =============================================================================
+# T-016: Self-healing / auto-repair of corrupted YAML
+# =============================================================================
+
+@test "T-016: auto-repair corrupted YAML inbox file" {
+    # 1. Create a corrupted YAML file
+    echo "messages: {invalid_yaml_here: [:" > "$TEST_INBOX_DIR/test_agent.yaml"
+
+    # 2. Write a new message to the corrupted inbox
+    run bash "$TEST_INBOX_WRITE" "test_agent" "message after repair" "test_type" "other_sender"
+    [ "$status" -eq 0 ]
+
+    # 3. Confirm backup file is created
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml.corrupt" ]
+    grep -q "invalid_yaml_here" "$TEST_INBOX_DIR/test_agent.yaml.corrupt"
+
+    # 4. Confirm new inbox file is valid and contains the new message
+    "$VENV_PYTHON" <<EOF
+import yaml
+
+with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
+    data = yaml.safe_load(f)
+
+assert 'messages' in data
+assert len(data['messages']) == 1
+msg = data['messages'][0]
+assert msg['content'] == 'message after repair'
+print('T-016: PASS')
+EOF
+}
+

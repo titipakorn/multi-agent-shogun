@@ -101,7 +101,7 @@ agent_is_busy_check() {
     # that might still be visible in the bottom 5 lines (T-BUSY-008 scenario).
     local last_line
     last_line=$(echo "$pane_tail" | grep -v '^[[:space:]]*$' | tail -1)
-    if echo "$last_line" | grep -qiF 'esc to'; then
+    if echo "$last_line" | grep -qiF 'esc to' && ! echo "$last_line" | grep -qiE '(esc to cancel|esc to exit)'; then
         return 0  # busy — status bar confirms active processing
     fi
 
