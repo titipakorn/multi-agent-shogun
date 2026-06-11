@@ -943,23 +943,30 @@ This unified format enables:
 
 ### 📱 8. Phone Notifications (ntfy)
 
-Two-way communication between your phone and the Shogun — no SSH, no Tailscale, no server needed.
+The Shogun system features a sophisticated, **high-signal communication harness** for two-way communication with your phone.
 
-| Direction | How it works |
-|-----------|-------------|
-| **Phone → Shogun** | Send a message from the ntfy app → `ntfy_listener.sh` receives it via streaming → auto-ACK reply (`📱Received: {your message}`) sent back to your phone → Shogun processes automatically |
-| **Karo → Phone (direct)** | When Karo updates `dashboard.md`, it sends push notifications directly via `scripts/ntfy.sh` — **Shogun is bypassed** (Shogun is for human interaction, not progress reporting) |
+| Direction | Protocol | How it works |
+|-----------|----------|-------------|
+| **Phone → Shogun** | **Minimal ACK** | Send a message from the ntfy app → `ntfy_listener.sh` receives it → **Instant "🏯" emoji reply** (acknowledgment) → Shogun processes automatically |
+| **Shogun → Phone** | **Strategic Report** | The Shogun is the **primary strategic reporter**. It sends high-level **Business Reports** (Progress, Assignment, Completion) to your phone via `ntfy.sh`. |
+| **Karo → Phone** | **Silenced** | Karo's low-level "one-liner" notifications are silenced to prevent noise. Karo only reports internally to the Shogun. |
+
+**Key Harness Features:**
+- **Notification Deduplication**: A 5-second hash-based harness in `scripts/ntfy.sh` prevents double-messaging if multiple agents report the same state simultaneously.
+- **Proactive Progress**: Whenever you assign a new command, the Shogun proactively summarizes recent accomplishments ("what has been done") before confirming the new mission.
+- **Interactive Delegation (Action Required)**: When the army hits a blocker, Karo delegates the inquiry to the Shogun. The Shogun then sends the **topic and choices** to your phone via an interactive Telegram/ntfy dialogue.
 
 ```
 📱 You (from bed)          🏯 Shogun
     │                          │
     │  "Research React 19"     │
     ├─────────────────────────►│
-    │    (ntfy message)        │  → Delegates to Karo → Ashigaru work
+    │    (ntfy message)        │  → Listener ACKs: "🏯" (Instant)
+    │                          │  → Shogun: "Ha! Recent progress: ... New mission confirmed."
     │                          │
-    │  "✅ cmd_042 complete"   │
+    │  "✅ Strategic Report"   │
     │◄─────────────────────────┤
-    │    (push notification)   │
+    │    (Business Report)     │  → Shogun sends full Background/Action/Next summary
 ```
 
 **Setup:**

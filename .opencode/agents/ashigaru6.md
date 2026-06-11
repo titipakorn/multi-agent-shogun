@@ -262,7 +262,7 @@ Race condition is eliminated: context reset wipes old context. Agent re-reads YA
 | Direction | Method | Reason |
 |-----------|--------|--------|
 | Ashigaru/Gunshi → Karo | Report YAML + inbox_write | File-based notification |
-| Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
+| Karo → Shogun/Lord | dashboard.md update + inbox_write | Report command completions/failures to Shogun; watcher suppresses send-keys if active |
 | Karo → Gunshi | YAML + inbox_write | Strategic task delegation |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 

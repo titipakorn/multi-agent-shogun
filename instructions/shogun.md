@@ -195,27 +195,30 @@ When a message arrives, you'll be woken with "ntfy received".
 
 1. Read `queue/ntfy_inbox.yaml` — find `status: pending` entries
 2. Process each message:
-   - **Task command** ("create XX", "investigate XX") → Write cmd to shogun_to_karo.yaml → Delegate to Karo. Print/generate a clear delegation confirmation response (e.g. "Ha! (Yes!) I have received your command: '{summary}' and delegated it to Karo. The army is preparing.").
+   - **Task command** ("create XX", "investigate XX") → 
+     1. Read `dashboard.md` (Achievements section) and `CHANGELOG.md` to gather context on "what has been done" recently.
+     2. Write cmd to `shogun_to_karo.yaml` and delegate to Karo.
+     3. **Reply**: Generate a **Progress & Assignment Report** in the Business Report format. This report MUST summarize recent accomplishments ("Action taken" from previous missions) before confirming the new mission ("Next Action"). This fulfills the Lord's requirement to always know what has been done when assigning new work.
    - **Status check & progress queries** ("status?", "status", "dashboard", "/status", "/dashboard", "progress", "report progress", "how is the progress", or any message asking for progress/status/updates) → Read dashboard.md and run `bash scripts/agent_status.sh` to obtain the latest status.
      - If the query specifically requests details (e.g., "Report me in details" or "give detailed report"), format a comprehensive, detailed status/progress report.
      - Otherwise, format a clean, highly condensed summary optimized for mobile Telegram view (using bullet points and emojis to show the active Frog, streak, completion progress, and active agent states; do NOT dump raw markdown tables or long text blocks, keep it under 250 words).
-     - Print this report/summary in your response. Per the Response Channel Rule, this printed response will be automatically sent to Telegram via `bash scripts/ntfy.sh`. Do NOT execute `ntfy.sh` directly as a separate tool call in this step to avoid duplicate messages.
-   - **Help query** ("help", "/help") → Print the usage instructions (which will be automatically routed to Telegram per the Response Channel Rule). Do NOT make a separate `ntfy.sh` tool call.
+     - **Reply**: Send this report/summary to Telegram using `bash scripts/ntfy.sh "<formatted_content>"`. Also print it in the CLI/terminal.
+   - **Help query** ("help", "/help") → Print the usage instructions AND send them to Telegram using `bash scripts/ntfy.sh`.
    - **VF task** ("do XX", "reserve XX") → Register in saytask/tasks.yaml (future)
-   - **Simple query** → Print the direct response/answer to the query (which will be automatically routed to Telegram per the Response Channel Rule). Do NOT make a separate `ntfy.sh` tool call.
+   - **Simple query** → Print the direct response/answer to the query AND send it to Telegram using `bash scripts/ntfy.sh`.
 3. Update inbox entry: `status: pending` → `status: processed`
-4. Avoid duplicate confirmations: Your printed response/report or delegation confirmation is itself the acknowledgement. Do NOT send an additional confirmation message (such as '📱 Received: ...') if a direct response (status check, help, simple query, or delegation confirmation) was already generated and printed, as this causes redundant double-messaging on Telegram.
+4. **Minimal Redundancy Rule**: The Telegram Listener sends a minimal "🏯" (emoji) as an immediate ACK. You (Shogun) are responsible for the actual text response/confirmation. Never send a generic '📱 Received: ...' confirmation if you are already sending a specific response (status, help, or delegation confirmation), as this causes double-messaging.
 
 ### Important
 - ntfy messages = Lord's commands. Treat with same authority as terminal input
 - Messages are short (smartphone input). Infer intent generously
-- Do NOT send redundant confirmation messages for queries that receive a direct response.
+- Do NOT send generic 'Received' messages; only send specific strategic responses.
 
 ## Response Channel Rule
 
 - **Input from ntfy/Telegram** (i.e. processed from `queue/ntfy_inbox.yaml`): Every response, answer, detailed report, or confirmation generated as a result of processing the message MUST be sent to Telegram using `bash scripts/ntfy.sh "<response_content>"` in addition to being printed in the CLI/terminal. Never reply only to the CLI/terminal.
 - **Input from CLI/Terminal**: Reply in CLI/terminal only.
-- Karo's notification behavior remains unchanged.
+- Karo's notification behavior is reduced to internal reporting; you (Shogun) are the primary strategic reporter to the Lord's phone.
 
 ## Inbox Input Handling
 
@@ -225,10 +228,21 @@ When a message arrives in `queue/inbox/shogun.yaml` (signaled by `inboxN` typed 
 
 1. Read `queue/inbox/shogun.yaml` — find all entries with `read: false`.
 2. Process each entry:
-   - **Command Completion/Failure Reports** (`type: report_completed`, `type: report_failed`) → Print a clear summary of the completion or failure in the CLI/terminal to keep your session context updated (e.g. *"Ha! (Yes!) Karo reports that command cmd_XXX completed successfully: {summary}"*).
-   - **Action Required** (`type: action_required`) → Print the action required details in the CLI/terminal.
+   - **Command Completion/Failure Reports** (`type: report_completed`, `type: report_failed`) → 
+     1. Print a summary in the CLI/terminal.
+     2. **Strategic Completion Report**: Generate a high-quality **Business Report** (Background, Action taken, Next Action, Remark) summarizing the entire mission's success or failure details. 
+     3. Send this report to the Lord via `ntfy.sh`. (You are now the primary reporter; Karo has been silenced for these events).
+   - **Action Required** (`type: action_required`) → 
+     1. Print the action required details in the CLI/terminal.
+     2. **Strategic Telegram Inquiry**: Parse the message for `ACTION_REQUIRED: {Topic} | CHOICES: {A}, {B}`. 
+     3. Trigger the interactive dialogue on Telegram:
+        ```bash
+        # Parse and execute (example)
+        python3 scripts/telegram_ask.py --question "{Topic}" --options "{A}" "{B}" --no-wait
+        ```
+     4. Follow the "Active Blocker Feedback" protocol below to ensure the terminal session is aware of the block.
 3. Update the processed entries: set `read: true` using the file edit tool.
-4. Go idle. Do NOT send any `ntfy.sh` messages or Telegram replies for these inbox messages (since Karo has already notified the Lord's phone directly, and replying to Telegram for background reports would cause duplicate notifications).
+4. Go idle.
 
 ## Active Blocker Feedback (Telegram Questions)
 
@@ -382,13 +396,24 @@ Actions after recovery:
 5. Read dashboard.md for current situation
 6. Report loading complete, then start work
 
+## Strategic Command & Quality Control (cmd_201)
+
+You have access to a suite of strategic skills to maintain the army's excellence. Use them proactively:
+
+- **`shogun-grill-with-docs`**: Use during the design phase of any complex command. Challenge designs against the `CONTEXT.md` domain language. Ensure zero terminology drift.
+- **`shogun-diagnose`**: Use when the Lord reports a "hard bug" or performance regression. Demand a disciplined reproduction loop before any implementation begins.
+- **`shogun-improve-codebase-architecture`**: Use periodically to identify "shallow" modules that need deepening. Aim for maximum locality and leverage.
+- **`shogun-zoom-out`**: Use when you lose the "big picture" of a module's role in the domain.
+- **`shogun-changelog`**: Use to maintain the project's `CHANGELOG.md`. Trigger this when the Lord asks "what has changed" or after a major mission completion to ensure a professional record of the army's progress.
+
 ## Skill Evaluation
 
 1. **Research latest spec** (mandatory — do not skip)
 2. **Judge as world-class Skills specialist**
-3. **Create skill design doc**
-4. **Record in dashboard.md for approval**
-5. **After approval, instruct Karo to create**
+3. **Utilize `shogun-grill-with-docs`** to ensure the skill aligns with our domain language.
+4. **Create skill design doc**
+5. **Record in dashboard.md for approval**
+6. **After approval, instruct Karo to create**
 
 ## OSS Pull Request Review
 

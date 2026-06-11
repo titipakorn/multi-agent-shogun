@@ -118,17 +118,34 @@ def main():
     else:
         print(f"[telegram_listener] Warning: Failed to register slash commands: {register_res.get('description')}")
 
-    # Get current offset (only process messages sent after listener startup)
-    updates_res = make_telegram_request(token, "getUpdates", {"limit": 1})
+    # Get current offset
+    offset_file = os.path.join(script_dir, "../config/telegram_offset.txt")
     offset = 0
-    if updates_res.get("ok") and updates_res.get("result"):
-        offset = updates_res["result"][-1]["update_id"] + 1
+    if os.path.exists(offset_file):
+        try:
+            with open(offset_file, "r") as f:
+                offset = int(f.read().strip())
+        except Exception:
+            pass
+
+    if offset == 0:
+        updates_res = make_telegram_request(token, "getUpdates", {"limit": 1})
+        if updates_res.get("ok") and updates_res.get("result"):
+            offset = updates_res["result"][-1]["update_id"] + 1
 
     inbox_path = os.path.join(script_dir, "../queue/ntfy_inbox.yaml")
     message_buffers = {}
 
     while True:
         try:
+            # Save offset periodically
+            if offset > 0:
+                try:
+                    with open(offset_file, "w") as f:
+                        f.write(str(offset))
+                except Exception:
+                    pass
+
             # Determine timeout based on whether any buffers have chunks
             has_buffered = any(len(buf["chunks"]) > 0 for buf in message_buffers.values())
             poll_timeout = 1 if has_buffered else 30
@@ -365,22 +382,17 @@ def main():
                 # Forward to Shogun
                 append_to_inbox(inbox_path, first_msg_id, concatenated_text)
 
-                # Send instant feedback to user
-                msg_preview = concatenated_text
-                if len(msg_preview) > 60:
-                    msg_preview = msg_preview[:60] + "..."
-
-                lang = get_system_language(script_dir)
-                if lang == "ja":
-                    feedback_text = f"📱 *受信 (結合):* \"{msg_preview}\"\n\n🏯 *将軍:* ハッ、承知いたしました。ただちに将軍に伝達し、指示を分析中..."
-                else:
-                    feedback_text = f"📱 *Received (Concatenated):* \"{msg_preview}\"\n\n🏯 *Shogun:* Ha! (Yes!) Conveying directive to Shogun. Analyzing..."
+                # Send instant feedback to user (Minimal ACK to prevent double-reporting noise)
+                # Instead of a full message, we send a single emoji to acknowledge reception.
+                # The Shogun will follow up with the actual strategic confirmation.
+                feedback_text = "🏯"
 
                 make_telegram_request(token, "sendMessage", {
                     "chat_id": cid,
                     "text": feedback_text,
                     "parse_mode": "Markdown"
                 })
+
 
                 # Signal Shogun to wake up
                 inbox_write_path = os.path.join(script_dir, "inbox_write.sh")

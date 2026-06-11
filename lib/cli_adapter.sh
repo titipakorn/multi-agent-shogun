@@ -253,6 +253,9 @@ build_cli_command() {
         prefix="MAX_THINKING_TOKENS=0 "
     fi
 
+    local agent_env_prefix
+    agent_env_prefix=$(_cli_adapter_get_agent_env_prefix "$agent_id")
+
     local cmd=""
     case "$cli_type" in
         claude)
@@ -277,7 +280,6 @@ build_cli_command() {
             local tui_config_path
             local variant
             local launch_agent_id
-            local agent_env_prefix
             normalized_model=$(normalize_opencode_model "$model")
             tui_config_path=$(_cli_adapter_shell_quote "$CLI_ADAPTER_PROJECT_ROOT/config/opencode-tui.json")
             variant=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.variant" "")
@@ -285,7 +287,6 @@ build_cli_command() {
             if [[ -n "$variant" ]]; then
                 launch_agent_id="${agent_id}-runtime"
             fi
-            agent_env_prefix=$(_cli_adapter_get_agent_env_prefix "$agent_id")
             local quoted_agent_id
             quoted_agent_id=$(_cli_adapter_shell_quote "$agent_id")
             cmd="opencode"
@@ -300,7 +301,7 @@ build_cli_command() {
             cmd="$cmd --agent $launch_agent_id"
             # Use a project-pinned TUI config so tmux automation sees stable keybinds
             # even when the user has a different global tui.json.
-            cmd="${agent_env_prefix}OPENCODE_AGENT_ID=$quoted_agent_id OPENCODE_TUI_CONFIG=$tui_config_path $cmd"
+            cmd="OPENCODE_AGENT_ID=$quoted_agent_id OPENCODE_TUI_CONFIG=$tui_config_path $cmd"
             ;;
         copilot)
             cmd="copilot --yolo"
@@ -339,7 +340,7 @@ build_cli_command() {
         cmd="$cmd $startup_prompt_arg"
     fi
 
-    echo "${prefix}${cmd}"
+    echo "${agent_env_prefix}${prefix}${cmd}"
 }
 
 # get_instruction_file(agent_id [,cli_type])

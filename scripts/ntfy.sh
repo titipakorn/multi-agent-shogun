@@ -13,6 +13,22 @@ if [ -f "$TELEGRAM_ENV" ]; then
   source "$TELEGRAM_ENV"
 fi
 
+# Deduplication harness
+# Prevents double-messages if multiple agents report same info within short window
+LAST_MSG_FILE="/tmp/ntfy_last_msg_$(id -u).txt"
+MSG_HASH=$(echo "$1" | md5sum 2>/dev/null | awk '{print $1}')
+[ -z "$MSG_HASH" ] && MSG_HASH=$(echo "$1" | cksum | awk '{print $1}')
+CURRENT_TIME=$(date +%s)
+
+if [ -f "$LAST_MSG_FILE" ]; then
+  read -r LAST_HASH LAST_TIME < "$LAST_MSG_FILE"
+  if [ "$MSG_HASH" = "$LAST_HASH" ] && [ $((CURRENT_TIME - LAST_TIME)) -lt 5 ]; then
+    # Duplicate detected within 5s window, skipping
+    exit 0
+  fi
+fi
+echo "$MSG_HASH $CURRENT_TIME" > "$LAST_MSG_FILE"
+
 if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ] && [ "$TELEGRAM_BOT_TOKEN" != "your_bot_token_here" ]; then
   # Route notification to Telegram
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \

@@ -242,30 +242,25 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
 ### Action Needed Notification (Step 11)
 
 When the Lord needs to make a decision, approve a choice, or solve a blocker:
-1. **Check if Telegram is configured (MANDATORY)**: You MUST proactively check if `config/telegram.env` exists (or if `TELEGRAM_BOT_TOKEN` is set). If it exists, Telegram is the **primary, urgent, and preferred channel** for all approvals/blockers.
-2. **If configured (Must-Use Asynchronous Ask - URGENT)**: You must immediately send the question to Telegram in a non-blocking/asynchronous manner:
-   ```bash
-   # For multiple-choice questions:
-   python3 scripts/telegram_ask.py --question "Blocker details" --options "Choice A" "Choice B" --no-wait
-   # For open-ended questions:
-   python3 scripts/telegram_ask.py --question "Blocker details" --no-wait
-   ```
-   After executing this command:
-   - Do NOT run a blocking poll or loop.
-   - Record in your log/report that you are waiting for the Lord's decision on Telegram.
+1. **Delegate to Shogun (MANDATORY)**: You MUST NOT call `telegram_ask.py` directly. Instead, delegate the inquiry to the Shogun.
+2. **Procedure**:
+   - Write a structured `action_required` message to the Shogun's inbox:
+     ```bash
+     bash scripts/inbox_write.sh shogun "ACTION_REQUIRED: {Topic} | CHOICES: {A}, {B}" action_required karo
+     ```
+   - Record in your log/report that you are waiting for the Lord's decision via Shogun/Telegram.
    - Mark the current command or task status as paused/blocked in the dashboard/reports.
    - **STOP your execution and end your turn (go idle)**.
-   - You will be woken up automatically via an inbox message of type `telegram_answer` when the user responds.
+   - You will be woken up automatically via an inbox message of type `telegram_answer` (sent by the listener daemon) when the user responds.
    - Once woken by `telegram_answer`:
      - Read the user's response from the inbox message or `queue/current_question.json`.
      - Delete `queue/current_question.json` to clean up.
      - Resume execution with the chosen response.
-   - **Dialogue vs Normal Messages**: For purely informational messages or notifications (where no response or choice is needed from the Lord), you MUST send them as **normal messages** using `bash scripts/ntfy.sh "<content>"`. Do NOT use `scripts/telegram_ask.py` or any dialogue with options for informational messages. Only use `scripts/telegram_ask.py` when explicitly asking the Lord a question that requires interactive choices or a reply.
 3. **If not configured (Fallback)**:
    - Add the item to the 🚨 Action Required section in `dashboard.md`.
    - Count 🚨 section lines before update.
    - Count after update.
-   - If increased → send ntfy: `🚨 Action Required: {first new heading}`
+   - If increased → notify Shogun via `inbox_write.sh` AND (as a safety fallback) send ntfy: `bash scripts/ntfy.sh "🚨 Action Required: {heading}"`
 
 ### cmd Completion Check (Step 11.7)
 
@@ -284,12 +279,10 @@ When the Lord needs to make a decision, approve a choice, or solve a blocker:
    - Timeline (start to end)
    - Issues/observations (if any)
    - If file does not exist, create new file with header `# Daily Report YYYY-MM-DD`
-7. Send ntfy notification to Lord and write report/completion to Shogun's inbox:
+7. Send report/completion to Shogun's inbox:
    - cmd complete: 
-     - `bash scripts/ntfy.sh "✅ cmd_{id} Completed — {summary}"`
      - `bash scripts/inbox_write.sh shogun "Command cmd_{id} completed successfully. Summary: {summary}" report_completed karo`
    - cmd failed: 
-     - `bash scripts/ntfy.sh "❌ cmd_{id} Failed — {reason}"`
      - `bash scripts/inbox_write.sh shogun "Command cmd_{id} failed. Reason: {reason}" report_failed karo`
 
 ## OSS Pull Request Review

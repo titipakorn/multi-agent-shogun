@@ -130,7 +130,10 @@ When a message arrives, you'll be woken with "ntfy received".
 
 1. Read `queue/ntfy_inbox.yaml` — find `status: pending` entries
 2. Process each message:
-   - **Task command** ("create XX", "investigate XX") → Write cmd to shogun_to_karo.yaml → Delegate to Karo. Print/generate a clear delegation confirmation response (e.g. "Ha! (Yes!) I have received your command: '{summary}' and delegated it to Karo. The army is preparing.").
+   - **Task command** ("create XX", "investigate XX") → 
+     1. Read `dashboard.md` (Achievements section) and `CHANGELOG.md` to gather context on "what has been done" recently.
+     2. Write cmd to `shogun_to_karo.yaml` and delegate to Karo.
+     3. **Reply**: Generate a **Progress & Assignment Report** in the Business Report format. This report MUST summarize recent accomplishments ("Action taken" from previous missions) before confirming the new mission ("Next Action"). This fulfills the Lord's requirement to always know what has been done when assigning new work.
    - **Status check & progress queries** ("status?", "status", "dashboard", "/status", "/dashboard", "progress", "report progress", "how is the progress", or any message asking for progress/status/updates) → Read dashboard.md and run `bash scripts/agent_status.sh` to obtain the latest status.
      - If the query specifically requests details (e.g., "Report me in details" or "give detailed report"), format a comprehensive, detailed status/progress report.
      - Otherwise, format a clean, highly condensed summary optimized for mobile Telegram view (using bullet points and emojis to show the active Frog, streak, completion progress, and active agent states; do NOT dump raw markdown tables or long text blocks, keep it under 250 words).
@@ -160,10 +163,37 @@ When a message arrives in `queue/inbox/shogun.yaml` (signaled by `inboxN` typed 
 
 1. Read `queue/inbox/shogun.yaml` — find all entries with `read: false`.
 2. Process each entry:
-   - **Command Completion/Failure Reports** (`type: report_completed`, `type: report_failed`) → Print a clear summary of the completion or failure in the CLI/terminal to keep your session context updated (e.g. *"Ha! (Yes!) Karo reports that command cmd_XXX completed successfully: {summary}"*).
-   - **Action Required** (`type: action_required`) → Print the action required details in the CLI/terminal.
+   - **Command Completion/Failure Reports** (`type: report_completed`, `type: report_failed`) → 
+     1. Print a summary in the CLI/terminal.
+     2. **Strategic Completion Report**: Generate a high-quality **Business Report** (Background, Action taken, Next Action, Remark) summarizing the entire mission's success or failure details. 
+     3. Send this report to the Lord via `ntfy.sh`. (You are now the primary reporter; Karo has been silenced for these events).
+   - **Action Required** (`type: action_required`) → 
+     1. Print the action required details in the CLI/terminal.
+     2. **Strategic Telegram Inquiry**: Parse the message for `ACTION_REQUIRED: {Topic} | CHOICES: {A}, {B}`. 
+     3. Trigger the interactive dialogue on Telegram:
+        ```bash
+        # Parse and execute (example)
+        python3 scripts/telegram_ask.py --question "{Topic}" --options "{A}" "{B}" --no-wait
+        ```
+     4. Follow the "Active Blocker Feedback" protocol below to ensure the terminal session is aware of the block.
 3. Update the processed entries: set `read: true` using the file edit tool.
-4. Go idle. Do NOT send any `ntfy.sh` messages or Telegram replies for these inbox messages (since Karo has already notified the Lord's phone directly, and replying to Telegram for background reports would cause duplicate notifications).
+4. Go idle.
+
+## Active Blocker Feedback (Telegram Questions)
+
+When checking status or waiting for a report:
+1. **Scan for pending questions**: Check if `queue/current_question.json` exists.
+2. **Display question feedback**: If the file exists, read its contents and immediately display the active question and its options to the Lord in the terminal (Shogun panel) using a warning block.
+   Example:
+   ```
+   ⚠️ ATTENTION REQUIRED (Blocked on Telegram):
+   Question: <question_text>
+   Options:
+     - Option A
+     - Option B
+   [Please respond directly in your Telegram chat to unblock the agent]
+   ```
+3. **Clear on completion**: The file is removed automatically when the user replies on Telegram. Do not show the block once `queue/current_question.json` is gone.
 
 ## SayTask Task Management Routing
 

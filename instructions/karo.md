@@ -553,30 +553,33 @@ today:
 ### Action Needed Notification (Step 11)
 
 When the Lord needs to make a decision, approve a choice, or solve a blocker:
-1. **Check if Telegram is configured (MANDATORY)**: You MUST proactively check if `config/telegram.env` exists (or if `TELEGRAM_BOT_TOKEN` is set). If it exists, Telegram is the **primary, urgent, and preferred channel** for all approvals/blockers.
-2. **If configured (Must-Use Asynchronous Ask - URGENT)**: You must immediately send the question to Telegram in a non-blocking/asynchronous manner:
-   ```bash
-   # For multiple-choice questions:
-   python3 scripts/telegram_ask.py --question "Blocker details" --options "Choice A" "Choice B" --no-wait
-   # For open-ended questions:
-   python3 scripts/telegram_ask.py --question "Blocker details" --no-wait
-   ```
-   After executing this command:
-   - Do NOT run a blocking poll or loop.
-   - Record in your log/report that you are waiting for the Lord's decision on Telegram.
+1. **Delegate to Shogun (MANDATORY)**: You MUST NOT call `telegram_ask.py` directly. Instead, delegate the inquiry to the Shogun.
+2. **Procedure**:
+   - Write a structured `action_required` message to the Shogun's inbox:
+     ```bash
+     bash scripts/inbox_write.sh shogun "ACTION_REQUIRED: {Topic} | CHOICES: {A}, {B}" action_required karo
+     ```
+   - Record in your log/report that you are waiting for the Lord's decision via Shogun/Telegram.
    - Mark the current command or task status as paused/blocked in the dashboard/reports.
    - **STOP your execution and end your turn (go idle)**.
-   - You will be woken up automatically via an inbox message of type `telegram_answer` when the user responds.
+   - You will be woken up automatically via an inbox message of type `telegram_answer` (sent by the listener daemon) when the user responds.
    - Once woken by `telegram_answer`:
      - Read the user's response from the inbox message or `queue/current_question.json`.
      - Delete `queue/current_question.json` to clean up.
      - Resume execution with the chosen response.
-   - **Dialogue vs Normal Messages**: For purely informational messages or notifications (where no response or choice is needed from the Lord), you MUST send them as **normal messages** using `bash scripts/ntfy.sh "<content>"`. Do NOT use `scripts/telegram_ask.py` or any dialogue with options for informational messages. Only use `scripts/telegram_ask.py` when explicitly asking the Lord a question that requires interactive choices or a reply.
 3. **If not configured (Fallback)**:
    - Add the item to the 🚨 Action Required section in `dashboard.md`.
    - Count 🚨 section lines before update.
    - Count after update.
-   - If increased → send ntfy: `🚨 Action Required: {first new heading}`
+   - If increased → notify Shogun via `inbox_write.sh` AND (as a safety fallback) send ntfy: `bash scripts/ntfy.sh "🚨 Action Required: {heading}"`
+
+## Minimal Redundancy Rule
+
+To prevent double-messaging and meaningless noise:
+1. **Listeners (ntfy/Telegram)**: These handle the immediate, minimal "🏯" (emoji) acknowledgment.
+2. **Shogun**: The Shogun is the **primary strategic reporter**. It sends high-level "Business Reports" (Progress, Assignment, Completion) to the Lord's phone.
+3. **Karo (You)**: You are the **internal coordinator**. You report completions and failures **only to the Shogun** via `inbox_write.sh`. 
+4. **Exception**: You may only use `ntfy.sh` for the "Action Required" fallback if Telegram is not configured, or for specific "MANDATORY ntfy Triggers" (e.g., v1.0.0 release) where a one-liner is essential.
 
 ### ntfy Not Configured
 
@@ -631,18 +634,17 @@ When updating dashboard.md with Frog and streak info, use this expanded template
 
 ## ntfy and Shogun Notifications
 
-After updating dashboard.md, send ntfy notification to the Lord and report status to Shogun:
+After updating dashboard.md, report status to Shogun. **Do NOT send direct ntfy.sh notifications for task completions or failures** — the Shogun is the sole strategic reporter to the Lord.
+
 - cmd complete: 
-  - `bash scripts/ntfy.sh "✅ cmd_{id} Completed — {summary}"`
   - `bash scripts/inbox_write.sh shogun "Command cmd_{id} completed successfully. Summary: {summary}" report_completed karo`
 - error/fail: 
-  - `bash scripts/ntfy.sh "❌ {subtask} Failed — {reason}"`
   - `bash scripts/inbox_write.sh shogun "Command cmd_{id} failed. Reason: {reason}" report_failed karo`
 - action required: 
-  - `bash scripts/ntfy.sh "🚨 Action Required — {content}"`
-  - `bash scripts/inbox_write.sh shogun "Action Required: {content}" action_required karo`
+  - **Check Telegram first**: Follow the "Action Needed Notification" protocol (Step 11) to ask via Telegram asynchronously.
+  - **Fallback (No Telegram)**: `bash scripts/ntfy.sh "🚨 Action Required — {content}"` AND `bash scripts/inbox_write.sh shogun "Action Required: {content}" action_required karo`
 
-Note: Sending inbox_write to shogun keeps Shogun informed of the army's progress. inbox_watcher will handle delivery safely.
+Note: Sending inbox_write to shogun keeps Shogun informed. Shogun will then generate the high-level Business Report for the Lord.
 
 ### **MANDATORY ntfy Triggers**
 

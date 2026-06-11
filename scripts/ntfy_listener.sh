@@ -165,18 +165,8 @@ while true; do
             continue
         fi
 
-        # Send instant feedback
-        MSG_PREVIEW="$MSG"
-        if [ "${#MSG_PREVIEW}" -gt 60 ]; then
-            MSG_PREVIEW="${MSG_PREVIEW:0:60}..."
-        fi
-        
-        LANGUAGE=$(grep '^language:' "$SETTINGS" 2>/dev/null | awk '{print $2}' | tr -d '"')
-        if [ "$LANGUAGE" = "ja" ]; then
-            FEEDBACK_TEXT="📱 受信: \"$MSG_PREVIEW\""$'\n\n'"🏯 将軍: ハッ、承知いたしました。ただちに将軍へ伝達し、指示を分析中..."
-        else
-            FEEDBACK_TEXT="📱 Received: \"$MSG_PREVIEW\""$'\n\n'"🏯 Shogun: Ha! (Yes!) Conveying directive to Shogun. Analyzing..."
-        fi
+        # Send instant feedback (Minimal ACK to prevent double-reporting noise)
+        FEEDBACK_TEXT="🏯"
         
         bash "$SCRIPT_DIR/scripts/ntfy.sh" "$FEEDBACK_TEXT"
 

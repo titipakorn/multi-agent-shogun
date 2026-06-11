@@ -135,10 +135,7 @@ logs/
 !memory/
 !memory/MEMORY.md.sample
 
-# Docs
-!docs/
-!docs/philosophy.md
-!docs/vps_pr118_verification_plan.md
+# Docs (General docs ignored)
 
 # Screenshots (masked — no secrets)
 !images/
@@ -175,9 +172,19 @@ logs/
 !skills/shogun-screenshot/scripts/
 !skills/shogun-screenshot/scripts/*.sh
 !skills/shogun-screenshot/scripts/*.py
+!skills/shogun-subagent-driven-development/
+!skills/shogun-subagent-driven-development/SKILL.md
+!skills/shogun-subagent-driven-development/references/
+!skills/shogun-subagent-driven-development/references/*.md
+!skills/shogun-feature-spec/
+!skills/shogun-feature-spec/SKILL.md
+
 
 # Python venv (explicit deny — whitelist patterns like LICENSE leak through !*/)
 .venv/
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Test specs
 !tests/specs/

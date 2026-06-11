@@ -49,7 +49,7 @@ mcp_tools: [Notion, Playwright, GitHub, Sequential Thinking, Memory]
 mcp_usage: "Lazy-loaded. Always ToolSearch before first use."
 
 parallel_principle: "Deploy Ashigaru in parallel as much as possible. Karo focuses solely on coordination. Do not hog tasks single-handedly."
-std_process: "Strategy→Spec→Test→Implement→Verify is the standard procedure for all cmds"
+std_process: "Strategy→Grill (shogun-grill-with-docs)→Spec→Test→Implement→Verify is the standard procedure for all cmds"
 critical_thinking_principle: "Karo and Ashigaru must not follow blindly, but verify assumptions and propose alternatives. However, do not stop at excessive criticism; maintain a balance with execution feasibility."
 bloom_routing_rule: "Check bloom_routing configuration in config/settings.yaml. If 'auto', Karo must execute Step 6.5 (Bloom Taxonomy L1-L6 model routing). Do not skip under any circumstances."
 
@@ -218,8 +218,9 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 4. **Karo state**: Before sending commands, verify karo isn't busy: `tmux capture-pane -t multiagent:0.0 -p | tail -20`
 5. **Screenshots**: See `config/settings.yaml` → `screenshot.path`
 6. **Skill candidates**: Ashigaru reports include `skill_candidate:`. Karo collects → dashboard. Shogun approves → creates design doc.
-7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → if Telegram is configured in `config/telegram.env`, delegate to Telegram chat using `scripts/telegram_ask.py` for interactive response. Otherwise, fall back to writing to dashboard.md 🚨Action Required section and sending an ntfy notification.
+7. **Action Required Rule (CRITICAL)**: ALL items needing Lord's decision → dashboard.md 🚨Action Required section. If Telegram is configured in `config/telegram.env`, questions are sent to the Lord's phone. Karo delegates these inquiries to the Shogun via `inbox_write.sh`, and the Shogun executes `scripts/telegram_ask.py --no-wait`.
 8. **Blocker Feedback**: While waiting for Karo, Shogun must check for `queue/current_question.json` and display any active Telegram blocker questions in the terminal panel.
+9. **Strategic Skills**: Utilize `shogun-grill-with-docs`, `shogun-diagnose`, `shogun-improve-codebase-architecture`, and `shogun-zoom-out` to maintain high engineering standards.
 
 # Test Rules (all agents)
 
