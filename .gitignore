@@ -221,10 +221,6 @@ tests/specs/osato_lms_*
 !.github/workflows/
 !.github/workflows/*.yml
 
-# Android companion app
-!android/
-!android/**
-
 # reports/ (empty placeholder only — content is intentionally local-only)
 !reports/
 !reports/.gitkeep
