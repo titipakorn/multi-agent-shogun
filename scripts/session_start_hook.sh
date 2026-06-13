@@ -90,4 +90,31 @@ EOF
         ;;
 esac
 
+# lint_lord_marker — Remind the Shogun to end the next reply with
+# "### 📨 To Lord" if the captured pane has no marker in the recent history.
+# This is a one-time nudge per check; the function can be called repeatedly
+# (e.g. on every turn end) and will only fire when the marker is missing.
+lint_lord_marker() {
+    local target="${SHOGUN_TMUX_TARGET:-multiagent:0.0}"
+    local pane
+    pane="$(tmux capture-pane -t "$target" -p -S -500 2>/dev/null || true)"
+    [[ -z "$pane" ]] && return 0
+
+    # If zero markers in the recent pane, inject a reminder.
+    local count
+    count=$(printf '%s\n' "$pane" | grep -c "To Lord" || true)
+
+    if [[ "$count" -eq 0 ]]; then
+        tmux send-keys -t "$target" \
+            "[system reminder] End your next reply with '### 📨 To Lord' block — Lord is reading via Telegram."
+        sleep 0.3
+        tmux send-keys -t "$target" "Enter"
+    fi
+}
+
+# Fire the lint only when the Shogun is the one starting/resuming
+if [[ "$AGENT_ID" == "shogun" ]]; then
+    lint_lord_marker || true
+fi
+
 exit 0
