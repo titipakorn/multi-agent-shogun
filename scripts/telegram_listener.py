@@ -315,7 +315,117 @@ def watch_stale_inbox(script_dir, warned_entries, now=None):
         print(f"[telegram_listener] watch_stale_inbox error: {e}", file=sys.stderr)
 
 
+def _drain_pending_lord_questions(script_dir, token, chat_id):
+    """If pending_lord_questions.yaml has entries, pop the first one and
+    write it to current_question.json as the new active question. Send it
+    to Telegram. Notify the Lord if more questions remain.
+
+    Returns True if a question was popped, False if the queue is empty.
+    """
+    pending_path = os.path.abspath(
+        os.path.join(script_dir, "../queue/pending_lord_questions.yaml")
+    )
+    if not os.path.exists(pending_path):
+        return False
+
+    # Read all entries (simple YAML list-of-mappings parser — no PyYAML dep
+    # to keep the listener lean). Each entry is four lines emitted by
+    # lord_ask.sh's enqueue_pending helper.
+    try:
+        with open(pending_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception as e:
+        print(f"[telegram_listener] drain read error: {e}", file=sys.stderr)
+        return False
+
+    # Find the first `- request_id:` line and its block (until next `- ` or EOF).
+    match = re.search(
+        r'^- request_id: "([^"]+)"\n  question: "([^"]+)"\n  options: (\[.*?\])\n  timestamp: "([^"]+)"\n',
+        content, re.MULTILINE,
+    )
+    if not match:
+        return False
+
+    request_id, question, options_json, timestamp = match.groups()
+
+    # Remove the popped entry from the pending file
+    remaining = content[match.end():]
+    try:
+        with open(pending_path, "w", encoding="utf-8") as f:
+            f.write(remaining)
+    except Exception as e:
+        print(f"[telegram_listener] drain write error: {e}", file=sys.stderr)
+        return False
+
+    # Count remaining entries (rough — count of "- request_id:")
+    remaining_count = remaining.count("- request_id:")
+
+    # Write the popped question as the new active question. The waiting
+    # lord_ask.sh caller polls current_question.json for its own request_id;
+    # telegram_ask.py will overwrite this file when it sends, but the
+    # request_id field persists because telegram_ask.py doesn't touch it.
+    question_file = os.path.abspath(
+        os.path.join(script_dir, "../queue/current_question.json")
+    )
+    try:
+        options = json.loads(options_json)
+    except Exception:
+        options = []
+    question_data = {
+        "request_id": request_id,
+        "question": question,
+        "options": options,
+        "timestamp": timestamp,
+        "status": "pending",
+    }
+    try:
+        with open(question_file, "w", encoding="utf-8") as f:
+            json.dump(question_data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[telegram_listener] drain question-file write error: {e}", file=sys.stderr)
+        return False
+
+    # Send the question to Telegram
+    payload = {
+        "chat_id": chat_id,
+        "text": f"❓ *Question:*\n{question}",
+        "parse_mode": "Markdown",
+    }
+    if options:
+        keyboard = [[{"text": o, "callback_data": f"opt_{i}"}] for i, o in enumerate(options)]
+        keyboard.append([{"text": "✏️ Other (free text)", "callback_data": "opt_other"}])
+        payload["reply_markup"] = {"inline_keyboard": keyboard}
+    send_res = make_telegram_request(token, "sendMessage", payload)
+    if not send_res.get("ok"):
+        print(
+            f"[telegram_listener] Failed to send pending question: {send_res.get('description')}",
+            file=sys.stderr,
+        )
+        return False
+
+    # Notify Lord if more questions remain
+    if remaining_count > 0:
+        notify_text = f"📋 {remaining_count} more question(s) queued after this one."
+        make_telegram_request(token, "sendMessage", {
+            "chat_id": chat_id,
+            "text": notify_text,
+        })
+
+    return True
+
+
 TELEGRAM_MAX_CHARS = 4000  # Hard cap per message; Telegram's limit is 4096.
+
+# FIFO queue of Lord questions waiting for the active question to resolve.
+# Concurrent lord_ask.sh callers append here; _drain_pending_lord_questions
+# pops the first entry into current_question.json after the active one is
+# answered. See error-handling spec row 6: "Multiple concurrent Lord
+# questions → queue extras in queue/pending_lord_questions.yaml (FIFO).
+# Listener pops on resolve."
+PENDING_LORD_QUESTIONS_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "../queue/pending_lord_questions.yaml",
+)
 
 
 def _strip_markdown_for_telegram(text):
@@ -1553,6 +1663,14 @@ def main():
                     # Question file was removed (answered and cleaned up) — drop
                     # any throttle entries for completed questions.
                     last_blinker_edit.clear()
+                    # Drain the FIFO of pending Lord questions now that the
+                    # active one is gone. Race-free: the bash lord_ask.sh
+                    # caller has already consumed the answer and removed the
+                    # file, so it's safe to write the next entry here.
+                    try:
+                        _drain_pending_lord_questions(script_dir, token, chat_id)
+                    except Exception as e:
+                        print(f"[telegram_listener] drain error: {e}", file=sys.stderr)
             except Exception as e:
                 print(f"[telegram_listener] Blinker edit error: {e}", file=sys.stderr)
 
