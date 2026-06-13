@@ -14,6 +14,11 @@ TRUNCATE_SUFFIX='…[truncated]'
 # extract_lord_block <pane_text> -> echoes the last block below the marker
 # Block is: from the marker line, to the next `### ` heading OR end of input.
 # Uses the LAST "### ... To Lord" marker (later markers supersede earlier ones).
+#
+# Two passes: the first pass scans the entire pane to find the index of the
+# last marker (a single-pass forward scan cannot honor "last marker wins"
+# because it would treat a later `### To Lord` line as a stopping boundary).
+# The second pass emits the body lines from the last marker forward.
 extract_lord_block() {
     local pane="$1"
     local last_marker_idx=-1
