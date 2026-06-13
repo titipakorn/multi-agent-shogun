@@ -921,6 +921,13 @@ NINJA_EOF
 
     log_success "  └─ inbox_watcher started for $((_ASHIGARU_COUNT + 3)) agents (Shogun + Karo + Ashigaru ${_ASHIGARU_COUNT} + Gunshi)"
 
+    # Start Shogun → Telegram relay (tails Shogun pane, pushes "### 📨 To Lord" blocks to Telegram)
+    pkill -f "shogun_telegram_relay.sh" 2>/dev/null || true
+    nohup bash "$SCRIPT_DIR/scripts/shogun_telegram_relay.sh" \
+        >> "$SCRIPT_DIR/logs/shogun_telegram_relay.log" 2>&1 &
+    disown
+    log_info "  └─ shogun_telegram_relay started (pid $!)"
+
     # STEP 6.7 is obsolete — each agent autonomously reads its own instructions/*.md
     # via CLAUDE.md Session Start (step 1: tmux agent_id). Verified (2026-02-08).
     log_info "📜 Instructions loaded autonomously by each agent (CLAUDE.md Session Start)"
