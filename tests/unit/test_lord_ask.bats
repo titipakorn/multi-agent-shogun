@@ -1,0 +1,95 @@
+#!/usr/bin/env bats
+# test_lord_ask.bats — lord_ask.sh unit tests
+# These tests stub telegram_ask.py and current_question.json to verify
+# the bash wrapper's request_id generation, exit codes, and timeout path.
+
+setup_file() {
+    export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+}
+
+setup() {
+    export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/lordask.XXXXXX")"
+    export MOCK_ASK="$TEST_TMPDIR/telegram_ask.py"
+    export MOCK_QUEUE="$TEST_TMPDIR/queue"
+    mkdir -p "$MOCK_QUEUE"
+
+    # Mock telegram_ask.py: writes a question file, then watches for status.
+    cat > "$MOCK_ASK" << 'PYEOF'
+#!/usr/bin/env python3
+import sys, os, json, time, argparse
+ap = argparse.ArgumentParser()
+ap.add_argument("--question", required=True)
+ap.add_argument("--options", nargs="*", default=[])
+ap.add_argument("--question-file", required=True)
+ap.add_argument("--chat-id", required=True)
+ap.add_argument("--token", required=True)
+ap.add_argument("--timeout", type=int, default=10)
+ap.add_argument("--no-wait", action="store_true")
+args = ap.parse_args()
+qf = args.question_file
+data = {
+    "request_id": os.environ.get("REQUEST_ID", "mock-rid"),
+    "question": args.question,
+    "options": args.options,
+    "status": "pending",
+    "chat_id": args.chat_id,
+}
+with open(qf, "w") as f:
+    json.dump(data, f)
+if args.no_wait:
+    print("mock-sent")
+    sys.exit(0)
+# In --wait mode, poll for status=answered
+start = time.time()
+while time.time() - start < args.timeout:
+    try:
+        with open(qf) as f:
+            d = json.load(f)
+        if d.get("status") == "answered":
+            print(d.get("response", ""))
+            sys.exit(0)
+    except Exception:
+        pass
+    time.sleep(0.2)
+print("ERROR: timeout", file=sys.stderr)
+sys.exit(1)
+PYEOF
+    chmod +x "$MOCK_ASK"
+
+    export PATH="$TEST_TMPDIR:$PATH"
+    # Override the path resolution inside lord_ask.sh
+    export LORD_ASK_PYTHON="$MOCK_ASK"
+    export LORD_ASK_QUEUE_DIR="$MOCK_QUEUE"
+    export TELEGRAM_BOT_TOKEN="stub-token"
+    export TELEGRAM_CHAT_ID="12345"
+}
+
+teardown() { rm -rf "$TEST_TMPDIR"; }
+
+@test "lord_ask.sh: writes request_id and reads answer" {
+    # Pre-stage an "answered" status
+    (
+        sleep 0.5
+        cat > "$MOCK_QUEUE/current_question.json" <<'JSON'
+{"status":"answered","response":"yes, do A"}
+JSON
+    ) &
+    FLIPPER=$!
+    run bash "$PROJECT_ROOT/scripts/lord_ask.sh" "pick one" "A" "B" --timeout 5
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"yes, do A"* ]]
+    wait $FLIPPER 2>/dev/null || true
+}
+
+@test "lord_ask.sh: exits 3 on timeout" {
+    run bash "$PROJECT_ROOT/scripts/lord_ask.sh" "pick one" "A" "B" --timeout 1
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"no answer"* ]]
+}
+
+@test "lord_ask.sh: exits 2 when Telegram not configured" {
+    unset TELEGRAM_BOT_TOKEN
+    run bash "$PROJECT_ROOT/scripts/lord_ask.sh" "pick one"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"Telegram not configured"* ]]
+}
