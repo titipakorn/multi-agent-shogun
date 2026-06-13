@@ -114,3 +114,39 @@ EOF
     grep -q 'first q' "$LORD_ASK_PENDING_FILE"
     grep -q 'second q' "$LORD_ASK_PENDING_FILE"
 }
+
+@test "lord_ask.sh: pending_first returns the head entry" {
+    export LORD_ASK_PENDING_FILE="$TEST_TMPDIR/pending.yaml"
+    # Source all three queue helpers in one snippet.
+    export SNIPPET="$TEST_TMPDIR/queue_helpers.sh"
+    sed -n '/^enqueue_pending()/,/^}/p; /^pending_first()/,/^}/p; /^pending_pop()/,/^}/p' \
+        "$PROJECT_ROOT/scripts/lord_ask.sh" > "$SNIPPET"
+    cat >> "$SNIPPET" <<'EOF'
+enqueue_pending 'rid-1' 'first q' '["A"]'
+enqueue_pending 'rid-2' 'second q' '["B"]'
+pending_first
+EOF
+    local output
+    output="$(QUEUE_DIR="$TEST_TMPDIR/queue" PENDING_FILE="$LORD_ASK_PENDING_FILE" bash "$SNIPPET")"
+    [[ "$output" == *'rid-1'* ]]
+    [[ "$output" != *'rid-2'* ]]
+}
+
+@test "lord_ask.sh: pending_pop drops the head entry" {
+    export LORD_ASK_PENDING_FILE="$TEST_TMPDIR/pending.yaml"
+    # Seed the file with two entries via the helpers.
+    export SNIPPET="$TEST_TMPDIR/queue_helpers.sh"
+    sed -n '/^enqueue_pending()/,/^}/p; /^pending_first()/,/^}/p; /^pending_pop()/,/^}/p' \
+        "$PROJECT_ROOT/scripts/lord_ask.sh" > "$SNIPPET"
+    cat >> "$SNIPPET" <<'EOF'
+enqueue_pending 'rid-1' 'first q' '["A"]'
+enqueue_pending 'rid-2' 'second q' '["B"]'
+pending_pop
+EOF
+    QUEUE_DIR="$TEST_TMPDIR/queue" PENDING_FILE="$LORD_ASK_PENDING_FILE" \
+        bash "$SNIPPET"
+    # After pop, rid-1 is gone but rid-2 remains.
+    ! grep -q "rid-1" "$LORD_ASK_PENDING_FILE"
+    grep -q "rid-2" "$LORD_ASK_PENDING_FILE"
+    grep -q 'second q' "$LORD_ASK_PENDING_FILE"
+}

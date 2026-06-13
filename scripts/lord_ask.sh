@@ -45,6 +45,26 @@ enqueue_pending() {
         "$request_id" "${question//\"/\\\"}" "$opts_json" "$ts" >> "$PENDING_FILE"
 }
 
+# pending_first — returns the first YAML mapping block (6 lines) from the
+# pending file, or 1 if the file is missing/empty. Used for inspection;
+# the actual FIFO pop happens in the listener (telegram_listener.py).
+pending_first() {
+    [[ -f "$PENDING_FILE" ]] || return 1
+    awk '/^- /{exit} {print}' "$PENDING_FILE" | head -n 6
+}
+
+# pending_pop — drops the first YAML mapping from the pending file and
+# rewrites the file with the remainder. Useful for shell-side drain if
+# the listener is not available. Each mapping is exactly 4 lines (the
+# `- request_id:` line + 3 indented body lines), so `tail -n +5` is the
+# cleanest FIFO pop. If enqueue_pending's printf format ever changes,
+# update this too.
+pending_pop() {
+    [[ -f "$PENDING_FILE" ]] || return 1
+    tail -n +5 "$PENDING_FILE" > "$PENDING_FILE.tmp"
+    mv "$PENDING_FILE.tmp" "$PENDING_FILE"
+}
+
 if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" \
       || "$TELEGRAM_BOT_TOKEN" == "your_bot_token_here" \
       || "$TELEGRAM_CHAT_ID" == "your_chat_id_here" ]]; then
