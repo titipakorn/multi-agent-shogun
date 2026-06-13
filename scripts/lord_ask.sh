@@ -28,7 +28,8 @@ INBOX_FILE="$QUEUE_DIR/inbox/shogun.yaml"
 mkdir -p "$(dirname "$INBOX_FILE")"
 
 if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" \
-      || "$TELEGRAM_BOT_TOKEN" == "your_bot_token_here" ]]; then
+      || "$TELEGRAM_BOT_TOKEN" == "your_bot_token_here" \
+      || "$TELEGRAM_CHAT_ID" == "your_chat_id_here" ]]; then
     echo "Telegram not configured — falling back to terminal." >&2
     exit 2
 fi
