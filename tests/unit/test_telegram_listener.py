@@ -130,11 +130,17 @@ class TestBuildProgressSummary(unittest.TestCase):
              "content": "done", "read": True}
         ])
         out = telegram_listener.build_progress_summary(self.script_dir)
-        self.assertIn("All quiet", out)
+        # Read entries must NOT trigger Awaiting Shogun. They fall through
+        # to either the recent-completion branch (Bug B) or "All quiet" if
+        # the queue is empty. Either is acceptable; "Awaiting Shogun" is not.
+        self.assertNotIn("Awaiting Shogun", out)
 
     def test_missing_inbox_file_falls_through(self):
         out = telegram_listener.build_progress_summary(self.script_dir)
-        self.assertIn("All quiet", out)
+        # No inbox file → falls past step 2. Step 3 (active task scan) and
+        # the Bug-B recent-completion branch may both surface content from
+        # queue/tasks/, but never "Awaiting Shogun".
+        self.assertNotIn("Awaiting Shogun", out)
 
     def test_unread_overrides_dashboard(self):
         ts = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
@@ -1317,6 +1323,278 @@ class TestBlinkerEmptyPollRegression(unittest.TestCase):
             "Blinker edit error", stderr,
             f"Blinker error logged on empty poll cycle:\n{stderr}",
         )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Tests for the fixes that resolve the user's "static and too simple"
+# complaint against /progress, /status, /dashboard. See plan at
+# /Users/prince/.claude/plans/glistening-wibbling-micali.md.
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestLiveYamlFallback(unittest.TestCase):
+    """Bug A: /dashboard falls back to queue/tasks/*.yaml when dashboard.md's
+    Achievements section is missing OR when YAML has a strictly newer done-
+    task timestamp than dashboard.md reports."""
+
+    def setUp(self):
+        import tempfile
+        self._tmp = tempfile.mkdtemp()
+        self._fake_queue = os.path.join(self._tmp, "queue")
+        self._fake_tasks = os.path.join(self._fake_queue, "tasks")
+        self._fake_dash = os.path.join(self._fake_queue, "dashboard.md")
+        self._fake_script_dir = os.path.join(self._tmp, "scripts")
+        os.makedirs(self._fake_tasks, exist_ok=True)
+        os.makedirs(self._fake_script_dir, exist_ok=True)
+        # Reset module-level parser state so each test starts clean.
+        telegram_listener._dashboard_parse_state = None
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self._tmp, ignore_errors=True)
+        telegram_listener._dashboard_parse_state = None
+
+    def _write_dashboard(self, contents):
+        with open(self._fake_dash, "w", encoding="utf-8") as f:
+            f.write(contents)
+
+    def _write_yaml(self, agent_name, content):
+        with open(os.path.join(self._fake_tasks, f"{agent_name}.yaml"), "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_stale_dashboard_falls_back_to_yaml(self):
+        # Dashboard says last completion was 5 days ago; YAML shows a task
+        # done today. YAML is fresher → it should win.
+        self._write_dashboard(
+            "# X\n"
+            "## 🚨 Action Required\n- None\n"
+            "## ✅ Achievements\n"
+            "- [cmd_006] (Completed: 2026-06-09 22:01): Old thing.\n"
+        )
+        now = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        self._write_yaml("gunshi", f"""\
+task:
+  task_id: subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_095q
+  status: done
+  timestamp: "{now}"
+  description: |
+    Retrain the lip-sync model with v6 corpus.
+""")
+        out = telegram_listener.build_dashboard_text(self._fake_script_dir)
+        self.assertIn("subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_095q", out)
+        self.assertIn("Retrain the lip-sync", out)
+        self.assertNotIn("Old thing", out)
+
+    def test_fresh_dashboard_wins_over_older_yaml(self):
+        # Dashboard has a 1h-old completion; YAML only has a 5-day-old one.
+        # Dashboard should be the source.
+        fresh_ts = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time() - 3600))
+        self._write_dashboard(
+            "# X\n"
+            "## 🚨 Action Required\n- None\n"
+            "## ✅ Achievements\n"
+            f"- [cmd_007] (Completed: {fresh_ts}): Fresh dashboard entry.\n"
+        )
+        self._write_yaml("ashigaru1", """\
+task:
+  task_id: subtask_old_done
+  status: done
+  timestamp: "2026-06-09T22:00:00"
+  description: Old.
+""")
+        out = telegram_listener.build_dashboard_text(self._fake_script_dir)
+        self.assertIn("cmd_007", out)
+        self.assertIn("Fresh dashboard entry", out)
+        self.assertNotIn("subtask_old_done", out)
+
+    def test_missing_achievements_uses_yaml(self):
+        # Dashboard has no Achievements section at all → YAML synthesises.
+        self._write_dashboard(
+            "# X\n"
+            "## 🚨 Action Required\n- None\n"
+        )
+        ts = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        self._write_yaml("ashigaru2", f"""\
+task:
+  task_id: subtask_007_qc
+  status: done
+  timestamp: "{ts}"
+  description: QC pass on subtask 7.
+""")
+        out = telegram_listener.build_dashboard_text(self._fake_script_dir)
+        self.assertIn("subtask_007_qc", out)
+        self.assertIn("Recent Completions (1)", out)
+
+    def test_idle_placeholder_does_not_appear(self):
+        # An ashigaru's idle placeholder record (`status: idle`,
+        # `task_id: null`) must NOT be counted as a completion.
+        self._write_dashboard("# X\n## 🚨 Action Required\n- None\n")
+        self._write_yaml("ashigaru5", """\
+task:
+  task_id: null
+  status: idle
+""")
+        out = telegram_listener.build_dashboard_text(self._fake_script_dir)
+        self.assertIn("Recent Completions (0)", out)
+
+    def test_malformed_yaml_is_skipped_silently(self):
+        # Garbage YAML must not crash the listener.
+        self._write_dashboard("# X\n## 🚨 Action Required\n- None\n")
+        self._write_yaml("gunshi", "this: is: not: valid: yaml: : :\n  - [\n")
+        out = telegram_listener.build_dashboard_text(self._fake_script_dir)
+        self.assertIn("Recent Completions (0)", out)
+
+
+class TestProgressRecentCompletion(unittest.TestCase):
+    """Bug B: /progress surfaces the most recent done task when no agent
+    is currently active. Without this branch, /progress says 'all quiet'
+    the instant 8 agents finish."""
+
+    def setUp(self):
+        import tempfile
+        self._tmp = tempfile.mkdtemp()
+        self._fake_queue = os.path.join(self._tmp, "queue")
+        self._fake_tasks = os.path.join(self._fake_queue, "tasks")
+        os.makedirs(self._fake_tasks, exist_ok=True)
+        self._fake_script_dir = os.path.join(self._tmp, "scripts")
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def _write_yaml(self, agent_name, content):
+        with open(os.path.join(self._fake_tasks, f"{agent_name}.yaml"), "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_recent_done_shows_completion_summary(self):
+        # All three agents are done — /progress must NOT say "all quiet"
+        # and must surface the most recent completion.
+        now = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        for i in (1, 2, 3):
+            self._write_yaml(f"ashigaru{i}", f"""\
+task:
+  task_id: subtask_006_{i}
+  status: done
+  timestamp: "{now}"
+  description: Component {i} shipped.
+""")
+        out = telegram_listener.build_progress_summary(self._fake_script_dir)
+        self.assertNotIn("All quiet", out)
+        self.assertIn("finished", out)
+        self.assertIn("subtask_006", out)
+
+    def test_active_task_takes_precedence_over_recent_done(self):
+        # One agent is actively working, another just finished. Active wins.
+        self._write_yaml("ashigaru1", f"""\
+task:
+  task_id: subtask_active_007
+  status: assigned
+  timestamp: "{time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime())}"
+  description: Doing the active thing.
+""")
+        ts = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(time.time() - 60))
+        self._write_yaml("ashigaru2", f"""\
+task:
+  task_id: subtask_finished_006
+  status: done
+  timestamp: "{ts}"
+  description: Just finished.
+""")
+        out = telegram_listener.build_progress_summary(self._fake_script_dir)
+        # Active task shows up via the original step-3 branch (🔨 prefix).
+        # The active branch surfaces the description, not the task_id.
+        self.assertIn("Doing the active thing", out)
+        self.assertIn("🔨", out)
+        # Recent-completion branch (✅ prefix) is NOT taken because active exists.
+        self.assertNotIn("finished subtask_finished_006", out)
+
+    def test_no_yaml_at_all_returns_all_quiet(self):
+        # Empty tasks dir → original "all quiet" message is preserved.
+        out = telegram_listener.build_progress_summary(self._fake_script_dir)
+        self.assertIn("All quiet", out)
+
+
+class TestParseAgentStatusTableRtl(unittest.TestCase):
+    """Bug C (parser): right-to-left parsing tolerates task_id overflow,
+    CJK bytes in the status field, and format drift."""
+
+    # Hand-crafted table that mimics what scripts/agent_status.sh emits
+    # AFTER the bash-side fix (TASK_ID_WIDTH=64). Long task_ids are
+    # truncated to 63 chars + `…` so columns stay aligned.
+    OVERFLOW_TABLE = (
+        "Agent      CLI          State     Task ID                                                       Status     Inbox\n"
+        "---------- ------------ --------- ------------------------------------------------------------ ---------- -----\n"
+        "gunshi     antigravity  N/A       subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_095q…   done       0\n"
+        "ashigaru5  antigravity  N/A       None                                                          idle       0\n"
+    )
+
+    def test_overflow_truncated_task_id_parses_correctly(self):
+        rows = telegram_listener._parse_agent_status_table(self.OVERFLOW_TABLE)
+        self.assertIsNotNone(rows)
+        gunshi = next(r for r in rows if r["agent"] == "gunshi")
+        self.assertEqual(gunshi["status"], "done")
+        self.assertEqual(gunshi["inbox"], "0")
+        self.assertIn("subtask_lipsync_sophia_v6", gunshi["task_id"])
+
+    def test_cjk_status_does_not_break_parser(self):
+        # A CJK status value (`作業中` = "in progress") must round-trip.
+        # Use spaces between columns so the splitter produces 6 parts.
+        table = (
+            "Agent      CLI          State     Task ID                            Status     Inbox\n"
+            "---------- ------------ --------- ---------------------------------- ---------- -----\n"
+            "karo       antigravity  N/A       cmd_007                            作業中      3\n"
+        )
+        rows = telegram_listener._parse_agent_status_table(table)
+        self.assertIsNotNone(rows)
+        self.assertEqual(rows[0]["status"], "作業中")
+        self.assertEqual(rows[0]["inbox"], "3")
+        self.assertEqual(rows[0]["task_id"], "cmd_007")
+
+    def test_format_drift_returns_none(self):
+        # Garbage input with no whitespace-separated columns → parser
+        # returns None → caller falls back to raw output (graceful).
+        rows = telegram_listener._parse_agent_status_table("garbage\n")
+        self.assertIsNone(rows)
+
+
+class TestAgentStatusShWidth(unittest.TestCase):
+    """Bug C (bash): when the listener shells out to agent_status.sh, the
+    returned table is 64-wide with truncated-with-ellipsis task_ids. The
+    parser must correctly extract those truncated IDs."""
+
+    def setUp(self):
+        self.script_dir = os.path.dirname(os.path.abspath(telegram_listener.__file__))
+
+    # Real-world example: a 60-char task_id overflowing the OLD 42-wide
+    # column would produce `done       0` (7-space gap) and the OLD
+    # parser concatenated them. The NEW 64-wide bash output truncates
+    # the task_id to 63 chars + `…`, leaving clean 1-space separators.
+    POSTFIX_TABLE = (
+        "Agent      CLI          State     Task ID                                                       Status     Inbox\n"
+        "---------- ------------ --------- ------------------------------------------------------------ ---------- -----\n"
+        "gunshi     antigravity  N/A       subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_0…        done       0\n"
+        "ashigaru1  antigravity  N/A       subtask_006_integration                                        done       0\n"
+        "ashigaru7  antigravity  N/A       None                                                           idle       0\n"
+    )
+
+    def _run(self, stdout):
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout=stdout, stderr=""
+            )
+            return telegram_listener.build_status_text(self.script_dir)
+
+    def test_truncated_task_id_with_ellipsis_renders_correctly(self):
+        out = self._run(self.POSTFIX_TABLE)
+        # Truncated-with-ellipsis task_id appears in the brackets.
+        self.assertIn("subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_0…", out)
+        # Status and inbox are correctly identified — gunshi is "done", not "0".
+        self.assertIn("🟢 gunshi: done", out)
+        self.assertNotIn("gunshi: 0 [", out)
+        # Summary counts done as idle, not active. All 3 rows (gunshi=done,
+        # ashigaru1=done, ashigaru7=idle) qualify as idle → 3/3 idle.
+        self.assertIn("3/3 idle", out)
+        self.assertIn("0/3 active", out)
 
 
 if __name__ == '__main__':

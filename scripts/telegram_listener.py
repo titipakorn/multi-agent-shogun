@@ -534,55 +534,60 @@ def _status_emoji(status_str):
 
 
 def _parse_agent_status_table(output):
-    """Parse agent_status.sh table output. Expected columns:
-       Agent | CLI | State | Task ID | Status | Inbox
-    The State column is always 'N/A' in current output and the CLI column
-    is always 'antigravity', so the columns collapse to: agent | cli_state
-    (space-separated) | task_id | status | inbox. We split on 2+ spaces
-    and handle the 'cli state' collapse by reading task_id from parts[2]
-    onward if the row has fewer than 5 wide-spaced parts.
-    Skips header + separator rows. Returns list of dicts, or None on parse
-    failure (caller falls back to raw output)."""
+    """Parse agent_status.sh table output using a right-to-left strategy:
+    parts[-1] = inbox (always the last whitespace-separated token),
+    parts[-2] = status, parts[0] = agent. Everything in between is split
+    into cli / state / task_id by tokenizing on single spaces and pulling
+    out a known state marker.
+
+    Robust against:
+      - Long task_ids overflowing the column (the bash-side fix truncates
+        to TASK_ID_WIDTH=64, but the parser tolerates overflow too)
+      - CJK bytes that defeat the old `\s{2,}` left-indexed contract
+      - Future column additions (parser relies on right edge, not indices)
+
+    Returns None only when a row has fewer than 3 whitespace-separated
+    tokens — strictly less likely than the previous `len(parts) < 4`
+    threshold. Caller falls back to raw output at line 686-689 in that
+    case (graceful degradation preserved).
+    """
     rows = []
+    # Known state labels emitted by `state_label()` (scripts/agent_status.sh)
+    # and the CLI adapters. Used to split cli / state / task_id in the
+    # middle of the row when N/A is the only state token present.
+    _KNOWN_STATE_TOKENS = (
+        "N/A", "BUSY", "IDLE", "Busy", "Idle", "Absent",
+    )
     for line in output.splitlines():
         s = line.strip()
         if not s:
             continue
         # Skip the dashed separator row
-        if s.startswith("---") or set(s.replace(" ", "")) <= {"-"}:
+        if set(s.replace(" ", "")) <= {"-"}:
             continue
         # Skip the header row (column names)
         if s.lower().startswith("agent") and "cli" in s.lower():
             continue
         parts = re.split(r"\s{2,}", s)
-        if len(parts) < 4:
+        if len(parts) < 3:
             return None  # Format drift — let caller fall back
         agent = parts[0].strip()
-        # CLI + State are often collapsed because State is always "N/A"
-        # and columns are narrow. If parts[1] contains a space, split it.
-        cli_state = parts[1]
-        if " " in cli_state:
-            cli, state = cli_state.split(" ", 1)
+        inbox = parts[-1].strip()
+        status = parts[-2].strip()
+        # Middle: everything between agent and the trailing (status, inbox).
+        middle = parts[1:-2]
+        mid_text = " ".join(middle).strip()
+        if not mid_text:
+            cli = state = task_id = ""
         else:
-            cli = cli_state
-            state = parts[2] if len(parts) > 2 else ""
-            # Shift indices: agent | cli | state | task | status | inbox
-            task_id = parts[3].strip() if len(parts) > 3 else ""
-            status = parts[4].strip() if len(parts) > 4 else ""
-            inbox = parts[5].strip() if len(parts) > 5 else ""
-            rows.append({
-                "agent": agent,
-                "cli": cli,
-                "state": state,
-                "task_id": task_id,
-                "status": status,
-                "inbox": inbox,
-            })
-            continue
-        # agent | cli_state | task | status | inbox
-        task_id = parts[2].strip() if len(parts) > 2 else ""
-        status = parts[3].strip() if len(parts) > 3 else ""
-        inbox = parts[4].strip() if len(parts) > 4 else ""
+            tokens = mid_text.split()
+            cli = tokens[0] if tokens else ""
+            if len(tokens) >= 2 and tokens[1] in _KNOWN_STATE_TOKENS:
+                state = tokens[1]
+                task_id = " ".join(tokens[2:]).strip()
+            else:
+                state = ""
+                task_id = " ".join(tokens[1:]).strip()
         rows.append({
             "agent": agent,
             "cli": cli,
@@ -719,6 +724,13 @@ _last_cancel_cmd_id = None
 _dashboard_parse_state = None  # None | "ok" | "failing"
 _status_parse_state = None     # None | "ok" | "failing"
 
+# Stale-dashboard grace window (seconds). When a YAML completion timestamp
+# is more than this many seconds newer than the newest "Completed:" entry
+# in dashboard.md, /dashboard falls back to live YAML rather than trusting
+# the stale summary. 60s leaves slack for Karo's write batching while
+# still catching the multi-day drift the user reported on 2026-06-14.
+DASHBOARD_STALE_THRESHOLD_SEC = 60
+
 # Regex to extract task_id and (Completed: timestamp) from a bullet line like:
 #   - [cmd_006] (Completed: 2026-06-09 22:01): Did some things.
 _DASH_ITEM_RE = re.compile(
@@ -742,6 +754,58 @@ def _resolve_dashboard_path(script_dir):
         if os.path.exists(p):
             return p
     return candidates[0]
+
+
+def _scan_recent_done_tasks(script_dir, max_items=3):
+    """Scan queue/tasks/*.yaml for tasks with status: done and return the
+    newest-by-timestamp entries as a list of dicts:
+        {"task_id": str, "agent": str, "ts_epoch": int, "summary": str}
+    Used by build_progress_summary (Bug B: surface the most recent completion
+    when no agent is active) and build_dashboard_text (Bug A: fall back to
+    live YAML when dashboard.md is stale). Filters out:
+      - malformed YAML
+      - missing or unparseable timestamps
+      - placeholder records like {"task": {"task_id": null, "status": idle}}
+    Returns [] on any error so callers can fall through gracefully."""
+    import yaml
+    # Use os.path.abspath to resolve the `..` even when script_dir doesn't
+    # actually exist as a directory (some unit tests pass a non-existent
+    # path). _resolve_dashboard_path uses the same trick.
+    tasks_dir = os.path.abspath(os.path.join(script_dir, "../queue/tasks"))
+    if not os.path.isdir(tasks_dir):
+        return []
+    done = []
+    for fname in sorted(os.listdir(tasks_dir)):
+        if not fname.endswith(".yaml"):
+            continue
+        fpath = os.path.join(tasks_dir, fname)
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        except Exception:
+            continue
+        task = data.get("task") if isinstance(data, dict) else None
+        if not isinstance(task, dict):
+            continue
+        if (task.get("status") or "").lower() != "done":
+            continue
+        ts_str = (task.get("timestamp") or "").strip()
+        if not ts_str:
+            continue
+        try:
+            ts_epoch = int(time.mktime(time.strptime(ts_str[:19], "%Y-%m-%dT%H:%M:%S")))
+        except Exception:
+            continue
+        desc = (task.get("description") or "").strip().splitlines()
+        summary = _truncate_summary(desc[0] if desc else task.get("task_id", ""))
+        done.append({
+            "task_id": str(task.get("task_id") or fname.replace(".yaml", "")),
+            "agent": fname.replace(".yaml", ""),
+            "ts_epoch": ts_epoch,
+            "summary": summary,
+        })
+    done.sort(key=lambda d: d["ts_epoch"], reverse=True)
+    return done[:max_items]
 
 
 def _log_dashboard_parse_state(failing, reason):
@@ -1011,16 +1075,77 @@ def build_dashboard_text(script_dir):
         lines.append("🔄 In Progress: None")
     lines.append("")
 
+    # Determine whether to use live YAML or dashboard.md for Recent Completions.
+    # Stale dashboard (Karo hasn't updated it for newer completions) → live YAML
+    # is fresher, so we synthesise from queue/tasks/*.yaml instead. The
+    # threshold (60s) leaves slack for Karo's write batching while still
+    # catching the multi-day drift the user reported.
+    live_done = _scan_recent_done_tasks(script_dir, max_items=3)
+    dashboard_max_ts = 0
     if achieve_name is not None:
-        lines.extend(_shape_achievements(achieve_bullets, max_items=3))
-    else:
-        lines.append("Recent Completions (0):")
+        # Only _DASH_ITEM_RE has the (Completed: <ts>) capture group;
+        # _DASH_ITEM_LOOSE_RE intentionally doesn't. We try multiple
+        # timestamp formats to match dashboard.md's history — Karo has
+        # used both "2026-06-09 22:01" (space, no seconds) and
+        # "2026-06-09T22:01:30" (T-separator, with seconds) over time.
+        _ts_formats = (
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d %H:%M",
+        )
+        for b in achieve_bullets:
+            m = _DASH_ITEM_RE.match(b)
+            if not m:
+                continue
+            ts_raw = (m.group("ts") or "").strip()[:19]
+            if not ts_raw:
+                continue
+            for fmt in _ts_formats:
+                try:
+                    dashboard_max_ts = max(
+                        dashboard_max_ts,
+                        int(time.mktime(time.strptime(ts_raw, fmt))),
+                    )
+                    break
+                except Exception:
+                    continue
+
+    use_live = bool(live_done) and (
+        not achieve_name
+        or live_done[0]["ts_epoch"] > dashboard_max_ts + DASHBOARD_STALE_THRESHOLD_SEC
+    )
+
+    def _render_achievements_lines(max_items=3, summary_cap=SUMMARY_MAX_CHARS):
+        """Render Recent Completions from the chosen source. Returns a list
+        of lines (header + bullets). Single source of truth so the hard-cap
+        fallback below trims the SAME data the main path displays."""
+        if use_live:
+            if not live_done:
+                return ["Recent Completions (0):"]
+            items = live_done[:max_items]
+            out = [f"Recent Completions ({len(items)}):"]
+            for it in items:
+                rel = _relative_time(
+                    time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(it["ts_epoch"]))
+                )
+                summary = _truncate_summary(it["summary"], summary_cap)
+                out.append(f"   ✅ {it['task_id']} ({rel}): {summary}")
+            return out
+        if achieve_name is not None:
+            return _shape_achievements(achieve_bullets, max_items=max_items, summary_cap=summary_cap)
+        return ["Recent Completions (0):"]
+
+    lines.extend(_render_achievements_lines(max_items=3))
+    if use_live:
+        # Synthesised from live YAML — parse state is fine.
+        _log_dashboard_parse_state(failing=False, reason="")
 
     text = "\n".join(lines)
 
     # Hard-cap with graceful degradation: trim achievements, then summaries.
     if len(text) > DASHBOARD_PHONE_CAP:
-        if achieve_name is not None:
+        if achieve_name is not None or use_live:
             lines_reduced = lines[:]
             # Replace achievements block with 2-item version
             # Find where the achievements section starts.
@@ -1031,12 +1156,12 @@ def build_dashboard_text(script_dir):
                     break
             if cut is not None:
                 lines_reduced = lines_reduced[:cut]
-                lines_reduced.extend(_shape_achievements(achieve_bullets, max_items=2))
+                lines_reduced.extend(_render_achievements_lines(max_items=2))
                 text = "\n".join(lines_reduced)
 
     if len(text) > DASHBOARD_PHONE_CAP:
         # Final fallback: tighter summary cap
-        if achieve_name is not None:
+        if achieve_name is not None or use_live:
             lines_tight = ["🏯 Project Dashboard", "",
                            "🚨 Action Required: None" if not action_bullets else
                            "\n".join(_shape_dashboard_section(f"🚨 Action Required", action_bullets, max_items=2)),
@@ -1044,7 +1169,7 @@ def build_dashboard_text(script_dir):
                            "🔄 In Progress: None" if not inprog_bullets else
                            "\n".join(_shape_dashboard_section(f"🔄 In Progress", inprog_bullets, max_items=2)),
                            ""]
-            lines_tight.extend(_shape_achievements(achieve_bullets, max_items=2, summary_cap=30))
+            lines_tight.extend(_render_achievements_lines(max_items=2, summary_cap=30))
             text = "\n".join(lines_tight)
 
     if len(text) > DASHBOARD_PHONE_CAP:
@@ -1202,7 +1327,9 @@ def build_progress_summary(script_dir):
         pass
 
     # 3. Scan queue/tasks/ for any in-progress work
-    tasks_dir = os.path.join(script_dir, "../queue/tasks")
+    # Use os.path.abspath so the `..` resolves even when script_dir doesn't
+    # exist as a directory (e.g. unit tests passing a non-existent path).
+    tasks_dir = os.path.abspath(os.path.join(script_dir, "../queue/tasks"))
     if os.path.isdir(tasks_dir):
         try:
             import yaml
@@ -1236,6 +1363,24 @@ def build_progress_summary(script_dir):
                 return f"🔨 {first}{extra}"[:200]
         except Exception:
             pass
+
+    # 3b. No active task — but did one just finish? Surface the most recent
+    #     done task so /progress doesn't go silent the instant work completes.
+    #     Without this branch, the moment the last active task transitions
+    #     to status: done, the active list becomes empty and the function
+    #     falls through to the static "all quiet" message — even though
+    #     productive work just landed.
+    try:
+        recent = _scan_recent_done_tasks(script_dir, max_items=1)
+        if recent:
+            it = recent[0]
+            ts_display = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(it["ts_epoch"]))
+            rel = _relative_time(ts_display)
+            return (
+                f"✅ {it['agent']} finished {it['task_id']} ({rel}): {it['summary']}"
+            )[:200]
+    except Exception:
+        pass
 
     # 4. Fall back to dashboard.md
     dashboard_path = os.path.join(script_dir, "../queue/dashboard.md")
