@@ -215,14 +215,20 @@ except Exception:
 " 2>/dev/null || echo "?"
 }
 
+# Task ID column width. Width 64 covers the 60-char
+# `subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_095q` pattern with
+# 4 chars of headroom, and bash-side truncation below caps anything longer
+# so column alignment is preserved even for unbounded task_ids.
+TASK_ID_WIDTH=64
+
 # ─── Output ───
 printf "\n"
 if [[ "$LANG_MODE" == "en" ]]; then
-    printf "%-10s %-7s %-9s %-42s %-10s %s\n" "Agent" "CLI" "State" "Task ID" "Status" "Inbox"
-    printf "%-10s %-7s %-9s %-42s %-10s %s\n" "----------" "-------" "---------" "------------------------------------------" "----------" "-----"
+    printf "%-10s %-7s %-9s %-${TASK_ID_WIDTH}s %-10s %s\n" "Agent" "CLI" "State" "Task ID" "Status" "Inbox"
+    printf "%-10s %-7s %-9s %-${TASK_ID_WIDTH}s %-10s %s\n" "----------" "-------" "---------" "$(printf '%*s' "$TASK_ID_WIDTH" '' | tr ' ' '-')" "----------" "-----"
 else
-    printf "%-10s %-7s %-9s %-42s %-10s %s\n" "Agent" "CLI" "Pane" "Task ID" "Status" "Inbox"
-    printf "%-10s %-7s %-9s %-42s %-10s %s\n" "----------" "-------" "---------" "------------------------------------------" "----------" "-----"
+    printf "%-10s %-7s %-9s %-${TASK_ID_WIDTH}s %-10s %s\n" "Agent" "CLI" "Pane" "Task ID" "Status" "Inbox"
+    printf "%-10s %-7s %-9s %-${TASK_ID_WIDTH}s %-10s %s\n" "----------" "-------" "---------" "$(printf '%*s' "$TASK_ID_WIDTH" '' | tr ' ' '-')" "----------" "-----"
 fi
 
 for i in "${!AGENTS[@]}"; do
@@ -249,10 +255,19 @@ for i in "${!AGENTS[@]}"; do
     # Unread inbox
     unread=$(get_unread_count "$agent")
 
+    # bash-side truncation. bash `%-Ns` is a *width* specifier (padding
+    # only), NOT a precision specifier (truncation), so a 60-char task_id
+    # would overflow and break the parser's `\s{2,}` column detection.
+    # Parameter expansion `${var:0:N}` IS real truncation.
+    task_id_disp="$task_id"
+    if (( ${#task_id_disp} > TASK_ID_WIDTH )); then
+        task_id_disp="${task_id_disp:0:$((TASK_ID_WIDTH - 1))}…"
+    fi
+
     # Print with CJK padding
     printf "%-10s %-7s " "$agent" "$cli_type"
     print_padded "$pane_state" 9
-    printf " %-42s %-10s %s\n" "$task_id" "$task_status" "$unread"
+    printf " %-${TASK_ID_WIDTH}s %-10s %s\n" "$task_id_disp" "$task_status" "$unread"
 done
 
 printf "\n"
