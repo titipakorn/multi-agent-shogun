@@ -36,7 +36,7 @@ start_specialist_pane() {
 
     # Split pane if not pane 0
     if [ "$pane_idx" -gt 0 ]; then
-        tmux split-window -h -t "${session}:${window}"
+        tmux split-window -h -t "${session}:${window}.0"
     fi
 
     # Set agent_id and styling
@@ -54,6 +54,8 @@ if ! tmux has-session -t shogun 2>/dev/null; then
     tmux set-option -p -t shogun:main.0 @agent_id "shogun"
     tmux select-pane -t shogun:main.0 -T "shogun"
     tmux select-pane -t shogun:main.0 -P "bg=#002b36"
+    # Launch CLI in the shogun pane (matches start_specialist_pane behavior)
+    tmux send-keys -t shogun:main.0 "${CLI_DEFAULT} --model $(v2_model_for shogun)" Enter
 fi
 
 # ─── Phase 2: Multiagent session with two windows ────────────
@@ -80,6 +82,8 @@ else
             "$(v2_color_for "$role")" \
             "$CLI_DEFAULT"
     done
+    # Force even-horizontal layout so all 4 panes share equal width
+    tmux select-layout -t multiagent:ops even-horizontal
 fi
 
 # ─── Phase 4: Research window panes ──────────────────────────
@@ -97,6 +101,8 @@ else
             "$(v2_color_for "$role")" \
             "$CLI_DEFAULT"
     done
+    # Force even-horizontal layout so all 4 panes share equal width
+    tmux select-layout -t multiagent:research even-horizontal
 fi
 
 echo "[shutsujin_v2] topology ready"
