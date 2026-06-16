@@ -252,7 +252,9 @@ case "$SHELL_SETTING" in
     zsh) PS1_FORMAT="(%F{magenta}%BShogun%b%f) %F{green}%B%~%b%f%# " ;;
     *)   PS1_FORMAT='(\[\033[1;35m\]Shogun\[\033[0m\]) \[\033[1;32m\]\w\[\033[0m\]\$ ' ;;
 esac
+ensure_shell_idle "shogun:main" "${CLI_DEFAULT:-claude}"
 tmux send-keys -t shogun:main "cd \"$(pwd)\" && export PS1='${PS1_FORMAT}' && clear" Enter
+wait_for_shell_prompt "shogun:main" || log_war "👑 Shogun shell prompt not detected within 15s"
 tmux select-pane -t shogun:main -P 'bg=#002b36'
 tmux set-option -p -t shogun:main @agent_id "shogun"
 SHOGUN_MODEL_DISPLAY=$(v2_model_for shogun | title_case)
@@ -397,7 +399,44 @@ PY
         return 1
     }
 
+    # ponytail: poll pane for a shell prompt (PS1 marker at end of last lines).
+    # Returns 0 if found within 15s, 1 on timeout. Caller may proceed either way.
+    wait_for_shell_prompt() {
+        local pane_target=$1
+        local max_wait=15 waited=0
+        while [ "$waited" -lt "$max_wait" ]; do
+            sleep 1
+            waited=$((waited + 1))
+            local last_lines
+            last_lines=$(tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -v '^$' | tail -3)
+            if echo "$last_lines" | grep -qE '[\$%#❯►] *$'; then
+                return 0
+            fi
+        done
+        return 1
+    }
+
+    # ponytail: if a CLI is running in the pane, exit it so send-keys hits a
+    # clean shell. No-op if pane is already at a prompt. Idempotent for --clean
+    # (fresh session) and idempotent re-run (live Claude from previous run).
+    ensure_shell_idle() {
+        local pane_target=$1 cli_type=$2
+        if tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -qE '[\$%#❯►] *$'; then
+            return 0  # already at prompt
+        fi
+        # CLI likely active — ask it to exit. /exit works for claude/codex/opencode.
+        case "$cli_type" in
+            claude|codex|opencode|antigravity)
+                tmux send-keys -t "$pane_target" "/exit" Enter ;;
+            *)
+                tmux send-keys -t "$pane_target" C-c ;;
+        esac
+        wait_for_shell_prompt "$pane_target" || true
+    }
+
     # Shogun
+    ensure_shell_idle "shogun:main" "$CLI_DEFAULT"
+    wait_for_shell_prompt "shogun:main" || true
     tmux send-keys -t shogun:main "${CLI_DEFAULT} --model $(v2_model_for shogun) ${PERMISSION_FLAG}" Enter
     opencode_stagger
     if wait_for_cli_ready "shogun:main" "$CLI_DEFAULT"; then
@@ -409,6 +448,8 @@ PY
     # Specialists
     for r in $(v2_role_list | tr ' ' '\n' | grep -v '^shogun$'); do
         pane_target="$(v2_pane_for "$r")"
+        ensure_shell_idle "$pane_target" "$CLI_DEFAULT"
+        wait_for_shell_prompt "$pane_target" || true
         tmux send-keys -t "$pane_target" "${CLI_DEFAULT} --model $(v2_model_for "$r") ${PERMISSION_FLAG}" Enter
         opencode_stagger
         if wait_for_cli_ready "$pane_target" "$CLI_DEFAULT"; then
