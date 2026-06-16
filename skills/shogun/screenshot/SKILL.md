@@ -1,5 +1,5 @@
 ---
-name: shogun-screenshot
+name: screenshot
 description: |
   Captures and processes screenshots. Retrieves the latest image from local screenshots,
   captures web pages via Playwright, crops/resizes images, and masks sensitive info in black.

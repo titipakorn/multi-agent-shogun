@@ -1,5 +1,5 @@
 ---
-name: shogun-feature-spec
+name: feature-spec
 description: |
   Guides the Shogun in gathering project scope, core features, and constraints from the Lord (user),
   and generating a comprehensive feature specification and development roadmap document.

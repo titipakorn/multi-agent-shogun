@@ -1,5 +1,5 @@
 ---
-name: shogun-bloom-config
+name: bloom-config
 description: >
   Interactive wizard: guided questions with multiple-choice options about subscriptions,
   then outputs a ready-to-paste capability_tiers YAML + fixed agent model assignments.

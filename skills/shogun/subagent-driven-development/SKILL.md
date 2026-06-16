@@ -1,5 +1,5 @@
 ---
-name: shogun-subagent-driven-development
+name: subagent-driven-development
 description: |
   Decomposes high-level Shogun commands into subtasks and delegates them to v2 task-layer
   specialists (explorer/librarian/designer/fixer/observer) via Orchestrator, with Oracle

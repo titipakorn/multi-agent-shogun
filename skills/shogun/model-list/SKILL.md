@@ -1,5 +1,5 @@
 ---
-name: shogun-model-list
+name: model-list
 description: >
   All AI CLI tools × available models × required subscriptions × Bloom max capability.
   Reference table for choosing which models to use in multi-agent-shogun.
