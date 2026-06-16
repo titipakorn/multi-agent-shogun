@@ -88,7 +88,6 @@
 !.cursor/skills/inbox-write/SKILL.md
 
 # Setup and deployment scripts
-!shutsujin_departure.sh
 !first_setup.sh
 !setup.sh
 !install.bat
