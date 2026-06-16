@@ -1179,14 +1179,14 @@ def build_dashboard_text(script_dir):
 
 
 def _find_active_cmd_id(script_dir):
-    """Find the most recent cmd in queue/shogun_to_karo.yaml whose status
+    """Find the most recent cmd in queue/shogun_to_orchestrator.yaml whose status
     is not 'done' and not 'cancelled'. Returns the cmd id string, or None
     if no active command exists. The active command is the one Orchestrator is
     currently working on (or the one the Lord just issued that Shogun has
     not yet delegated). Status check matches the YAML schema used by
-    queue/shogun_to_karo.yaml (status field per cmd entry)."""
+    queue/shogun_to_orchestrator.yaml (status field per cmd entry)."""
     cmd_path = os.path.abspath(
-        os.path.join(script_dir, "../queue/shogun_to_karo.yaml")
+        os.path.join(script_dir, "../queue/shogun_to_orchestrator.yaml")
     )
     if not os.path.exists(cmd_path):
         return None
@@ -1217,7 +1217,7 @@ def _find_active_cmd_id(script_dir):
 def build_cancel_text(script_dir):
     """
     Build the /cancel response. Looks for the most recent active cmd in
-    queue/shogun_to_karo.yaml and, if one exists, writes a cancel_request
+    queue/shogun_to_orchestrator.yaml and, if one exists, writes a cancel_request
     inbox message to Shogun so it can set the cmd's status to 'cancelled'
     at the next safe checkpoint. Phone-friendly: response is always
     < 200 chars.
@@ -1689,7 +1689,7 @@ def main():
                             print(f"[telegram_listener] sendMessage (/dashboard) response: {res}")
                             continue
 
-                        # /cancel -> listener direct: scan queue/shogun_to_karo.yaml
+                        # /cancel -> listener direct: scan queue/shogun_to_orchestrator.yaml
                         # for the most recent active cmd, write a cancel_request
                         # to Shogun's inbox (with 5s in-memory dedup), and ack
                         # the Lord. Bare "cancel" follows the same pattern.
