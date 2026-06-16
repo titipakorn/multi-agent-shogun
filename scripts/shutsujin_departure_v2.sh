@@ -63,23 +63,40 @@ if ! tmux has-session -t multiagent 2>/dev/null; then
 fi
 
 # ─── Phase 3: Ops window panes ───────────────────────────────
-OPS_ROLES=("orchestrator" "fixer" "designer" "observer")
-for idx in "${!OPS_ROLES[@]}"; do
-    role="${OPS_ROLES[$idx]}"
-    start_specialist_pane "$role" "multiagent" "ops" "$idx" \
-        "$(v2_model_for "$role")" \
-        "$(v2_color_for "$role")" \
-        "$CLI_DEFAULT"
-done
+# Idempotency: count existing panes; if window already has 4 correctly
+# configured panes, skip. If it has MORE than 4 panes, warn and skip
+# (caller should reset via tmux kill-session).
+OPS_EXISTING=$(tmux list-panes -t multiagent:ops 2>/dev/null | wc -l | tr -d ' ')
+if [ "${OPS_EXISTING:-0}" -eq 4 ]; then
+    echo "[shutsujin_v2] ops window: 4 panes already configured"
+elif [ "${OPS_EXISTING:-0}" -gt 4 ]; then
+    echo "[shutsujin_v2] WARNING: ops has $OPS_EXISTING panes (>4). Run on a fresh session." >&2
+else
+    OPS_ROLES=("orchestrator" "fixer" "designer" "observer")
+    for idx in "${!OPS_ROLES[@]}"; do
+        role="${OPS_ROLES[$idx]}"
+        start_specialist_pane "$role" "multiagent" "ops" "$idx" \
+            "$(v2_model_for "$role")" \
+            "$(v2_color_for "$role")" \
+            "$CLI_DEFAULT"
+    done
+fi
 
 # ─── Phase 4: Research window panes ──────────────────────────
-RESEARCH_ROLES=("explorer" "librarian" "oracle" "council")
-for idx in "${!RESEARCH_ROLES[@]}"; do
-    role="${RESEARCH_ROLES[$idx]}"
-    start_specialist_pane "$role" "multiagent" "research" "$idx" \
-        "$(v2_model_for "$role")" \
-        "$(v2_color_for "$role")" \
-        "$CLI_DEFAULT"
-done
+RESEARCH_EXISTING=$(tmux list-panes -t multiagent:research 2>/dev/null | wc -l | tr -d ' ')
+if [ "${RESEARCH_EXISTING:-0}" -eq 4 ]; then
+    echo "[shutsujin_v2] research window: 4 panes already configured"
+elif [ "${RESEARCH_EXISTING:-0}" -gt 4 ]; then
+    echo "[shutsujin_v2] WARNING: research has $RESEARCH_EXISTING panes (>4). Run on a fresh session." >&2
+else
+    RESEARCH_ROLES=("explorer" "librarian" "oracle" "council")
+    for idx in "${!RESEARCH_ROLES[@]}"; do
+        role="${RESEARCH_ROLES[$idx]}"
+        start_specialist_pane "$role" "multiagent" "research" "$idx" \
+            "$(v2_model_for "$role")" \
+            "$(v2_color_for "$role")" \
+            "$CLI_DEFAULT"
+    done
+fi
 
 echo "[shutsujin_v2] topology ready"
