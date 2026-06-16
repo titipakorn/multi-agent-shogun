@@ -59,6 +59,9 @@ set -u
 # ─── Defaults ───────────────────────────────────────────────────────────────
 PERMISSION_FLAG="${PERMISSION_FLAG:---dangerously-skip-permissions}"
 CLI_DEFAULT="${CLI_DEFAULT:-claude}"
+
+# ponytail: BSD sed on macOS doesn't support \U; use awk for portability
+title_case() { awk '{print toupper(substr($0,1,1)) substr($0,2)}'; }
 CLEAN_MODE=false
 SETUP_ONLY=false
 SILENT_MODE=false
@@ -246,7 +249,7 @@ esac
 tmux send-keys -t shogun:main "cd \"$(pwd)\" && export PS1='${PS1_FORMAT}' && clear" Enter
 tmux select-pane -t shogun:main -P 'bg=#002b36'
 tmux set-option -p -t shogun:main @agent_id "shogun"
-SHOGUN_MODEL_DISPLAY=$(v2_model_for shogun | sed 's/^./\U&/')
+SHOGUN_MODEL_DISPLAY=$(v2_model_for shogun | title_case)
 tmux set-option -p -t shogun:main @model_name "$SHOGUN_MODEL_DISPLAY"
 tmux set-option -p -t shogun:main @current_task ""
 
@@ -286,18 +289,25 @@ start_specialist_pane() {
     [ "$existing" = "$expected" ] && return 0
 
     # Split only if no pane at target index (repair unconfigured panes in place)
+    # ponytail: split the previous pane (pane_idx - 1) so the new pane always
+    # lands at the target index — keeps indexes stable across multiple splits.
     local pane_exists
     pane_exists=$(tmux list-panes -t "${session}:${window}" -F '#{pane_index}' \
         2>/dev/null | grep -w "^${pane_idx}$" || true)
     if [ -z "$pane_exists" ]; then
-        tmux split-window -h -t "${session}:${window}.0"
+        if [ "$pane_idx" -gt 0 ]; then
+            tmux split-window -h -t "${session}:${window}.$((pane_idx - 1))"
+        else
+            # Initial pane 0 already exists from new-session; nothing to split
+            :
+        fi
     fi
 
     # Configure
     local model color model_display
     model=$(v2_model_for "$role")
     color=$(v2_color_for "$role")
-    model_display=$(echo "$model" | sed 's/^./\U&/')
+    model_display=$(echo "$model" | title_case)
     tmux set-option -p -t "$target" @agent_id "$role"
     tmux set-option -p -t "$target" @model_name "$model_display"
     tmux set-option -p -t "$target" @current_task ""
