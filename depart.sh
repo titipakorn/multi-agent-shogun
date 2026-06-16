@@ -156,95 +156,9 @@ opencode_stagger() {
     return 0
 }
 
-# ponytail: regex pattern matching each CLI's "ready" banner — used to wait
-# for the CLI to be ready before launching the next agent (avoids race conditions)
-cli_ready_pattern() {
-    case "$1" in
-        claude)      echo "bypass permissions|Do you trust|Claude Code" ;;
-        codex)       echo 'context left|\? for shortcuts|Codex' ;;
-        opencode)    echo "esc.*interrupt|OpenCode|opencode" ;;
-        antigravity) echo "Antigravity|agy|type a message|Type a message|message" ;;
-        *)           echo "." ;;
-    esac
-}
-
-# ponytail: poll pane output up to 30s for the CLI's ready banner. Returns 0
-# if banner seen, 1 on timeout (caller may still proceed; this is non-fatal).
-wait_for_cli_ready() {
-    local pane_target=$1 cli_type=$2
-    local pattern
-    pattern=$(cli_ready_pattern "$cli_type")
-    for _ in {1..30}; do
-        if tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -qiE "$pattern"; then
-            return 0
-        fi
-        sleep 1
-    done
-    return 1
-}
-
-# ponytail: poll pane for a shell prompt (PS1 marker at end of last lines).
-# Returns 0 if found within 15s, 1 on timeout. Caller may proceed either way.
-wait_for_shell_prompt() {
-    local pane_target=$1
-    local max_wait=15 waited=0
-    while [ "$waited" -lt "$max_wait" ]; do
-        sleep 1
-        waited=$((waited + 1))
-        local last_lines
-        last_lines=$(tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -v '^$' | tail -3)
-        if echo "$last_lines" | grep -qE '[\$%#❯►] *$'; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# ponytail: poll ALL panes in parallel for CLI banner. Returns 0 if all
-# ready within 30s, 1 if any timed out. Stdout lists which panes are ready.
-wait_for_all_cli_ready() {
-    local cli_type=$1; shift
-    local panes=("$@")
-    local pattern
-    pattern=$(cli_ready_pattern "$cli_type")
-    local max_wait=30 waited=0
-    local ready_count=0 total=${#panes[@]}
-    while [ "$waited" -lt "$max_wait" ] && [ "$ready_count" -lt "$total" ]; do
-        ready_count=0
-        for p in "${panes[@]}"; do
-            if tmux capture-pane -t "$p" -p 2>/dev/null | grep -qiE "$pattern"; then
-                ready_count=$((ready_count + 1))
-            fi
-        done
-        if [ "$ready_count" -eq "$total" ]; then
-            return 0
-        fi
-        sleep 1
-        waited=$((waited + 1))
-    done
-    return 1
-}
-
-# ponytail: poll ALL panes in parallel for shell prompt.
-wait_for_all_shell_prompts() {
-    local panes=("$@")
-    local max_wait=10 waited=0
-    local ready_count=0 total=${#panes[@]}
-    while [ "$waited" -lt "$max_wait" ] && [ "$ready_count" -lt "$total" ]; do
-        ready_count=0
-        for p in "${panes[@]}"; do
-            if tmux capture-pane -t "$p" -p 2>/dev/null | grep -qE '[\$%#❯►] *$'; then
-                ready_count=$((ready_count + 1))
-            fi
-        done
-        if [ "$ready_count" -eq "$total" ]; then
-            return 0
-        fi
-        sleep 1
-        waited=$((waited + 1))
-    done
-    return 1
-}
+# ponytail: STEP 5 uses v1-style fire-and-forget. tmux send-keys buffers
+# into the pane's TTY; the shell processes the command when ready. No race
+# risk, no banner-wait needed. STEP 5 wall time = send-keys loop + sleep 1.
 
 # ═════════════════════════════════════════════════════════════════════════════
 # STEP 1: Always kill + recreate our own sessions (fast restart)
@@ -356,7 +270,6 @@ case "$SHELL_SETTING" in
     *)   PS1_FORMAT='(\[\033[1;35m\]Shogun\[\033[0m\]) \[\033[1;32m\]\w\[\033[0m\]\$ ' ;;
 esac
 tmux send-keys -t shogun:main "cd \"$(pwd)\" && export PS1='${PS1_FORMAT}' && clear" Enter
-wait_for_shell_prompt "shogun:main" || log_war "👑 Shogun shell prompt not detected within 15s"
 tmux select-pane -t shogun:main -P 'bg=#002b36'
 tmux set-option -p -t shogun:main @agent_id "shogun"
 SHOGUN_MODEL_DISPLAY=$(v2_model_for shogun | title_case)
@@ -466,33 +379,24 @@ PY
         exit 1
     fi
 
-    # Phase A: collect all 8 pane targets + send claude command to each
-    # (fire-and-forget — no per-pane wait between sends).
-    declare -a ALL_PANES=()
-    declare -a ROLE_MODEL=()
-    ALL_PANES+=("shogun:main")
-    ROLE_MODEL+=("shogun")
-    for r in $(v2_role_list | tr ' ' '\n' | grep -v '^shogun$'); do
-        pane="$(v2_pane_for "$r")"
-        ALL_PANES+=("$pane")
-        ROLE_MODEL+=("$r")
-    done
+    # ponytail: v1-style fire-and-forget. tmux send-keys buffers into the pane's
+    # TTY — the shell processes the command when it's ready, no race risk. Skip
+    # the per-pane /exit dance, skip the 30s banner poll, skip the 10s shell-poll.
+    # Net: STEP 5 wall time = sum of send-keys + one sleep 1 (≈1s).
 
-    # Phase B: wait for all 8 shells to be at a prompt (parallel poll, 10s).
-    wait_for_all_shell_prompts "${ALL_PANES[@]}" || log_war "Some shell prompts not detected within 10s"
-
-    # Phase C: fire the claude launch command at every pane in one pass.
-    for i in "${!ALL_PANES[@]}"; do
-        tmux send-keys -t "${ALL_PANES[$i]}" "${CLI_DEFAULT} --model $(v2_model_for "${ROLE_MODEL[$i]}") ${PERMISSION_FLAG}" Enter
-    done
+    # Shogun
+    tmux send-keys -t shogun:main "${CLI_DEFAULT} --model $(v2_model_for shogun) ${PERMISSION_FLAG}" Enter
     opencode_stagger
 
-    # Phase D: wait for ALL 8 CLI banners in parallel (single 30s poll).
-    if wait_for_all_cli_ready "$CLI_DEFAULT" "${ALL_PANES[@]}"; then
-        log_success "👑 All 8 agents summoned ($(v2_model_for shogun) shogun + 7 specialists)"
-    else
-        log_war "Some CLIs did not show ready banner within 30s (continuing anyway)"
-    fi
+    # Specialists — fire all 7 in one pass (no per-pane wait)
+    for r in $(v2_role_list | tr ' ' '\n' | grep -v '^shogun$'); do
+        pane_target="$(v2_pane_for "$r")"
+        tmux send-keys -t "$pane_target" "${CLI_DEFAULT} --model $(v2_model_for "$r") ${PERMISSION_FLAG}" Enter
+        opencode_stagger
+    done
+
+    sleep 1  # let shells begin processing the buffered commands
+    log_success "👑 All 8 agents summoned (claude launching in parallel — check panes)"
 
     # ═══════════════════════════════════════════════════════════════════════
     # STEP 6: Ninja ASCII art
