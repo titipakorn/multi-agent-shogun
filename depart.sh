@@ -147,6 +147,77 @@ echo ""
 # ponytail: clear stale idle flags from crashed sessions — prevents watcher confusion
 rm -f /tmp/shogun_idle_* 2>/dev/null || true
 
+# ─── CLI helper functions (top-level — used by STEP 3 + STEP 5) ──────────────
+# Stagger OpenCode launches (SIGILL on WSL2 if launched too fast)
+# ponytail: must always return 0 — `[ ... ]` returning false (1) under set -e
+# would silently exit the whole script before any CLI launches.
+opencode_stagger() {
+    [ "$CLI_DEFAULT" = "opencode" ] && sleep 0.1
+    return 0
+}
+
+# ponytail: regex pattern matching each CLI's "ready" banner — used to wait
+# for the CLI to be ready before launching the next agent (avoids race conditions)
+cli_ready_pattern() {
+    case "$1" in
+        claude)      echo "bypass permissions|Do you trust|Claude Code" ;;
+        codex)       echo 'context left|\? for shortcuts|Codex' ;;
+        opencode)    echo "esc.*interrupt|OpenCode|opencode" ;;
+        antigravity) echo "Antigravity|agy|type a message|Type a message|message" ;;
+        *)           echo "." ;;
+    esac
+}
+
+# ponytail: poll pane output up to 30s for the CLI's ready banner. Returns 0
+# if banner seen, 1 on timeout (caller may still proceed; this is non-fatal).
+wait_for_cli_ready() {
+    local pane_target=$1 cli_type=$2
+    local pattern
+    pattern=$(cli_ready_pattern "$cli_type")
+    for _ in {1..30}; do
+        if tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -qiE "$pattern"; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
+# ponytail: poll pane for a shell prompt (PS1 marker at end of last lines).
+# Returns 0 if found within 15s, 1 on timeout. Caller may proceed either way.
+wait_for_shell_prompt() {
+    local pane_target=$1
+    local max_wait=15 waited=0
+    while [ "$waited" -lt "$max_wait" ]; do
+        sleep 1
+        waited=$((waited + 1))
+        local last_lines
+        last_lines=$(tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -v '^$' | tail -3)
+        if echo "$last_lines" | grep -qE '[\$%#❯►] *$'; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ponytail: if a CLI is running in the pane, exit it so send-keys hits a
+# clean shell. No-op if pane is already at a prompt. Idempotent for --clean
+# (fresh session) and idempotent re-run (live Claude from previous run).
+ensure_shell_idle() {
+    local pane_target=$1 cli_type=$2
+    if tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -qE '[\$%#❯►] *$'; then
+        return 0  # already at prompt
+    fi
+    # CLI likely active — ask it to exit. /exit works for claude/codex/opencode.
+    case "$cli_type" in
+        claude|codex|opencode|antigravity)
+            tmux send-keys -t "$pane_target" "/exit" Enter ;;
+        *)
+            tmux send-keys -t "$pane_target" C-c ;;
+    esac
+    wait_for_shell_prompt "$pane_target" || true
+}
+
 # ═════════════════════════════════════════════════════════════════════════════
 # STEP 1: --clean → kill existing sessions, otherwise reuse (idempotent)
 # ═════════════════════════════════════════════════════════════════════════════
@@ -363,76 +434,6 @@ PY
         log_war "$CLI_DEFAULT not found. Run ./first_setup.sh first."
         exit 1
     fi
-
-    # Stagger OpenCode launches (SIGILL on WSL2 if launched too fast)
-    # ponytail: must always return 0 — `[ ... ]` returning false (1) under set -e
-    # would silently exit the whole script before any CLI launches.
-    opencode_stagger() {
-        [ "$CLI_DEFAULT" = "opencode" ] && sleep 0.1
-        return 0
-    }
-
-    # ponytail: regex pattern matching each CLI's "ready" banner — used to wait
-    # for the CLI to be ready before launching the next agent (avoids race conditions)
-    cli_ready_pattern() {
-        case "$1" in
-            claude)      echo "bypass permissions|Do you trust|Claude Code" ;;
-            codex)       echo 'context left|\? for shortcuts|Codex' ;;
-            opencode)    echo "esc.*interrupt|OpenCode|opencode" ;;
-            antigravity) echo "Antigravity|agy|type a message|Type a message|message" ;;
-            *)           echo "." ;;
-        esac
-    }
-
-    # ponytail: poll pane output up to 30s for the CLI's ready banner. Returns 0
-    # if banner seen, 1 on timeout (caller may still proceed; this is non-fatal).
-    wait_for_cli_ready() {
-        local pane_target=$1 cli_type=$2
-        local pattern
-        pattern=$(cli_ready_pattern "$cli_type")
-        for _ in {1..30}; do
-            if tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -qiE "$pattern"; then
-                return 0
-            fi
-            sleep 1
-        done
-        return 1
-    }
-
-    # ponytail: poll pane for a shell prompt (PS1 marker at end of last lines).
-    # Returns 0 if found within 15s, 1 on timeout. Caller may proceed either way.
-    wait_for_shell_prompt() {
-        local pane_target=$1
-        local max_wait=15 waited=0
-        while [ "$waited" -lt "$max_wait" ]; do
-            sleep 1
-            waited=$((waited + 1))
-            local last_lines
-            last_lines=$(tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -v '^$' | tail -3)
-            if echo "$last_lines" | grep -qE '[\$%#❯►] *$'; then
-                return 0
-            fi
-        done
-        return 1
-    }
-
-    # ponytail: if a CLI is running in the pane, exit it so send-keys hits a
-    # clean shell. No-op if pane is already at a prompt. Idempotent for --clean
-    # (fresh session) and idempotent re-run (live Claude from previous run).
-    ensure_shell_idle() {
-        local pane_target=$1 cli_type=$2
-        if tmux capture-pane -t "$pane_target" -p 2>/dev/null | grep -qE '[\$%#❯►] *$'; then
-            return 0  # already at prompt
-        fi
-        # CLI likely active — ask it to exit. /exit works for claude/codex/opencode.
-        case "$cli_type" in
-            claude|codex|opencode|antigravity)
-                tmux send-keys -t "$pane_target" "/exit" Enter ;;
-            *)
-                tmux send-keys -t "$pane_target" C-c ;;
-        esac
-        wait_for_shell_prompt "$pane_target" || true
-    }
 
     # Shogun
     ensure_shell_idle "shogun:main" "$CLI_DEFAULT"
