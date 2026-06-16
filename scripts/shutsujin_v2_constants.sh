@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Constants for the v2 (specialist team) topology.
-# Source this from shutsujin_departure_v2.sh.
+# Source this from depart.sh.
 #
 # NOTE: This file is intentionally bash-3.2 compatible (associative arrays
 # are a bash-4.0 feature). On macOS the system /bin/bash is still 3.2.

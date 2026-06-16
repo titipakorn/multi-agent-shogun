@@ -7,7 +7,7 @@
 #   - Exit with status 0 on success. To avoid blocking the terminal on failure, do not use 'set -e' but gracefully degrade
 #
 # Purpose of this hook:
-#   Obsoleted STEP 6.7 (inbox broadcast at startup) of shutsujin_departure.sh (commit 485ab9f, 2026-02-08)
+#   Obsoleted STEP 6.7 (inbox broadcast at startup) of depart.sh (commit 485ab9f, 2026-02-08)
 #   Thereafter, Session Start was not triggered at startup, leaving the persona unestablished,
 #   causing an incident where all agents misidentified themselves as the Shogun (2026-04-19).
 #   The SessionStart hook deterministically injects the Session Start procedure, covering /clear and compaction as well.

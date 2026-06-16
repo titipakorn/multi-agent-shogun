@@ -40,7 +40,7 @@ cd multi-agent-shogun
 bash first_setup.sh                        # one-time setup: config, dependencies, MCP
 source ~/.bashrc                           # reload PATH
 claude --dangerously-skip-permissions      # first run only: OAuth + accept Bypass Permissions → /exit
-bash shutsujin_departure.sh                # launch all agents
+bash depart.sh                # launch all agents
 ```
 
 > For full install steps (incl. Windows) and the first-30-minutes walkthrough, see [🚀 Quick Start](#-quick-start) and the basic usage section below.
@@ -250,7 +250,7 @@ cd /mnt/c/tools/multi-agent-shogun
 ✅ **Deploy!**
 
 ```bash
-./shutsujin_departure.sh
+./depart.sh
 ```
 
 </td>
@@ -280,7 +280,7 @@ Open an **Ubuntu terminal** (WSL) and run:
 
 ```bash
 cd /mnt/c/tools/multi-agent-shogun
-./shutsujin_departure.sh
+./depart.sh
 ```
 
 <details>
@@ -345,7 +345,7 @@ chmod +x *.sh
 
 ```bash
 cd ~/multi-agent-shogun
-./shutsujin_departure.sh
+./depart.sh
 ```
 
 </details>
@@ -384,7 +384,7 @@ Then restart your computer and run `install.bat` again.
 |--------|---------|-------------|
 | `install.bat` | Windows: WSL2 + Ubuntu setup | First time only |
 | `first_setup.sh` | Install tmux, Node.js, Claude Code CLI + Memory MCP config | First time only |
-| `shutsujin_departure.sh` | Create tmux sessions + launch the configured CLI for each agent + load instructions + start ntfy listener | Daily |
+| `depart.sh` | Create tmux sessions + launch the configured CLI for each agent + load instructions + start ntfy listener | Daily |
 | `scripts/switch_cli.sh` | Live switch agent CLI/model (settings.yaml → /exit → relaunch) | As needed |
 
 ### What `install.bat` does automatically:
@@ -392,7 +392,7 @@ Then restart your computer and run `install.bat` again.
 - ✅ Checks if Ubuntu is installed (guides you if not)
 - ✅ Shows next steps (how to run `first_setup.sh`)
 
-### What `shutsujin_departure.sh` does:
+### What `depart.sh` does:
 - ✅ Creates tmux sessions (shogun + multiagent)
 - ✅ Launches each agent with the CLI configured in `config/settings.yaml` (Claude/Codex/Copilot/Kimi/OpenCode)
 - ✅ Auto-loads instruction files or generated agent definitions for each CLI
@@ -448,7 +448,7 @@ Two tmux sessions are created:
 
 ### Step 1: Connect to the Shogun
 
-After running `shutsujin_departure.sh`, all agents automatically load their instructions and are ready.
+After running `depart.sh`, all agents automatically load their instructions and are ready.
 
 Open a new terminal and connect:
 
@@ -491,7 +491,7 @@ Once set up, the Shogun system can handle **multiple projects under the same Sho
 #### 1. Running your first project
 
 ```bash
-# (1) Connect to the Shogun (after shutsujin_departure.sh completes)
+# (1) Connect to the Shogun (after depart.sh completes)
 tmux attach-session -t shogun
 
 # (2) Just give the Shogun your command — the project starts automatically
@@ -550,7 +550,7 @@ cli:
 OpenRouter setup has two separate pieces:
 
 1. **Model routing** goes in `config/settings.yaml` as shown above (`type: opencode`, `model: openrouter/...`).
-2. **Provider authentication** is configured in OpenCode, not in `settings.yaml`. Run OpenCode once as the same OS user that will launch Shogun, then use `/connect` → `OpenRouter` and paste the API key. OpenCode stores provider credentials in its own user data under that OS user (for example under `~/.local/share/opencode/`; the exact file/database is OpenCode-internal). For headless deployments that use environment-based provider credentials, make sure the shell that runs `shutsujin_departure.sh` has `OPENROUTER_API_KEY` loaded.
+2. **Provider authentication** is configured in OpenCode, not in `settings.yaml`. Run OpenCode once as the same OS user that will launch Shogun, then use `/connect` → `OpenRouter` and paste the API key. OpenCode stores provider credentials in its own user data under that OS user (for example under `~/.local/share/opencode/`; the exact file/database is OpenCode-internal). For headless deployments that use environment-based provider credentials, make sure the shell that runs `depart.sh` has `OPENROUTER_API_KEY` loaded.
 
 Do not put API keys in `config/settings.yaml`, `config/opencode-tui.json`, or `.opencode/agents/*.md`. Those files only describe routing, tmux-safe keybindings, and generated agent definitions.
 
@@ -903,7 +903,7 @@ The Shogun system features a sophisticated, **high-signal communication harness*
 **Setup:**
 1. Add `ntfy_topic: "shogun-yourname"` to `config/settings.yaml`
 2. Install the [ntfy app](https://ntfy.sh) on your phone and subscribe to the same topic
-3. `shutsujin_departure.sh` automatically starts the listener — no extra steps
+3. `depart.sh` automatically starts the listener — no extra steps
 
 **Notification examples:**
 
@@ -940,7 +940,7 @@ If your phone receives the notification, you're all set. If not, check:
 
 Any text you send becomes a command. Write it like you'd talk to the Shogun — no special syntax needed.
 
-**Manual listener start** (if not using `shutsujin_departure.sh`):
+**Manual listener start** (if not using `depart.sh`):
 
 ```bash
 # Start the listener in the background
@@ -953,7 +953,7 @@ pgrep -f ntfy_listener.sh
 bash scripts/ntfy_listener.sh  # Run in foreground to see logs
 ```
 
-The listener automatically reconnects if the connection drops. `shutsujin_departure.sh` starts it automatically on deployment — you only need manual start if you skipped the deployment script.
+The listener automatically reconnects if the connection drops. `depart.sh` starts it automatically on deployment — you only need manual start if you skipped the deployment script.
 
 **Troubleshooting:**
 
@@ -1043,8 +1043,8 @@ task:
 **Shout mode is the default.** To disable (saves API tokens on the echo call):
 
 ```bash
-./shutsujin_departure.sh --silent    # No battle cries
-./shutsujin_departure.sh             # Default: shout mode (battle cries enabled)
+./depart.sh --silent    # No battle cries
+./depart.sh             # Default: shout mode (battle cries enabled)
 ```
 
 Silent mode sets `DISPLAY_MODE=silent` as a tmux environment variable. The Orchestrator checks this when writing task YAMLs and omits the `echo_message` field.
@@ -1432,7 +1432,7 @@ Tell the Shogun "check the latest screenshot" and it reads your screen captures 
 ntfy_topic: "shogun-yourname"
 ```
 
-Subscribe to the same topic in the [ntfy app](https://ntfy.sh) on your phone. The listener starts automatically with `shutsujin_departure.sh`.
+Subscribe to the same topic in the [ntfy app](https://ntfy.sh) on your phone. The listener starts automatically with `depart.sh`.
 
 #### ntfy Authentication (Self-Hosted Servers)
 
@@ -1486,7 +1486,7 @@ Priority: Token > Basic > None. If neither is set, no auth headers are sent (bac
 │                    Daily Startup (run every day)                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  shutsujin_departure.sh                                             │
+│  depart.sh                                             │
 │      │                                                              │
 │      ├──▶ Create tmux sessions                                      │
 │      │         • "shogun" session (1 pane)                          │
@@ -1502,38 +1502,38 @@ Priority: Token > Basic > None. If neither is set, no auth headers are sent (bac
 </details>
 
 <details>
-<summary><b>shutsujin_departure.sh Options</b> (click to expand)</summary>
+<summary><b>depart.sh Options</b> (click to expand)</summary>
 
 ```bash
 # Default: Full startup (tmux sessions + configured CLI launch)
-./shutsujin_departure.sh
+./depart.sh
 
 # Session setup only (no CLI launch)
-./shutsujin_departure.sh -s
-./shutsujin_departure.sh --setup-only
+./depart.sh -s
+./depart.sh --setup-only
 
 # Clean task queues (preserves command history)
-./shutsujin_departure.sh -c
-./shutsujin_departure.sh --clean
+./depart.sh -c
+./depart.sh --clean
 
 # Battle formation: All Specialist on Opus (max capability, higher cost)
-./shutsujin_departure.sh -k
-./shutsujin_departure.sh --kessen
+./depart.sh -k
+./depart.sh --kessen
 
 # Silent mode: Disable battle cries (saves API tokens on echo calls)
-./shutsujin_departure.sh -S
-./shutsujin_departure.sh --silent
+./depart.sh -S
+./depart.sh --silent
 
 # Full startup + open Windows Terminal tabs
-./shutsujin_departure.sh -t
-./shutsujin_departure.sh --terminal
+./depart.sh -t
+./depart.sh --terminal
 
 # Shogun relay-only mode: Disable Shogun's thinking (cost savings)
-./shutsujin_departure.sh --shogun-no-thinking
+./depart.sh --shogun-no-thinking
 
 # Show help
-./shutsujin_departure.sh -h
-./shutsujin_departure.sh --help
+./depart.sh -h
+./depart.sh --help
 ```
 
 </details>
@@ -1543,13 +1543,13 @@ Priority: Token > Basic > None. If neither is set, no auth headers are sent (bac
 
 **Normal daily use:**
 ```bash
-./shutsujin_departure.sh          # Launch everything
+./depart.sh          # Launch everything
 tmux attach-session -t shogun     # Connect and give commands
 ```
 
 **Debug mode (manual control):**
 ```bash
-./shutsujin_departure.sh -s       # Create sessions only
+./depart.sh -s       # Create sessions only
 
 # Manually launch Claude Code on specific agents
 tmux send-keys -t shogun:0 'claude --dangerously-skip-permissions' Enter
@@ -1563,7 +1563,7 @@ tmux kill-session -t shogun
 tmux kill-session -t multiagent
 
 # Fresh start
-./shutsujin_departure.sh
+./depart.sh
 ```
 
 </details>
@@ -1574,7 +1574,7 @@ tmux kill-session -t multiagent
 Running `first_setup.sh` automatically adds these aliases to `~/.bashrc`:
 
 ```bash
-alias csst='cd /mnt/c/tools/multi-agent-shogun && ./shutsujin_departure.sh'
+alias csst='cd /mnt/c/tools/multi-agent-shogun && ./depart.sh'
 alias css='tmux attach-session -t shogun'      # Connect to Shogun
 alias csm='tmux attach-session -t multiagent'  # Connect to Orchestrator + Specialist
 ```
@@ -1748,7 +1748,7 @@ mcp__memory__read_graph()
 <details>
 <summary><b>Agents asking for permissions?</b></summary>
 
-Agents should start with each CLI's unattended permission settings. This is handled automatically by `shutsujin_departure.sh`.
+Agents should start with each CLI's unattended permission settings. This is handled automatically by `depart.sh`.
 
 </details>
 
@@ -1873,7 +1873,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 - **Codex `--model` flag support** — `build_cli_command()` now passes `settings.yaml` model config to the Codex CLI via `--model`. Supports `gpt-5.3-codex-spark` and any future Codex models
 - **Separate rate limit** — Spark runs on its own rate limit quota, independent of GPT-5.3-Codex. Run both models in parallel across different Specialist to **double your effective throughput**
-- **Startup display** — `shutsujin_departure.sh` now shows the actual model name (e.g., `codex/gpt-5.3-codex-spark`) instead of the generic effort level
+- **Startup display** — `depart.sh` now shows the actual model name (e.g., `codex/gpt-5.3-codex-spark`) instead of the generic effort level
 
 ## What's New in v3.0 — Multi-CLI
 

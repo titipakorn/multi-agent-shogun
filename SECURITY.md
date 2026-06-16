@@ -260,7 +260,7 @@ To keep your multi-agent-shogun installation secure:
 3. **Review scripts before running**:
    ```bash
    # Always check what a script does before running it
-   cat shutsujin_departure.sh
+   cat depart.sh
    ```
 
 4. **Limit tmux session access**:

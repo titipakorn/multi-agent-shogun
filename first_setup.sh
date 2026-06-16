@@ -861,7 +861,7 @@ if [ -f "$BASHRC_FILE" ]; then
     # csm function
     if ! grep -q "^csm()" "$BASHRC_FILE" 2>/dev/null; then
         echo "$CSM_FUNC" >> "$BASHRC_FILE"
-        log_info "Added csm function (Karo/Ashigaru window — with auto-cleanup)"
+        log_info "Added csm function (specialist tmux window — with auto-cleanup)"
         ALIAS_ADDED=true
     else
         sed -i '/^csm()/d' "$BASHRC_FILE"
@@ -1036,7 +1036,7 @@ echo ""
 echo "  ────────────────────────────────────────────────────────────────"
 echo ""
 echo "  DEPARTING FOR BATTLE (Start the v2 specialist team):"
-echo "     bash scripts/shutsujin_departure_v2.sh"
+echo "     bash scripts/depart.sh"
 echo ""
 echo "  ────────────────────────────────────────────────────────────────"
 echo "  TOPOLOGY (v2 specialist team — default):"

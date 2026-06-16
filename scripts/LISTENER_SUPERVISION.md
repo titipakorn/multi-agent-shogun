@@ -20,7 +20,7 @@ Before this watchdog was added, the only supervision for the listener was the `t
 ## Supervision chain
 
 ```
-shogun-watchers tmux session (created by shutsujin_departure.sh)
+shogun-watchers tmux session (created by depart.sh)
   └── window: listener-watchdog
         └── bash scripts/listener_watchdog.sh    (this loop runs forever)
               ├── pgrep -f scripts/telegram_listener.py    (every 30s)
@@ -30,7 +30,7 @@ shogun-watchers tmux session (created by shutsujin_departure.sh)
               └── logs/listener_watchdog.log + logs/listener_restarts.log
 ```
 
-The watchdog itself is supervised by the tmux session, which is created at deploy time by `shutsujin_departure.sh` and is not killed by the listener. The tmux server is supervised by the operating system.
+The watchdog itself is supervised by the tmux session, which is created at deploy time by `depart.sh` and is not killed by the listener. The tmux server is supervised by the operating system.
 
 ### Relationship to other scripts
 
@@ -39,11 +39,11 @@ The watchdog itself is supervised by the tmux session, which is created at deplo
 | `scripts/watcher_supervisor.sh` | `inbox_watcher.sh` for every agent (shogun, orchestrator, explorer, librarian, oracle, designer, fixer, observer, council, telegram). | **No.** Despite the generic name, it does NOT supervise the listener. |
 | `scripts/inbox_watcher.sh` | One agent's inbox YAML file (file-system watch + tmux nudge). | **No.** |
 | `scripts/listener_watchdog.sh` (new) | The Telegram listener process. | **Yes** — restarts it on crash. |
-| `shutsujin_departure.sh` | Initial deployment. Creates tmux sessions, panes, and watchers. | Yes, but only at deploy time. |
+| `depart.sh` | Initial deployment. Creates tmux sessions, panes, and watchers. | Yes, but only at deploy time. |
 
 ## Setup
 
-The watchdog is intended to be launched as a tmux window inside the existing `shogun-watchers` session (which `shutsujin_departure.sh` already creates). Add the following lines near the existing watcher-launching block in `shutsujin_departure.sh` (e.g., just after the `start_watcher_in_tmux telegram ...` line, ~step 6.8):
+The watchdog is intended to be launched as a tmux window inside the existing `shogun-watchers` session (which `depart.sh` already creates). Add the following lines near the existing watcher-launching block in `depart.sh` (e.g., just after the `start_watcher_in_tmux telegram ...` line, ~step 6.8):
 
 ```bash
 # Launch the telegram listener watchdog
@@ -84,8 +84,8 @@ When the watchdog sees the pause sentinel, it logs the event to `logs/listener_w
 | --- | --- | --- |
 | Listener crashes (segfault, OOM, etc.) | Watchdog detects within `POLL_INTERVAL` (default 30s) and restarts. | Automatic. |
 | Listener crashes immediately on startup (config error, bad token) | Watchdog keeps restarting with exponential backoff. After 10 restarts in 60 min, the alarm trips and the watchdog stops. | Fix the listener config, then `rm logs/.listener_watchdog.disabled` and relaunch the watchdog. |
-| Watchdog itself dies | Tmux session is still up but the window's process is gone. The listener keeps running (if it was up) but no longer auto-restarts on crash. | `tmux send-keys -t shogun-watchers:listener-watchdog 'bash scripts/listener_watchdog.sh' Enter`, or just re-run `shutsujin_departure.sh`. |
-| Tmux server dies | Both the listener and the watchdog die. The system is unreachable from Telegram. | `tmux start-server` (or relaunch via `shutsujin_departure.sh`). |
+| Watchdog itself dies | Tmux session is still up but the window's process is gone. The listener keeps running (if it was up) but no longer auto-restarts on crash. | `tmux send-keys -t shogun-watchers:listener-watchdog 'bash scripts/listener_watchdog.sh' Enter`, or just re-run `depart.sh`. |
+| Tmux server dies | Both the listener and the watchdog die. The system is unreachable from Telegram. | `tmux start-server` (or relaunch via `depart.sh`). |
 | Pause sentinel accidentally left in place | The listener is down and stays down. | `rm queue/.listener_paused` and relaunch the watchdog. |
 
 ## Tunables (environment variables)

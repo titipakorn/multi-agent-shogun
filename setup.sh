@@ -2,11 +2,11 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # setup.sh - Wrapper script for compatibility
 # ═══════════════════════════════════════════════════════════════════════════════
-# This script has been merged into shutsujin_departure.sh.
-# For compatibility, all arguments are forwarded to shutsujin_departure.sh.
+# This script has been merged into depart.sh.
+# For compatibility, all arguments are forwarded to depart.sh.
 #
-# Recommendation: Use ./shutsujin_departure.sh directly.
+# Recommendation: Use ./depart.sh directly.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$SCRIPT_DIR/shutsujin_departure.sh" "$@"
+exec "$SCRIPT_DIR/depart.sh" "$@"

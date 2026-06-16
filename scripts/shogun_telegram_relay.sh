@@ -2,7 +2,7 @@
 # shogun_telegram_relay.sh — tails the Shogun pane and pushes
 # "### 📨 To Lord" blocks to Telegram.
 #
-# Started by shutsujin_departure.sh alongside the other watchers.
+# Started by depart.sh alongside the other watchers.
 # Supervised by watcher_supervisor.sh.
 #
 # State: dedup hash ring at /tmp/shogun_telegram_relay_dedup_$(id -u).log

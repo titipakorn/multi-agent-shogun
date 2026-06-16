@@ -41,7 +41,7 @@
 #
 # How the watchdog is launched (chicken-and-egg):
 #   The recommended deployment is to run the watchdog inside a tmux window
-#   in the shogun-watchers session. shutsujin_departure.sh already creates
+#   in the shogun-watchers session. depart.sh already creates
 #   that session. See scripts/LISTENER_SUPERVISION.md for setup steps.
 #
 # Manual commands:

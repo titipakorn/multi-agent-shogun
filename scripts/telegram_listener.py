@@ -727,7 +727,7 @@ _status_parse_state = None     # None | "ok" | "failing"
 # Stale-dashboard grace window (seconds). When a YAML completion timestamp
 # is more than this many seconds newer than the newest "Completed:" entry
 # in dashboard.md, /dashboard falls back to live YAML rather than trusting
-# the stale summary. 60s leaves slack for Karo's write batching while
+# the stale summary. 60s leaves slack for Orchestrator's write batching while
 # still catching the multi-day drift the user reported on 2026-06-14.
 DASHBOARD_STALE_THRESHOLD_SEC = 60
 
@@ -1076,16 +1076,16 @@ def build_dashboard_text(script_dir):
     lines.append("")
 
     # Determine whether to use live YAML or dashboard.md for Recent Completions.
-    # Stale dashboard (Karo hasn't updated it for newer completions) → live YAML
+    # Stale dashboard (Orchestrator hasn't updated it for newer completions) → live YAML
     # is fresher, so we synthesise from queue/tasks/*.yaml instead. The
-    # threshold (60s) leaves slack for Karo's write batching while still
+    # threshold (60s) leaves slack for Orchestrator's write batching while still
     # catching the multi-day drift the user reported.
     live_done = _scan_recent_done_tasks(script_dir, max_items=3)
     dashboard_max_ts = 0
     if achieve_name is not None:
         # Only _DASH_ITEM_RE has the (Completed: <ts>) capture group;
         # _DASH_ITEM_LOOSE_RE intentionally doesn't. We try multiple
-        # timestamp formats to match dashboard.md's history — Karo has
+        # timestamp formats to match dashboard.md's history — Orchestrator has
         # used both "2026-06-09 22:01" (space, no seconds) and
         # "2026-06-09T22:01:30" (T-separator, with seconds) over time.
         _ts_formats = (
@@ -1181,7 +1181,7 @@ def build_dashboard_text(script_dir):
 def _find_active_cmd_id(script_dir):
     """Find the most recent cmd in queue/shogun_to_karo.yaml whose status
     is not 'done' and not 'cancelled'. Returns the cmd id string, or None
-    if no active command exists. The active command is the one Karo is
+    if no active command exists. The active command is the one Orchestrator is
     currently working on (or the one the Lord just issued that Shogun has
     not yet delegated). Status check matches the YAML schema used by
     queue/shogun_to_karo.yaml (status field per cmd entry)."""
@@ -1712,7 +1712,7 @@ def main():
                                 "• `/cancel` - Cancel the currently-active command at the next safe checkpoint.\n"
                                 "• `/help` - Display this help guide.\n\n"
                                 "*How to order your Shogun:*\n"
-                                "Simply send any natural language command here. Shogun will receive it, decompose it, and delegate it to the Karo and Ashigaru workers in the background.\n\n"
+                                "Simply send any natural language command here. Shogun will receive it, decompose it, and delegate it to the Orchestrator and specialist workers in the background.\n\n"
                                 "Example:\n"
                                 "`Implement a user authentication endpoint in python`"
                             )

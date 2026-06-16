@@ -108,7 +108,7 @@ multi-agent-shogun/
 │   └── workflows/        # CI/CD pipelines
 │       └── test.yml      # GitHub Actions test suite
 │
-├── shutsujin_departure.sh  # Daily deployment script
+├── depart.sh  # Daily deployment script
 ├── first_setup.sh          # First-time setup
 ├── CLAUDE.md               # Core system instructions (auto-loaded)
 ├── AGENTS.md               # Codex auto-load file

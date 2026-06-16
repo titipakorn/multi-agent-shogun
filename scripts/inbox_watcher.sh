@@ -359,7 +359,7 @@ try:
             raise SystemExit(0)
 
     # Task YAML status guard: skip auto-recovery if task is cancelled or idle.
-    # This prevents restarting a task that Karo intentionally cancelled via clear_command.
+    # This prevents restarting a task that Orchestrator intentionally cancelled via clear_command.
     task_yaml_path = os.path.join(
         os.path.dirname(os.path.dirname(inbox)), "tasks", f"{agent_id}.yaml"
     )
@@ -1121,11 +1121,11 @@ for s in data.get('specials', []):
 
     # /clear is translated to /new in Codex. To prevent missing messages immediately after restart,
     # an additional task_assigned is automatically enqueued to guarantee wake-up in the next cycle.
-    # Plan B + Wait: Allow time for Karo to update the task YAML to cancelled,
+    # Plan B + Wait: Allow time for Orchestrator to update the task YAML to cancelled,
     # then perform the status check and skip if it is cancelled/idle.
     # Launch auto-recovery only when clear_sent (actually sent). Skips when busy are not covered.
     if [ "$clear_sent" -eq 1 ]; then
-        # Wait for Karo to update task YAML status (cancellation race condition mitigation).
+        # Wait for Orchestrator to update task YAML status (cancellation race condition mitigation).
         # send_cli_command already slept 3s for /clear; add 5s more = ~8s total before check.
         sleep 5
         local recovery_id
