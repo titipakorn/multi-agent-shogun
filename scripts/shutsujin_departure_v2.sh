@@ -18,9 +18,21 @@ CLI_DEFAULT="${CLI_DEFAULT:-claude}"
 
 # ─── Pane creation helper ────────────────────────────────────
 # Usage: start_specialist_pane <role> <session> <window> <pane_index> <model> <color> <cli>
+#
+# Idempotent: if a pane already exists at <pane_index> with the expected
+# @agent_id, this is a no-op. Otherwise split-window and configure.
 start_specialist_pane() {
     local role=$1 session=$2 window=$3 pane_idx=$4 model=$5 color=$6 cli=$7
     local target="${session}:${window}.${pane_idx}"
+
+    # Check if a pane already exists at the target index with the correct role
+    local existing
+    existing=$(tmux list-panes -t "${session}:${window}" -F '#{pane_index}:#{@agent_id}' \
+        2>/dev/null | sed -n "$((pane_idx + 1))p" || true)
+    local expected="${pane_idx}:${role}"
+    if [ "$existing" = "$expected" ]; then
+        return 0
+    fi
 
     # Split pane if not pane 0
     if [ "$pane_idx" -gt 0 ]; then
