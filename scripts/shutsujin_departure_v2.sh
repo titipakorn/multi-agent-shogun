@@ -50,4 +50,14 @@ if ! tmux has-session -t multiagent 2>/dev/null; then
     tmux new-window -t multiagent -n research
 fi
 
+# ─── Phase 3: Ops window panes ───────────────────────────────
+OPS_ROLES=("orchestrator" "fixer" "designer" "observer")
+for idx in "${!OPS_ROLES[@]}"; do
+    role="${OPS_ROLES[$idx]}"
+    start_specialist_pane "$role" "multiagent" "ops" "$idx" \
+        "$(v2_model_for "$role")" \
+        "$(v2_color_for "$role")" \
+        "$CLI_DEFAULT"
+done
+
 echo "[shutsujin_v2] topology ready"
