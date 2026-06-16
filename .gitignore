@@ -199,6 +199,12 @@ __pycache__/
 # Client project specs (not OSS — re-exclude after whitelist)
 tests/specs/osato_lms_*
 
+# Design specs (superpowers brainstorming artifacts)
+!docs/
+!docs/superpowers/
+!docs/superpowers/specs/
+!docs/superpowers/specs/*.md
+
 # Tests
 !tests/
 !tests/*.bats
