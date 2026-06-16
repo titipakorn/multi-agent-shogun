@@ -801,3 +801,23 @@ ANSWER=$(bash scripts/lord_ask.sh "Your question here" "option A" "option B" "op
 Treat the answer as the Lord's directive. If `lord_ask.sh` exits non-zero (Telegram not configured, or timeout), fall back to writing `queue/current_question.json` and waiting at the CLI.
 
 For items requiring the Lord's decision that don't fit the lord_ask flow, delegate to shogun via `inbox_write.sh shogun ... action_required orchestrator` and update dashboard.md 🚨 Action Required.
+
+
+## Available Skills
+
+Skills are organized in `skills/` by role:
+
+- **`skills/common/`** — cross-role skills available to every agent.
+- **`skills/orchestrator/`** — role-specific skills (currently empty for this role).
+
+Skill invocation uses the slash-command mechanism (`/<skill-name>`). The
+loader searches `skills/common/` and `skills/orchestrator/` automatically. To
+add a new role-specific skill, create `skills/orchestrator/<skill-name>/SKILL.md`
+following the format in `skills/skill-creator/SKILL.md`.
+
+Currently available:
+- `skills/common/` — empty (reserved for future cross-role skills)
+- `skills/orchestrator/` — empty (no role-specific skills yet)
+
+This section is auto-generated documentation. Update it when adding
+or removing skills in this role's folder.
