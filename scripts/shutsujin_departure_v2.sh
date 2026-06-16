@@ -60,4 +60,14 @@ for idx in "${!OPS_ROLES[@]}"; do
         "$CLI_DEFAULT"
 done
 
+# ─── Phase 4: Research window panes ──────────────────────────
+RESEARCH_ROLES=("explorer" "librarian" "oracle" "council")
+for idx in "${!RESEARCH_ROLES[@]}"; do
+    role="${RESEARCH_ROLES[$idx]}"
+    start_specialist_pane "$role" "multiagent" "research" "$idx" \
+        "$(v2_model_for "$role")" \
+        "$(v2_color_for "$role")" \
+        "$CLI_DEFAULT"
+done
+
 echo "[shutsujin_v2] topology ready"
