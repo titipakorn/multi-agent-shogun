@@ -1,7 +1,7 @@
 ---
 name: agent-status
 description: |
-  Skill to display the status list of all agents (Karo, Ashigaru 1-7, Gunshi).
+  Skill to display the status list of all agents (Orchestrator, specialists 1–7, Strategist).
   Integrates tmux pane status (Active/Idle/Absent), task YAML status (task_id, status),
   and unread inbox counts.
   Triggered by: "agent status", "agent check", "battle formation check", "check battle readiness".
@@ -22,7 +22,7 @@ Supports both Claude Code and Codex CLI.
 ## When to Use
 
 - When asked to "check agent status", "show agent status", or "check battle formation"
-- When you want to check if any Ashigaru are idle
+- When you want to check if any specialists are idle
 - When looking for free agents before allocating tasks
 - When checking if someone is stuck
 

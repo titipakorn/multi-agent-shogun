@@ -259,7 +259,7 @@ fi
 ## Sengoku Shogun System Rules
 
 - Save destination: `~/.claude/skills/shogun-{skill-name}/`
-- Skill candidates are discovered by Ashigaru → reported to Shogun via Karo → designed by Shogun → approved by Lord → created by Karo
+- Skill candidates are discovered by specialist → reported to Shogun via Orchestrator → designed by Shogun → approved by Lord → created by Orchestrator
 - Skills requiring integration with the Shogun System (such as inbox_write, task YAML) must include Bash in allowed-tools
 - Specify north_star in the **main body**, not in frontmatter (custom fields in frontmatter are ignored by Claude Code)
 

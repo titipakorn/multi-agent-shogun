@@ -16,7 +16,7 @@ Generates the optimal `capability_tiers` configuration in a ready-to-paste forma
 **Output:**
 1. `capability_tiers` YAML → Can be pasted directly into `config/settings.yaml`
 2. `available_cost_groups` declaration
-3. Recommended models for fixed agents (Karo / Gunshi)
+3. Recommended models for fixed agents (Orchestrator / Strategist)
 4. Coverage gap warning (e.g., when Bloom L6 cannot be processed)
 
 ## When to Use
@@ -59,11 +59,11 @@ question: "Please tell me your ChatGPT (OpenAI) plan."
 header: "ChatGPT Plan"
 options:
   - label: "None (Claude only operation)"
-    description: "Claude quota only. Simple configuration. Ashigaru primarily use Haiku 4.5."
+    description: "Claude quota only. Simple configuration. specialists primarily use Haiku 4.5."
   - label: "Plus ($20/month)"
     description: "gpt-5.3-codex available (Spark unavailable). Can cover up to L4."
   - label: "Pro ($200/month)"
-    description: "Spark (1000 tok/s, Terminal-Bench 58.4%) + gpt-5.3 (77.3%) available. Strongest formation with 7 Ashigaru (Recommended)"
+    description: "Spark (1000 tok/s, Terminal-Bench 58.4%) + gpt-5.3 (77.3%) available. Strongest formation with 7 specialists (Recommended)"
 ```
 
 ### Step 2.5: Q3 — Rate limit preference (Only when both are subscribed)
@@ -118,7 +118,7 @@ Output ONLY the matching pattern. Show:
 1. Simple explanation (why this configuration)
 2. `capability_tiers` YAML (copyable code block)
 3. `available_cost_groups`
-4. Recommended models for fixed agents (Karo / Gunshi)
+4. Recommended models for fixed agents (Orchestrator / Strategist)
 5. Gap warning (if any)
 6. Next steps
 
@@ -132,8 +132,8 @@ Output ONLY the matching pattern. Show:
 
 | Agent | Recommended Model | Notes |
 |------------|-----------|------|
-| Karo | `claude-sonnet-4-6` | Sonnet since Opus is unavailable |
-| Gunshi | `claude-sonnet-4-6` | Same as above |
+| Orchestrator | `claude-sonnet-4-6` | Sonnet since Opus is unavailable |
+| Oracle | `claude-sonnet-4-6` | Same as above |
 
 ### `config/settings.yaml` snippet
 
@@ -162,14 +162,14 @@ capability_tiers:
 
 ## Pattern A — Claude Pro/Max Only ($20–$200/month)
 
-> All models up to Claude Opus are available. Ashigaru are automatically routed: Haiku (L1-L3) → Sonnet (L4-L5) → Opus (L6).
+> All models up to Claude Opus are available. specialists are automatically routed: Haiku (L1-L3) → Sonnet (L4-L5) → Opus (L6).
 
 ### Fixed Agents
 
 | Agent | Recommended Model | Notes |
 |------------|-----------|------|
-| Karo | `claude-sonnet-4-6` | L4-L5 Orchestration. Opus is overkill. |
-| Gunshi | `claude-opus-4-6` | L5-L6 deep QC & Architecture evaluation |
+| Orchestrator | `claude-sonnet-4-6` | L4-L5 Orchestration. Opus is overkill. |
+| Oracle | `claude-opus-4-6` | L5-L6 deep QC & Architecture evaluation |
 
 ### `config/settings.yaml` snippet
 
@@ -205,12 +205,12 @@ capability_tiers:
 
 ### Fixed Agents
 
-> No Claude subscription → Karo/Gunshi also use Codex models. Beware of the L6 gap.
+> No Claude subscription → Orchestrator/Strategist also use Codex models. Beware of the L6 gap.
 
 | Agent | Recommended Model |
 |------------|-----------|
-| Karo | `gpt-5.3-codex` |
-| Gunshi | `gpt-5.1-codex-max` |
+| Orchestrator | `gpt-5.3-codex` |
+| Oracle | `gpt-5.1-codex-max` |
 
 ### `config/settings.yaml` snippet
 
@@ -249,8 +249,8 @@ capability_tiers:
 
 | Agent | Recommended Model |
 |------------|-----------|
-| Karo | `gpt-5.3-codex` |
-| Gunshi | `gpt-5.1-codex-max` |
+| Orchestrator | `gpt-5.3-codex` |
+| Oracle | `gpt-5.1-codex-max` |
 
 ### `config/settings.yaml` snippet
 
@@ -260,7 +260,7 @@ available_cost_groups:
 
 capability_tiers:
   gpt-5.3-codex-spark:
-    max_bloom: 3       # L1-L3: 1000+ tok/s — Comfortable throughput even for 7 Ashigaru
+    max_bloom: 3       # L1-L3: 1000+ tok/s — Comfortable throughput even for 7 specialists
     cost_group: chatgpt_pro
   gpt-5.3-codex:
     max_bloom: 4       # L4: Terminal-Bench 77.3%, 400K+ context
@@ -289,8 +289,8 @@ capability_tiers:
 
 | Agent | Recommended Model |
 |------------|-----------|
-| Karo | `claude-sonnet-4-6` |
-| Gunshi | `claude-opus-4-6` |
+| Orchestrator | `claude-sonnet-4-6` |
+| Oracle | `claude-opus-4-6` |
 
 ### `config/settings.yaml` snippet
 
@@ -334,8 +334,8 @@ capability_tiers:
 
 | Agent | Recommended Model | Reason |
 |------------|-----------|------|
-| Karo | `claude-sonnet-4-6` | L4-L5 Orchestration. SWE-bench 79.6% |
-| Gunshi | `claude-opus-4-6` | L5-L6 deep QC. SWE-bench 80.8% |
+| Orchestrator | `claude-sonnet-4-6` | L4-L5 Orchestration. SWE-bench 79.6% |
+| Oracle | `claude-opus-4-6` | L5-L6 deep QC. SWE-bench 80.8% |
 
 ### config by Q3a x Q3b answers
 
@@ -477,11 +477,11 @@ cli:
   agents:
     orchestrator:
       type: claude
-      model: claude-sonnet-4-6     # ← Change to Karo recommended model
+      model: claude-sonnet-4-6     # ← Change to Orchestrator recommended model
     oracle:
       type: claude
-      model: opus                  # ← Change to Gunshi recommended model
-    explorer:                     # ← Ashigaru are automatically routed according to capability_tiers
+      model: opus                  # ← Change to Oracle recommended model
+    explorer:                     # ← specialists are automatically routed according to capability_tiers
       type: codex                  #    Configure the CLI type according to the subscription
       model: gpt-5.3-codex-spark
 ```
@@ -505,11 +505,11 @@ source lib/cli_adapter.sh && validate_subscription_coverage
 
 ```
 Are you subscribed to Claude Pro or higher?
-  Yes → Claude is available for fixed agents (Shogun/Karo/Gunshi) ✓
+  Yes → Claude is available for fixed agents (Shogun/Orchestrator/Strategist) ✓
   No  → Codex only. Beware of L6 gap ⚠️
 
 Are you subscribed to ChatGPT Pro ($200)?
   Yes → Spark (L1-L3, 1000 tok/s) + gpt-5.3 (L4) can be used ✓
   Plus ($20) → gpt-5.3 (L3-L4) only. Spark unavailable.
-  None → Claude Haiku handles L1-L3 for Ashigaru
+  None → Claude Haiku handles L1-L3 for specialists
 ```

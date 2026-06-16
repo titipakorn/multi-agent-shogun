@@ -3,7 +3,7 @@ name: model-switch
 description: |
   Live-switch agent CLI and models. Automates settings.yaml update → /exit → starting new CLI →
   pane metadata update in one shot. Also controls Thinking ON/OFF.
-  Triggered by: "switch model", "change to Sonnet", "change to Opus", "switch all Ashigaru", "disable Thinking".
+  Triggered by: "switch model", "change to Sonnet", "change to Opus", "switch all specialists", "disable Thinking".
 argument-hint: "[agent-name target-model e.g. explorer sonnet]"
 allowed-tools: Bash(bash scripts/switch_cli.sh *), Read, Edit
 ---
@@ -17,7 +17,7 @@ Executes a seamless pipeline: `settings.yaml` update → `build_cli_command()` �
 
 ## When to Use
 
-- "Change designer to Opus", "Switch all Ashigaru to Sonnet"
+- "Change designer to Opus", "Switch all specialists to Sonnet"
 - "Switch model", "Change model", "Change CLI"
 - "Disable Thinking", "Enable Thinking"
 - "Restore to Claude from Codex", "Switch to Spark"
@@ -72,17 +72,17 @@ bash scripts/switch_cli.sh observer --type codex --model gpt-5.3-codex-spark
 ### Bulk Switch
 
 ```bash
-# Switch all Ashigaru to Sonnet
+# Switch all specialists to Sonnet
 for i in $(seq 1 7); do
     bash scripts/switch_cli.sh specialist$i --type claude --model claude-sonnet-4-6
 done
 
-# Switch all Ashigaru to Spark
+# Switch all specialists to Spark
 for i in $(seq 1 7); do
     bash scripts/switch_cli.sh specialist$i --type codex --model gpt-5.3-codex-spark
 done
 
-# Restart all agents (including Karo & Gunshi)
+# Restart all agents (including Orchestrator & Strategist)
 for agent in orchestrator explorer librarian designer fixer observer oracle council oracle; do
     bash scripts/switch_cli.sh "$agent"
 done
@@ -112,10 +112,10 @@ Steps for switching Thinking ON/OFF:
 2. Restart via `bash scripts/switch_cli.sh <agent_id>`
 3. The presence/absence of `+T` is reflected in the pane border
 
-### Via Inbox (Switching from Karo)
+### Via Inbox (Switching from Orchestrator)
 
 ```bash
-# When Karo switches an Ashigaru's CLI
+# When Orchestrator switches a specialist's CLI
 bash scripts/inbox_write.sh designer "--type claude --model claude-opus-4-6" cli_restart orchestrator
 ```
 

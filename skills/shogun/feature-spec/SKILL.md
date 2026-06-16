@@ -17,7 +17,7 @@ description: |
 ## When to Use
 - When the Lord requests to start a new software project or scope a feature.
 - When requirements are vague, underspecified, or lack concrete technical parameters.
-- Prior to writing commands for Karo in `queue/shogun_to_karo.yaml`.
+- Prior to writing commands for Orchestrator in `queue/shogun_to_orchestrator.yaml`.
 - When asked to "create feature spec", "define project scope", "gather feature specs", or "build project roadmap".
 
 ## The Process
@@ -85,4 +85,4 @@ Last Updated: YYYY-MM-DD
 
 ### Step 4: Record for Final Approval
 Add a notification under `dashboard.md` `🚨 Action Required` pointing to the newly generated `context/{project_id}.md` file.
-Once the Lord gives the final approval, the Shogun will decompose the Phase 1 tasks and begin feeding them to Karo in `queue/shogun_to_karo.yaml`.
+Once the Lord gives the final approval, the Shogun will decompose the Phase 1 tasks and begin feeding them to Orchestrator in `queue/shogun_to_orchestrator.yaml`.

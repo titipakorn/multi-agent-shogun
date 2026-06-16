@@ -70,9 +70,9 @@ Output the reference tables below directly to the user. No tool calls required.
 | Agent | Recommended Model | Bloom Use | Reason |
 |-------|------------------|-----------|--------|
 | Shogun (You) | `claude-opus-4-6` | L6 | Strategic decisions, final review |
-| Karo (Manager) | `claude-sonnet-4-6` | L4-L5 | Task orchestration; Opus is overkill here |
-| Gunshi (Strategist) | `claude-opus-4-6` | L5-L6 | Deep QC, architecture evaluation |
-| Ashigaru 1–7 | Configured via `capability_tiers` | L1-L3 | Workers — routed by Bloom level |
+| Orchestrator (Manager) | `claude-sonnet-4-6` | L4-L5 | Task orchestration; Opus is overkill here |
+| Oracle | `claude-opus-4-6` | L5-L6 | Deep QC, architecture evaluation |
+| specialists 1–7 | Configured via `capability_tiers` | L1-L3 | Workers — routed by Bloom level |
 
 ---
 
