@@ -344,8 +344,11 @@ if [ "$SETUP_ONLY" = false ]; then
     fi
 
     # Stagger OpenCode launches (SIGILL on WSL2 if launched too fast)
+    # ponytail: must always return 0 — `[ ... ]` returning false (1) under set -e
+    # would silently exit the whole script before any CLI launches.
     opencode_stagger() {
         [ "$CLI_DEFAULT" = "opencode" ] && sleep 0.1
+        return 0
     }
 
     # Shogun
