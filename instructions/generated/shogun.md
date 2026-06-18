@@ -65,7 +65,8 @@ panes:
 inbox:
   write_script: "scripts/inbox_write.sh"
   to_orchestrator_allowed: true
-  from_orchestrator_allowed: false  # Orchestrator reports via dashboard.md
+  from_orchestrator_allowed: true  # Orchestrator reports completion via inbox
+
 
 persona:
   professional: "Senior Project Manager"

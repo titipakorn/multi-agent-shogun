@@ -69,7 +69,11 @@ workflow:
   - step: 4
     action: update_dashboard
     target: dashboard.md
-    note: "Orchestrator owns dashboard.md."
+    note: |
+      Orchestrator owns dashboard.md.
+      PRESERVE the 7-section v2 template (see Dashboard Format below).
+      MERGE — never overwrite. Each update targets ONE section.
+      Reference: depart.sh STEP 2 dashboard template.
   - step: 5
     action: path_selection
     note: |
@@ -125,12 +129,17 @@ workflow:
     action: update_dashboard
     target: dashboard.md
     cleanup_rule: |
-      [MANDATORY] Dashboard cleanup rules:
+      [MANDATORY] Dashboard cleanup rules — PRESERVE all 7 sections:
       1. Remove completed cmd from 🔄 In Progress
-      2. Add 1-3 line summary to ✅ Achievements (newest first)
+      2. Add 1-3 line summary to ✅ Today's Achievements (newest first)
       3. Keep only active tasks in 🔄 In Progress
       4. Update resolved items in 🚨 Action Required to ✅ Resolved
       5. Delete Achievements entries older than 2 weeks if section > 50 lines
+      6. Append specialist-recommended skills to 🎯 Skill Candidates (one-line each)
+      7. Move approved skills to 🛠️ Generated Skills (one-line each)
+      8. List idle / awaiting-Lord specialists in ⏸️ Standby
+      9. Surface unanswered Lord questions in ❓ Questions for Lord
+      10. NEVER delete a section. NEVER replace the header. MERGE, don't overwrite.
   - step: 16
     action: write_final_report
     target: queue/reports/orchestrator_report.yaml
@@ -559,12 +568,59 @@ Good: "Review install.bat" →
 | `queue/tasks/{role}.yaml` | orchestrator (write) + specialist (read) | Per-specialist task assignments |
 | `queue/reports/{role}_report.yaml` | specialist (write) + orchestrator (read) | Per-specialist completion reports |
 | `queue/reports/orchestrator_report.yaml` | orchestrator (write) | Final aggregated report to shogun |
-| `dashboard.md` | orchestrator (write) | Status board (In Progress / Achievements / Action Required) |
+| `dashboard.md` | orchestrator (write) | Status board — 7-section v2 template (preserve all sections) |
 | `queue/inbox/shogun.yaml` | orchestrator (write) | Completion/failure notifications to shogun |
 | `instructions/orchestrator.md` | (this file) | Orchestrator's prompt |
 | `instructions/{role}.md` | (other roles) | Specialist prompts |
 | `config/settings.yaml` | (config) | Roles block, topology flag, model assignments |
 | `logs/daily/YYYY-MM-DD.md` | orchestrator (write) | Daily log entries |
+
+## Dashboard Format (PINNED — 7 sections)
+
+`dashboard.md` has a fixed 7-section v2 template. **Never overwrite it with a 3-section variant.** Always MERGE: edit the specific section that changed; leave the other 6 untouched.
+
+Canonical header (created by `depart.sh` STEP 2):
+
+```markdown
+# 📊 Battle Status Report
+Last Updated: <ISO timestamp>
+
+## 🚨 Action Required - Awaiting Lord's Decision
+None
+
+## 🔄 In Progress - Currently in Battle
+None
+
+## ✅ Today's Achievements
+| Time | Battlefield | Mission | Result |
+|------|-------------|---------|--------|
+
+## 🎯 Skill Candidates - Pending Approval
+None
+
+## 🛠️ Generated Skills
+None
+
+## ⏸️ Standby
+None
+
+## ❓ Questions for Lord
+None
+```
+
+**Per-section rules:**
+
+| Section | Update rule |
+|---------|-------------|
+| 🚨 Action Required | Items awaiting Lord's decision. Resolve → mark ✅ Resolved and move to Achievements. |
+| 🔄 In Progress | Active cmds only. Completed → remove. |
+| ✅ Today's Achievements | Append 1-3 line summary (newest first). Trim entries > 2 weeks if section > 50 lines. |
+| 🎯 Skill Candidates | Specialists report `skill_candidate:` → append here for Lord approval. |
+| 🛠️ Generated Skills | Lord-approved skills → list with one-line description each. |
+| ⏸️ Standby | Idle specialists awaiting next task. |
+| ❓ Questions for Lord | Unanswered `lord_ask` prompts pending Lord response. |
+
+**Why this matters:** A 3-section overwrite silently drops the Skill Candidates pipeline and the Standby/Questions surfaces that the v2 specialist team depends on. The 7-section format is the v2 contract.
 
 ## "Wake = Full Scan" Pattern
 

@@ -68,7 +68,11 @@ workflow:
   - step: 4
     action: update_dashboard
     target: dashboard.md
-    note: "Orchestrator owns dashboard.md."
+    note: |
+      Orchestrator owns dashboard.md.
+      PRESERVE the 7-section v2 template (see Dashboard Format below).
+      MERGE — never overwrite. Each update targets ONE section.
+      Reference: depart.sh STEP 2 dashboard template.
   - step: 5
     action: path_selection
     note: |
@@ -124,12 +128,17 @@ workflow:
     action: update_dashboard
     target: dashboard.md
     cleanup_rule: |
-      [MANDATORY] Dashboard cleanup rules:
+      [MANDATORY] Dashboard cleanup rules — PRESERVE all 7 sections:
       1. Remove completed cmd from 🔄 In Progress
-      2. Add 1-3 line summary to ✅ Achievements (newest first)
+      2. Add 1-3 line summary to ✅ Today's Achievements (newest first)
       3. Keep only active tasks in 🔄 In Progress
       4. Update resolved items in 🚨 Action Required to ✅ Resolved
       5. Delete Achievements entries older than 2 weeks if section > 50 lines
+      6. Append specialist-recommended skills to 🎯 Skill Candidates (one-line each)
+      7. Move approved skills to 🛠️ Generated Skills (one-line each)
+      8. List idle / awaiting-Lord specialists in ⏸️ Standby
+      9. Surface unanswered Lord questions in ❓ Questions for Lord
+      10. NEVER delete a section. NEVER replace the header. MERGE, don't overwrite.
   - step: 16
     action: write_final_report
     target: queue/reports/orchestrator_report.yaml

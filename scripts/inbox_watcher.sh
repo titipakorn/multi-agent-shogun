@@ -519,6 +519,15 @@ send_cli_command() {
         return 0
     fi
 
+    # Shell check — never inject CLI commands if target pane is just running a shell
+    local current_cmd
+    current_cmd=$(timeout 2 tmux display-message -p -t "$PANE_TARGET" '#{pane_current_command}' 2>/dev/null || true)
+    current_cmd=$(echo "$current_cmd" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+    if [[ "$current_cmd" =~ ^(zsh|bash|sh|fish|ksh|csh|tcsh)$ ]]; then
+        echo "[$(date)] [SKIP] Pane $PANE_TARGET is running a shell ($current_cmd), not the agent CLI. Suppressing CLI command ($cmd)." >&2
+        return 1
+    fi
+
     # Safety: never inject CLI commands into the shogun pane.
     # Shogun is controlled by the Lord; keystroke injection can clobber human input.
     if [ "$AGENT_ID" = "shogun" ]; then
@@ -878,6 +887,15 @@ send_wakeup() {
     local unread_count="$1"
     local nudge="inbox${unread_count}"
 
+    # Shell check — never inject keys if target pane is just running a shell
+    local current_cmd
+    current_cmd=$(timeout 2 tmux display-message -p -t "$PANE_TARGET" '#{pane_current_command}' 2>/dev/null || true)
+    current_cmd=$(echo "$current_cmd" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+    if [[ "$current_cmd" =~ ^(zsh|bash|sh|fish|ksh|csh|tcsh)$ ]]; then
+        echo "[$(date)] [SKIP] Pane $PANE_TARGET is running a shell ($current_cmd), not the agent CLI. Suppressing nudge." >&2
+        return 0
+    fi
+
     if [ "${FINAL_ESCALATION_ONLY:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] FINAL_ESCALATION_ONLY=1, suppressing normal nudge for $AGENT_ID" >&2
         return 0
@@ -975,6 +993,16 @@ send_wakeup() {
 send_wakeup_with_escape() {
     local unread_count="$1"
     local nudge="inbox${unread_count}"
+
+    # Shell check — never inject keys if target pane is just running a shell
+    local current_cmd
+    current_cmd=$(timeout 2 tmux display-message -p -t "$PANE_TARGET" '#{pane_current_command}' 2>/dev/null || true)
+    current_cmd=$(echo "$current_cmd" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+    if [[ "$current_cmd" =~ ^(zsh|bash|sh|fish|ksh|csh|tcsh)$ ]]; then
+        echo "[$(date)] [SKIP] Pane $PANE_TARGET is running a shell ($current_cmd), not the agent CLI. Suppressing Escape+nudge." >&2
+        return 0
+    fi
+
     local effective_cli
     effective_cli=$(get_effective_cli_type)
 
