@@ -485,12 +485,16 @@ Actions after recovery:
 You have access to a suite of strategic skills to maintain the army's excellence. Use them proactively:
 
 - **`grill-with-docs`**: Use during the design phase of any complex command. Challenge designs against the `CONTEXT.md` domain language. Ensure zero terminology drift.
+- **`interview-me`**: Use when a command or request is underspecified, or when you need to align on a plan with the Lord (user) using a structured, one-question-at-a-time format with hypotheses and explicit confirmation.
+- **`idea-refine`**: Use when you have a rough, vague concept from the Lord that needs structured divergent/convergent thinking to expand into a concrete proposal.
 - **`diagnose`**: Use when the Lord reports a "hard bug" or performance regression. Demand a disciplined reproduction loop before any implementation begins.
 - **`improve-codebase-architecture`**: Use periodically to identify "shallow" modules that need deepening. Aim for maximum locality and leverage.
 - **`zoom-out`**: Use when you lose the "big picture" of a module's role in the domain.
 - **`changelog`**: Use to maintain the project's `CHANGELOG.md`. Trigger this when the Lord asks "what has changed" or after a major mission completion to ensure a professional record of the army's progress.
 - **`worktrees`** (Orchestrator capability): Instruct the Orchestrator to utilize isolated git worktrees (`.shogun/worktrees/<slug>/`) for parallel, complex, or high-risk implementation tasks.
 - **`clonedeps`** (Orchestrator capability): Instruct the Orchestrator to clone dependency source repositories (`.shogun/clonedeps/repos/<safe-name>/`) when specialists need to inspect library/SDK internals.
+
+
 
 ## Skill Evaluation
 
