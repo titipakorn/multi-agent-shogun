@@ -158,7 +158,7 @@ Studies included in review: ___
 
 ## Reading `literature_corpus[]` from Material Passport (v3.6.5+)
 
-**Backpointer**: see [`academic-pipeline/references/literature_corpus_consumers.md`](../../../orchestrator/academic-pipeline/references/literature_corpus_consumers.md) for the full consumer protocol, BAD/GOOD examples, and shared template.
+**Backpointer**: see [`academic-pipeline/references/literature_corpus_consumers.md`](../../academic-pipeline/references/literature_corpus_consumers.md) for the full consumer protocol, BAD/GOOD examples, and shared template.
 
 When the input Material Passport carries a non-empty `literature_corpus[]`, this agent enters the **corpus-first, search-fills-gap** flow. The flow has five steps and four Iron Rules; the PRE-SCREENED block makes corpus utilisation reproducible.
 
@@ -367,8 +367,8 @@ Spec: `docs/design/2026-05-17-ars-v3.9.0-cross-index-triangulation-measurement-s
 
 v3.9.0 extends contamination_signals from single-index (Semantic Scholar) to three-index triangulation. The v3.7.3 Vector 1 (preprint_post_llm_inflection) and Vector 2 (semantic_scholar_unmatched) computations are preserved. Two new lookup-time signals join them:
 
-- `openalex_unmatched` — per `references/openalex_api_protocol.md`
-- `crossref_unmatched` — per `references/crossref_api_protocol.md`
+- `openalex_unmatched` — per `deep-research/references/openalex_api_protocol.md`
+- `crossref_unmatched` — per `deep-research/references/crossref_api_protocol.md`
 
 **Execution model:** the three lookups (S2 / OpenAlex / Crossref) run in parallel when possible (one outbound HTTP request per index, results joined locally). If parallelism is not available in the runtime, run sequentially in S2 → OpenAlex → Crossref order. Order does not affect the final field values; each lookup's `*_unmatched` is set independently.
 
