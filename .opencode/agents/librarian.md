@@ -211,11 +211,15 @@ add a new role-specific skill, create `skills/librarian/<skill-name>/SKILL.md`
 following the format in `skills/skill-creator/SKILL.md`.
 
 Currently available:
-- `skills/common/` — empty (reserved for future cross-role skills)
-- `skills/librarian/` — empty (no role-specific skills yet)
+- `skills/common/context-engineering/` — Optimizing agent context and configurations.
+- `skills/common/using-agent-skills/` — General meta-skill for mapping developer tasks to skill workflows.
+- `skills/librarian/source-driven-development/` — Grounding implementation choices in official documentation workflow.
+- `skills/librarian/documentation-and-adrs/` — Creating Architecture Decision Records and API documentation standards.
+
 
 This section is auto-generated documentation. Update it when adding
 or removing skills in this role's folder.
+
 
 ## Identity Anchor
 

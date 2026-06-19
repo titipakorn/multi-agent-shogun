@@ -156,7 +156,7 @@ class TestBuildProgressSummary(unittest.TestCase):
 
 
 class TestWatchStaleInbox(unittest.TestCase):
-    """Tests for the 90s watchdog that warns the Lord when an inbox entry
+    """Tests for the 300s watchdog that warns the Lord when an inbox entry
     has been sitting unread in queue/inbox/shogun.yaml for too long.
 
     The watchdog's source of truth is queue/inbox/shogun.yaml (the file
@@ -220,7 +220,7 @@ class TestWatchStaleInbox(unittest.TestCase):
     @patch("subprocess.run")
     def test_stale_entry_warns_once(self, mock_run):
         now = time.time()
-        ts = self._ts(200, now)
+        ts = self._ts(400, now)
         self._write_inbox([
             {"id": "301", "timestamp": ts,
              "from": "telegram_listener", "type": "ntfy_received",
@@ -238,7 +238,7 @@ class TestWatchStaleInbox(unittest.TestCase):
     @patch("subprocess.run")
     def test_idempotent_no_spam(self, mock_run):
         now = time.time()
-        ts = self._ts(200, now)
+        ts = self._ts(400, now)
         self._write_inbox([
             {"id": "302", "timestamp": ts,
              "from": "telegram_listener", "type": "ntfy_received",
@@ -253,7 +253,7 @@ class TestWatchStaleInbox(unittest.TestCase):
     @patch("subprocess.run")
     def test_read_entry_pruned_from_warned(self, mock_run):
         now = time.time()
-        ts = self._ts(200, now)
+        ts = self._ts(400, now)
         # Start with the entry unread — adds to warned
         self._write_inbox([
             {"id": "303", "timestamp": ts,
@@ -313,7 +313,7 @@ class TestWatchStaleInbox(unittest.TestCase):
         page the Lord just because the shadow log is stale.
         """
         now = time.time()
-        ts = self._ts(200, now)
+        ts = self._ts(400, now)
         # Shogun has already handled the message (read: True).
         self._write_inbox([
             {"id": "306", "timestamp": ts,
@@ -322,8 +322,23 @@ class TestWatchStaleInbox(unittest.TestCase):
         ])
         # Shadow log still says pending (the bug condition).
         self._write_shadow([
-            {"id": "306", "timestamp": self._ts(200, now),
+            {"id": "306", "timestamp": self._ts(400, now),
              "message": "Lord's command", "status": "pending"}
+        ])
+        warned = set()
+        telegram_listener.watch_stale_inbox(self.script_dir, warned, now=now)
+        mock_run.assert_not_called()
+        self.assertEqual(warned, set())
+
+    @patch("subprocess.run")
+    def test_non_telegram_listener_sender_ignored(self, mock_run):
+        """Ensure that internal messages (e.g. from orchestrator) are ignored."""
+        now = time.time()
+        ts = self._ts(400, now)
+        self._write_inbox([
+            {"id": "307", "timestamp": ts,
+             "from": "orchestrator", "type": "report_completed",
+             "content": "done", "read": False}
         ])
         warned = set()
         telegram_listener.watch_stale_inbox(self.script_dir, warned, now=now)

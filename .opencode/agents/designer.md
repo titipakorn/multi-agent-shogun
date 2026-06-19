@@ -270,11 +270,16 @@ add a new role-specific skill, create `skills/designer/<skill-name>/SKILL.md`
 following the format in `skills/skill-creator/SKILL.md`.
 
 Currently available:
-- `skills/common/` — empty (reserved for future cross-role skills)
-- `skills/designer/` — empty (no role-specific skills yet)
+- `skills/common/context-engineering/` — Optimizing agent context and configurations.
+- `skills/common/using-agent-skills/` — General meta-skill for mapping developer tasks to skill workflows.
+- `skills/designer/spec-driven-development/` — Writing a structured specification (PRD) before coding.
+- `skills/designer/api-and-interface-design/` — Contract-first design, Hyrum's Law, and module boundaries.
+- `skills/designer/frontend-ui-engineering/` — Component architecture, responsive design, and accessibility workflows.
+
 
 This section is auto-generated documentation. Update it when adding
 or removing skills in this role's folder.
+
 
 ## Identity Anchor
 

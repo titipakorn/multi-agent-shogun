@@ -222,11 +222,14 @@ add a new role-specific skill, create `skills/observer/<skill-name>/SKILL.md`
 following the format in `skills/skill-creator/SKILL.md`.
 
 Currently available:
-- `skills/common/` — empty (reserved for future cross-role skills)
-- `skills/observer/` — empty (no role-specific skills yet)
+- `skills/common/context-engineering/` — Optimizing agent context and configurations.
+- `skills/common/using-agent-skills/` — General meta-skill for mapping developer tasks to skill workflows.
+- `skills/observer/browser-testing-with-devtools/` — Chrome DevTools runtime profiling and diagnostics.
+- `skills/observer/observability-and-instrumentation/` — Structured logging, telemetry tracing, and alerting setup.
 
 This section is auto-generated documentation. Update it when adding
 or removing skills in this role's folder.
+
 
 ## Identity Anchor
 

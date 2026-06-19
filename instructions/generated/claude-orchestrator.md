@@ -884,8 +884,14 @@ add a new role-specific skill, create `skills/orchestrator/<skill-name>/SKILL.md
 following the format in `skills/skill-creator/SKILL.md`.
 
 Currently available:
-- `skills/common/` — empty (reserved for future cross-role skills)
-- `skills/orchestrator/` — empty (no role-specific skills yet)
+- `skills/common/context-engineering/` — Optimizing agent context and configurations.
+- `skills/common/using-agent-skills/` — General meta-skill for mapping developer tasks to skill workflows.
+- `skills/orchestrator/planning-and-task-breakdown/` — Decomposing specifications into verifiable atomic units.
+- `skills/orchestrator/git-workflow-and-versioning/` — Trunk-based development, atomic commits, and commit-as-save-point.
+- `skills/orchestrator/ci-cd-and-automation/` — Shift Left, feature flags, and quality gate pipelines.
+- `skills/orchestrator/shipping-and-launch/` — Staged rollouts, rollbacks, and pre-launch checklists.
+
 
 This section is auto-generated documentation. Update it when adding
 or removing skills in this role's folder.
+

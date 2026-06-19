@@ -185,7 +185,7 @@ def watch_stale_inbox(script_dir, warned_entries, now=None):
     """
     Watch queue/inbox/shogun.yaml for entries that the Lord sent via Telegram
     but that Shogun has not yet read. When an unread entry crosses
-    STALE_THRESHOLD_SEC (90s), send a one-shot Telegram warning to the Lord so
+    STALE_THRESHOLD_SEC (300s), send a one-shot Telegram warning to the Lord so
     they know the system appears unresponsive.
 
     Source of truth: queue/inbox/shogun.yaml. This is the file that
@@ -205,7 +205,7 @@ def watch_stale_inbox(script_dir, warned_entries, now=None):
     warned about — the Lord has been paged plenty, and the entry itself is
     the user's problem to clean up. We don't auto-delete it.
     """
-    STALE_THRESHOLD_SEC = 90
+    STALE_THRESHOLD_SEC = 300
     ORPHAN_GRACE_SEC = 30 * 60  # 30 minutes
 
     if now is None:
@@ -233,6 +233,9 @@ def watch_stale_inbox(script_dir, warned_entries, now=None):
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
+            # ONLY track messages from the Lord via telegram_listener
+            if entry.get("from") != "telegram_listener":
+                continue
             if not entry.get("read", False):
                 eid = str(entry.get("id", ""))
                 ets = str(entry.get("timestamp", ""))
@@ -249,6 +252,8 @@ def watch_stale_inbox(script_dir, warned_entries, now=None):
 
         for entry in entries:
             if not isinstance(entry, dict):
+                continue
+            if entry.get("from") != "telegram_listener":
                 continue
             if entry.get("read", False):
                 continue  # Shogun has it.
@@ -1862,7 +1867,7 @@ def main():
 
             # Stale-Inbox Watchdog: warn the Lord once if a Telegram message
             # has been sitting in queue/inbox/shogun.yaml as unread for more
-            # than 90s. Distinguishes "system is working" from "system lost
+            # than 300s. Distinguishes "system is working" from "system lost
             # your message". Source of truth is the script-maintained Shogun
             # inbox, not the ntfy_inbox.yaml shadow log (which the watchdog
             # used to read but which requires LLM cooperation to maintain).
