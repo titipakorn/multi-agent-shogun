@@ -243,6 +243,10 @@ logs/
 !.claude-plugin/**
 !shared/contracts/
 !shared/contracts/**
+!shared/references/
+!shared/references/**
+!shared/templates/
+!shared/templates/**
 !POSITIONING.md
 !README.zh-TW.md
 !README.zh-CN.md
