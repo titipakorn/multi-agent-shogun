@@ -142,6 +142,11 @@ scripts/seo_qc.sh
 !scripts/validate_settings.sh
 !scripts/shutsujin_v2_constants.sh
 !scripts/shutsujin_departure_v2.sh
+!scripts/*.py
+!scripts/*.json
+!scripts/verification_gate/
+!scripts/verification_gate/**
+
 
 
 # SayTask (sample template only, not actual data)
