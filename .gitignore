@@ -255,9 +255,13 @@ logs/
 !agents/research_architect_agent.md
 !agents/synthesis_agent.md
 !/deep-research
+!/deep-research/**
 !/academic-paper
+!/academic-paper/**
 !/academic-pipeline
+!/academic-pipeline/**
 !/academic-paper-reviewer
+!/academic-paper-reviewer/**
 !/docs
 !/docs/**
 !/evals
