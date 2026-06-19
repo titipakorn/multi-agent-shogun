@@ -25,12 +25,15 @@ fi
 
 # ─── Python availability ────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python3"
-if [ ! -x "$PYTHON_BIN" ]; then
-    PYTHON_BIN="$(command -v python3)"
+if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+    PYTHON_BIN="python3"
+elif [ -x "${SCRIPT_DIR}/.venv/bin/python3" ] && "${SCRIPT_DIR}/.venv/bin/python3" -c "import yaml" 2>/dev/null; then
+    PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python3"
+else
+    PYTHON_BIN="$(command -v python3 || echo 'python3')"
 fi
 if [ -z "$PYTHON_BIN" ] || ! "$PYTHON_BIN" -c "import yaml" 2>/dev/null; then
-    echo "FAIL: Python with PyYAML not available (need $SCRIPT_DIR/.venv/bin/python3 or system python3 with pyyaml)" >&2
+    echo "FAIL: Python with PyYAML not available (need system python3 with pyyaml or $SCRIPT_DIR/.venv/bin/python3)" >&2
     exit 1
 fi
 

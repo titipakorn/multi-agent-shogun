@@ -23,7 +23,7 @@ echo "Building instruction files..."
 # Returns: path to python3 on success, 1 on error
 opencode_build_python() {
     local candidate
-    for candidate in "$ROOT_DIR/.venv/bin/python3" "$(command -v python3 2>/dev/null || true)"; do
+    for candidate in "$(command -v python3 2>/dev/null || true)" "$ROOT_DIR/.venv/bin/python3"; do
         [[ -n "$candidate" && -x "$candidate" ]] || continue
         if "$candidate" -c 'import yaml' 2>/dev/null; then
             echo "$candidate"

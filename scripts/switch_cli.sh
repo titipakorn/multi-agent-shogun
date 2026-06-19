@@ -43,6 +43,17 @@ LOG_FILE="${PROJECT_ROOT}/logs/switch_cli.log"
 source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 source "${PROJECT_ROOT}/lib/agent_registry.sh"
 
+# ─── Python Resolution ───
+if [ -z "${PYTHON_BIN:-}" ]; then
+    if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="python3"
+    elif [ -f "${PROJECT_ROOT}/.venv/bin/python3" ]; then
+        PYTHON_BIN="${PROJECT_ROOT}/.venv/bin/python3"
+    else
+        PYTHON_BIN="python3"
+    fi
+fi
+
 # ─── Log ───
 log() {
     local msg="[$(date '+%Y-%m-%d %H:%M:%S')] [switch_cli] $*"
@@ -72,7 +83,15 @@ usage() {
 resolve_pane() {
     local agent_id="$1"
 
-    # Phase 1: Dynamic search from @agent_id metadata
+    # Phase 1: Dynamic search from @agent_id metadata across all panes in all sessions
+    local target
+    target=$(tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{@agent_id}' 2>/dev/null | grep -E "[[:space:]]${agent_id}$" | head -n 1 | cut -d' ' -f1)
+    if [[ -n "$target" ]]; then
+        echo "$target"
+        return 0
+    fi
+
+    # Fallback search on legacy multiagent:agents layout
     local pane_count
     pane_count=$(tmux list-panes -t "multiagent:agents" 2>/dev/null | wc -l)
     if [[ "$pane_count" -gt 0 ]]; then
@@ -89,7 +108,7 @@ resolve_pane() {
 
     # Phase 2: Fallback (resolve based on settings.yaml ordering)
     local pane_base
-    pane_base=$(tmux show-options -t multiagent -v @pane_base 2>/dev/null || echo "0")
+    pane_base=$(tmux show-options -t multiagent-research -v @pane_base 2>/dev/null || tmux show-options -t multiagent -v @pane_base 2>/dev/null || echo "0")
 
     if agent_registry_multiagent_pane_for_agent "$agent_id" "$pane_base"; then
         return 0
@@ -113,7 +132,7 @@ update_settings_yaml() {
 
     log "Updating settings.yaml: ${agent_id} → type=${new_type:-<unchanged>}, model=${new_model:-<unchanged>}, effort=${new_effort:-<unchanged>}, variant=${new_variant:-<unchanged>}"
 
-    "${PROJECT_ROOT}/.venv/bin/python3" << PYEOF
+    "$PYTHON_BIN" << PYEOF
 import yaml, sys, os, datetime
 
 settings_path = "${SETTINGS_FILE}"
@@ -263,7 +282,7 @@ sync_opencode_agent_frontmatter() {
 
     log "Syncing OpenCode runtime agent: ${agent_id}-runtime → model=${normalized_model:-<unset>}, variant=${variant}"
 
-    "${PROJECT_ROOT}/.venv/bin/python3" - "$base_file" "$runtime_file" "$normalized_model" "$variant" <<'PYEOF'
+    "$PYTHON_BIN" - "$base_file" "$runtime_file" "$normalized_model" "$variant" <<'PYEOF'
 import sys
 from pathlib import Path
 

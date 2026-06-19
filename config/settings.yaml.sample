@@ -37,7 +37,7 @@ roles:
   shogun:
     model: opus
     cli_variant: claude
-    pane_target: "shogun:main.0"
+    pane_target: "shogun-research:main.0"
     color: "#002b36"
     title: "shogun"
     prompt_path: "instructions/shogun.md"
@@ -48,7 +48,7 @@ roles:
   orchestrator:
     model: opus
     cli_variant: claude
-    pane_target: "multiagent:ops.0"
+    pane_target: "multiagent-research:ops.0"
     color: "#501515"
     title: "orchestrator"
     prompt_path: "instructions/orchestrator.md"
@@ -71,7 +71,7 @@ roles:
   architect:
     model: opus
     cli_variant: claude
-    pane_target: "multiagent:ops.1"
+    pane_target: "multiagent-research:ops.1"
     color: "#1e3a1e"
     title: "architect"
     prompt_path: "instructions/architect.md"
@@ -83,7 +83,7 @@ roles:
   experimentalist:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:ops.2"
+    pane_target: "multiagent-research:ops.2"
     color: "#1e3a3a"
     title: "experimentalist"
     prompt_path: "instructions/experimentalist.md"
@@ -94,7 +94,7 @@ roles:
   analyst:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:ops.3"
+    pane_target: "multiagent-research:ops.3"
     color: "#3a1e3a"
     title: "analyst"
     prompt_path: "instructions/analyst.md"
@@ -106,7 +106,7 @@ roles:
   ablation_planner:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:ops.4"
+    pane_target: "multiagent-research:ops.4"
     color: "#503515"
     title: "ablation_planner"
     prompt_path: "instructions/ablation_planner.md"
@@ -118,7 +118,7 @@ roles:
   surveyor:
     model: haiku
     cli_variant: claude
-    pane_target: "multiagent:research.0"
+    pane_target: "multiagent-research:research.0"
     color: "#454510"
     title: "surveyor"
     prompt_path: "instructions/surveyor.md"
@@ -131,7 +131,7 @@ roles:
   critic:
     model: opus
     cli_variant: claude
-    pane_target: "multiagent:research.1"
+    pane_target: "multiagent-research:research.1"
     color: "#9e7c0a"
     title: "critic"
     prompt_path: "instructions/critic.md"
@@ -143,7 +143,7 @@ roles:
   writer:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:research.2"
+    pane_target: "multiagent-research:research.2"
     color: "#353535"
     title: "writer"
     prompt_path: "instructions/writer.md"
@@ -154,7 +154,7 @@ roles:
   observer:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:research.3"
+    pane_target: "multiagent-research:research.3"
     color: "#1c2a38"
     title: "observer"
     prompt_path: "instructions/observer.md"
@@ -166,7 +166,7 @@ roles:
   council:
     model: opus
     cli_variant: claude
-    pane_target: "multiagent:research.4"
+    pane_target: "multiagent-research:research.4"
     color: "#2b2b2b"
     title: "council"
     prompt_path: "instructions/council.md"

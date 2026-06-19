@@ -407,7 +407,7 @@ class TestBuildStatusTextShaping(unittest.TestCase):
         # Header + sep + 1 line but that line has only 3 cols — parser
         # should treat as drift and fall back. Verify no crash.
         out, _ = self._run(
-            "Agent      CLI     State\nkaro       cc      BUSY\n"
+            "Agent      CLI     State\norchestrator       cc      BUSY\n"
         )
         # Should fall back to raw (parse drift detected)
         self.assertIn("orchestrator", out)
@@ -889,7 +889,7 @@ class TestBuildCancelText(unittest.TestCase):
 
     def _write_cmd_yaml(self, cmds):
         import yaml
-        path = os.path.join(self._fake_queue, "shogun_to_karo.yaml")
+        path = os.path.join(self._fake_queue, "shogun_to_orchestrator.yaml")
         with open(path, "w", encoding="utf-8") as f:
             yaml.safe_dump(cmds, f, default_flow_style=False,
                            allow_unicode=True, sort_keys=False)

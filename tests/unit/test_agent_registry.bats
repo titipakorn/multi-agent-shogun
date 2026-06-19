@@ -83,11 +83,11 @@ join_lines() {
 
     load_registry_with "$settings"
 
-    [ "$(agent_registry_pane_for_agent shogun 1)" = "shogun:main.1" ]
+    [ "$(agent_registry_pane_for_agent shogun 1)" = "shogun-research:main.1" ]
     [ "$(agent_registry_pane_for_agent telegram 1)" = "telegram:main.1" ]
-    [ "$(agent_registry_multiagent_pane_for_agent orchestrator 1)" = "multiagent:ops.0" ]
-    [ "$(agent_registry_multiagent_pane_for_agent custom_role1 1)" = "multiagent:agents.2" ]
-    [ "$(agent_registry_multiagent_pane_for_agent custom_role3 1)" = "multiagent:agents.4" ]
+    [ "$(agent_registry_multiagent_pane_for_agent orchestrator 1)" = "multiagent-research:ops.0" ]
+    [ "$(agent_registry_multiagent_pane_for_agent custom_role1 1)" = "multiagent-research:agents.2" ]
+    [ "$(agent_registry_multiagent_pane_for_agent custom_role3 1)" = "multiagent-research:agents.4" ]
 }
 
 @test "watcher_supervisor: --print-watchers uses dynamic settings and pane base" {
@@ -109,9 +109,9 @@ join_lines() {
         bash "$PROJECT_ROOT/scripts/watcher_supervisor.sh" --print-watchers
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *$'shogun\tshogun:main.1\tlogs/inbox_watcher_shogun.log'* ]]
-    [[ "$output" == *$'orchestrator\tmultiagent:ops.0\tlogs/inbox_watcher_orchestrator.log'* ]]
-    [[ "$output" == *$'custom_role1\tmultiagent:agents.2\tlogs/inbox_watcher_custom_role1.log'* ]]
-    [[ "$output" == *$'custom_role2\tmultiagent:agents.3\tlogs/inbox_watcher_custom_role2.log'* ]]
-    [[ "$output" == *$'custom_role3\tmultiagent:agents.4\tlogs/inbox_watcher_custom_role3.log'* ]]
+    [[ "$output" == *$'shogun\tshogun-research:main.1\tlogs/inbox_watcher_shogun.log'* ]]
+    [[ "$output" == *$'orchestrator\tmultiagent-research:ops.0\tlogs/inbox_watcher_orchestrator.log'* ]]
+    [[ "$output" == *$'custom_role1\tmultiagent-research:agents.2\tlogs/inbox_watcher_custom_role1.log'* ]]
+    [[ "$output" == *$'custom_role2\tmultiagent-research:agents.3\tlogs/inbox_watcher_custom_role2.log'* ]]
+    [[ "$output" == *$'custom_role3\tmultiagent-research:agents.4\tlogs/inbox_watcher_custom_role3.log'* ]]
 }

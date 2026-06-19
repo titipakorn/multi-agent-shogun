@@ -11,9 +11,14 @@
 # Pair with: cleanup.sh && ./depart.sh
 # ═══════════════════════════════════════════════════════════════
 
-set -eo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/scripts/shutsujin_v2_constants.sh" ]; then
+    source "$SCRIPT_DIR/scripts/shutsujin_v2_constants.sh"
+elif [ -f "$SCRIPT_DIR/shutsujin_v2_constants.sh" ]; then
+    source "$SCRIPT_DIR/shutsujin_v2_constants.sh"
+fi
 
-SESSIONS=("shogun-research" "multiagent-research")
+SESSIONS=("shogun-research${SHOGUN_SESSION_SUFFIX:-}" "multiagent-research${SHOGUN_SESSION_SUFFIX:-}")
 
 for s in "${SESSIONS[@]}"; do
     if tmux has-session -t "$s" 2>/dev/null; then

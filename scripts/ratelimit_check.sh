@@ -28,7 +28,13 @@ done
 source "$SCRIPT_DIR/lib/agent_status.sh"
 source "$SCRIPT_DIR/lib/cli_adapter.sh"
 
-PYTHON="${SCRIPT_DIR}/.venv/bin/python3"
+if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+    PYTHON="python3"
+elif [ -x "${SCRIPT_DIR}/.venv/bin/python3" ] && "${SCRIPT_DIR}/.venv/bin/python3" -c "import yaml" 2>/dev/null; then
+    PYTHON="${SCRIPT_DIR}/.venv/bin/python3"
+else
+    PYTHON="$(command -v python3 || echo 'python3')"
+fi
 
 # ─── Constants ───
 CLAUDE_STATS="$HOME/.claude/stats-cache.json"

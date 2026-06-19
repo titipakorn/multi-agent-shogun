@@ -16,10 +16,16 @@ QUEUE_DIR="${SHOGUN_QUEUE_DIR:-${SCRIPT_DIR}/../queue}"
 LOCK_FILE="${QUEUE_DIR}/.slim_yaml.lock"
 LOCK_TIMEOUT=10
 DRY_RUN=false
-PYTHON_BIN="${SHOGUN_PYTHON_BIN:-${PROJECT_ROOT}/.venv/bin/python3}"
-
-if [ ! -x "$PYTHON_BIN" ]; then
-    PYTHON_BIN="python3"
+if [ -z "${PYTHON_BIN:-}" ]; then
+    if [ -n "${SHOGUN_PYTHON_BIN:-}" ]; then
+        PYTHON_BIN="${SHOGUN_PYTHON_BIN}"
+    elif command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="python3"
+    elif [ -x "${PROJECT_ROOT}/.venv/bin/python3" ] && "${PROJECT_ROOT}/.venv/bin/python3" -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="${PROJECT_ROOT}/.venv/bin/python3"
+    else
+        PYTHON_BIN="$(command -v python3 || echo 'python3')"
+    fi
 fi
 
 for arg in "$@"; do
