@@ -1385,7 +1385,7 @@ while true; do
     #        File still exists with new inode. Treat as event, re-watch next loop.
     # rc=2: timeout (30s safety net for WSL2 inotify gaps / macOS fswatch timeout)
     # All cases: check for unread, then loop back (re-watches new inode)
-    sleep 0.3
+    sleep 1.2
 
     if [ "$rc" -eq 2 ]; then
         if [ "${ASW_PROCESS_TIMEOUT:-1}" = "1" ]; then
