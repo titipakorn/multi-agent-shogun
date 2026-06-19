@@ -4,18 +4,23 @@
 
 set -euo pipefail
 
+# Source constants to resolve session suffix
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. "${SCRIPT_DIR}/scripts/shutsujin_v2_constants.sh"
+suffix="${SHOGUN_SESSION_SUFFIX:-}"
+
 EXPECTED=(
-    "multiagent:ops.0:orchestrator"
-    "multiagent:ops.1:architect"
-    "multiagent:ops.2:experimentalist"
-    "multiagent:ops.3:analyst"
-    "multiagent:ops.4:ablation_planner"
-    "multiagent:research.0:surveyor"
-    "multiagent:research.1:critic"
-    "multiagent:research.2:writer"
-    "multiagent:research.3:observer"
-    "multiagent:research.4:council"
-    "shogun:main.0:shogun"
+    "multiagent${suffix}:ops.0:orchestrator"
+    "multiagent${suffix}:ops.1:architect"
+    "multiagent${suffix}:ops.2:experimentalist"
+    "multiagent${suffix}:ops.3:analyst"
+    "multiagent${suffix}:ops.4:ablation_planner"
+    "multiagent${suffix}:research.0:surveyor"
+    "multiagent${suffix}:research.1:critic"
+    "multiagent${suffix}:research.2:writer"
+    "multiagent${suffix}:research.3:observer"
+    "multiagent${suffix}:research.4:council"
+    "shogun${suffix}:main.0:shogun"
 )
 
 FAIL=0

@@ -4,9 +4,14 @@
 
 set -euo pipefail
 
-OPS_COUNT=$(tmux list-panes -t multiagent:ops | wc -l | tr -d ' ')
-RESEARCH_COUNT=$(tmux list-panes -t multiagent:research | wc -l | tr -d ' ')
-SHOGUN_COUNT=$(tmux list-panes -t shogun:main | wc -l | tr -d ' ')
+# Source constants to resolve session suffix
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. "${SCRIPT_DIR}/scripts/shutsujin_v2_constants.sh"
+suffix="${SHOGUN_SESSION_SUFFIX:-}"
+
+OPS_COUNT=$(tmux list-panes -t "multiagent${suffix}:ops" | wc -l | tr -d ' ')
+RESEARCH_COUNT=$(tmux list-panes -t "multiagent${suffix}:research" | wc -l | tr -d ' ')
+SHOGUN_COUNT=$(tmux list-panes -t "shogun${suffix}:main" | wc -l | tr -d ' ')
 
 FAIL=0
 [ "$OPS_COUNT" -eq 5 ] || {

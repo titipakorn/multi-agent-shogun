@@ -15,6 +15,13 @@ language: en
 shell: bash
 topology: v2
 
+# Tmux session suffix (useful when running multiple shogun project environments simultaneously).
+# Options:
+#   - "": No suffix (default, session names are "shogun" and "multiagent")
+#   - "auto": Dynamically suffix with the current directory name (e.g. "-my-project-dir")
+#   - Any custom string (e.g. "-proj-a", "-research")
+session_suffix: ""
+
 skill:
   save_path: "~/.claude/skills/"
   local_path: "./skills/"

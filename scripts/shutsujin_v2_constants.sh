@@ -6,6 +6,36 @@
 # are a bash-4.0 feature). On macOS the system /bin/bash is still 3.2.
 # We provide the same role→{pane,model,color} lookups via case statements.
 
+# ─── Load session suffix ─────────────────────────────────────
+agent_registry_load_session_suffix() {
+    [ -n "${SHOGUN_SESSION_SUFFIX:-}" ] && return 0
+
+    local settings_file=""
+    if [ -f "./config/settings.yaml" ]; then
+        settings_file="./config/settings.yaml"
+    elif [ -n "${AGENT_REGISTRY_PROJECT_ROOT:-}" ] && [ -f "${AGENT_REGISTRY_PROJECT_ROOT}/config/settings.yaml" ]; then
+        settings_file="${AGENT_REGISTRY_PROJECT_ROOT}/config/settings.yaml"
+    elif [ -f "$(dirname "${BASH_SOURCE[0]}")/../config/settings.yaml" ]; then
+        settings_file="$(dirname "${BASH_SOURCE[0]}")/../config/settings.yaml"
+    fi
+
+    if [ -n "$settings_file" ] && [ -f "$settings_file" ]; then
+        local suffix_setting
+        suffix_setting=$(grep "^session_suffix:" "$settings_file" 2>/dev/null | awk '{print $2}' | tr -d '"'\'' ' || echo "")
+        if [ "$suffix_setting" = "auto" ]; then
+            local dir_name
+            dir_name=$(basename "$(pwd)")
+            SHOGUN_SESSION_SUFFIX="-$(echo "$dir_name" | tr -cd 'A-Za-z0-9_-')"
+        else
+            SHOGUN_SESSION_SUFFIX="$suffix_setting"
+        fi
+    else
+        SHOGUN_SESSION_SUFFIX=""
+    fi
+    export SHOGUN_SESSION_SUFFIX
+}
+agent_registry_load_session_suffix
+
 # ─── Read role list in deterministic order ───────────────────
 v2_role_list() {
     echo "shogun orchestrator surveyor critic architect experimentalist analyst ablation_planner writer observer council"
@@ -14,18 +44,19 @@ v2_role_list() {
 # ─── Read pane target for a role ─────────────────────────────
 v2_pane_for() {
     local role=$1
+    local suffix="${SHOGUN_SESSION_SUFFIX:-}"
     case "$role" in
-        shogun)            echo "shogun:main.0" ;;
-        orchestrator)      echo "multiagent:ops.0" ;;
-        architect)         echo "multiagent:ops.1" ;;
-        experimentalist)   echo "multiagent:ops.2" ;;
-        analyst)           echo "multiagent:ops.3" ;;
-        ablation_planner)  echo "multiagent:ops.4" ;;
-        surveyor)          echo "multiagent:research.0" ;;
-        critic)            echo "multiagent:research.1" ;;
-        writer)            echo "multiagent:research.2" ;;
-        observer)          echo "multiagent:research.3" ;;
-        council)           echo "multiagent:research.4" ;;
+        shogun)            echo "shogun${suffix}:main.0" ;;
+        orchestrator)      echo "multiagent${suffix}:ops.0" ;;
+        architect)         echo "multiagent${suffix}:ops.1" ;;
+        experimentalist)   echo "multiagent${suffix}:ops.2" ;;
+        analyst)           echo "multiagent${suffix}:ops.3" ;;
+        ablation_planner)  echo "multiagent${suffix}:ops.4" ;;
+        surveyor)          echo "multiagent${suffix}:research.0" ;;
+        critic)            echo "multiagent${suffix}:research.1" ;;
+        writer)            echo "multiagent${suffix}:research.2" ;;
+        observer)          echo "multiagent${suffix}:research.3" ;;
+        council)           echo "multiagent${suffix}:research.4" ;;
         *)                 echo "" ;;
     esac
 }

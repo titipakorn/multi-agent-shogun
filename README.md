@@ -1945,3 +1945,5 @@ Based on [Claude-Code-Communication](https://github.com/Akira-Papa/Claude-Code-C
 💖 [Sponsor this project](https://github.com/sponsors/yohey-w) to keep it free.
 
 </div>
+
+<!-- ARS_SOCRATIC_READING_PROBE -->
