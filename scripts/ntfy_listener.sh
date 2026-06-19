@@ -7,6 +7,17 @@
 # ═══════════════════════════════════════════════════════════════
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Resolve python binary
+if [ -z "${PYTHON_BIN:-}" ]; then
+    if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="python3"
+    elif [ -f "${SCRIPT_DIR}/.venv/bin/python3" ]; then
+        PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python3"
+    else
+        PYTHON_BIN="python3"
+    fi
+fi
 SETTINGS="$SCRIPT_DIR/config/settings.yaml"
 TOPIC=$(grep 'ntfy_topic:' "$SETTINGS" | awk '{print $2}' | tr -d '"')
 INBOX="$SCRIPT_DIR/queue/ntfy_inbox.yaml"
@@ -38,11 +49,11 @@ done < <(ntfy_get_auth_args "$SCRIPT_DIR/config/ntfy_auth.env")
 
 # JSON field extractor (python3 — jq not available)
 parse_json() {
-    "$SCRIPT_DIR/.venv/bin/python3" -c "import sys,json; print(json.load(sys.stdin).get('$1',''))" 2>/dev/null
+    "$PYTHON_BIN" -c "import sys,json; print(json.load(sys.stdin).get('$1',''))" 2>/dev/null
 }
 
 parse_tags() {
-    "$SCRIPT_DIR/.venv/bin/python3" -c "import sys,json; print(','.join(json.load(sys.stdin).get('tags',[])))" 2>/dev/null
+    "$PYTHON_BIN" -c "import sys,json; print(','.join(json.load(sys.stdin).get('tags',[])))" 2>/dev/null
 }
 
 append_ntfy_inbox() {
@@ -63,7 +74,7 @@ append_ntfy_inbox() {
         MSG_ID="$msg_id" \
         MSG_TS="$ts" \
         MSG_TEXT="$msg" \
-        "$SCRIPT_DIR/.venv/bin/python3" - << 'PY'
+        "$PYTHON_BIN" - << 'PY'
 import datetime
 import os
 import shutil

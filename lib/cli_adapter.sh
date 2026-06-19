@@ -18,6 +18,17 @@ CLI_ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI_ADAPTER_PROJECT_ROOT="$(cd "${CLI_ADAPTER_DIR}/.." && pwd)"
 CLI_ADAPTER_SETTINGS="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
 
+# Resolve python binary
+if [ -z "${PYTHON_BIN:-}" ]; then
+    if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="python3"
+    elif [ -f "${CLI_ADAPTER_PROJECT_ROOT}/.venv/bin/python3" ]; then
+        PYTHON_BIN="${CLI_ADAPTER_PROJECT_ROOT}/.venv/bin/python3"
+    else
+        PYTHON_BIN="python3"
+    fi
+fi
+
 # Allowed CLI types
 CLI_ADAPTER_ALLOWED_CLIS="claude codex copilot kimi opencode cursor"
 CLI_ADAPTER_ALLOWED_CLIS="claude codex copilot kimi opencode antigravity"
@@ -87,7 +98,7 @@ _cli_adapter_read_yaml() {
     local key_path="$1"
     local fallback="${2:-}"
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 try:
     with open('${CLI_ADAPTER_SETTINGS}') as f:
@@ -118,7 +129,7 @@ except Exception:
 # Quote value to safely embed as a shell argument
 _cli_adapter_shell_quote() {
     local value="$1"
-    local venv_python="$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3"
+    local venv_python="$PYTHON_BIN"
 
     if [[ -x "$venv_python" ]]; then
         "$venv_python" -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$value" 2>/dev/null && return 0
@@ -133,7 +144,7 @@ _cli_adapter_shell_quote() {
 _cli_adapter_get_agent_env_prefix() {
     local agent_id="$1"
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, shlex, sys
 try:
     with open('${CLI_ADAPTER_SETTINGS}') as f:
@@ -181,7 +192,7 @@ get_cli_type() {
     fi
 
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 allowed = ('claude', 'codex', 'copilot', 'kimi', 'opencode', 'cursor', 'antigravity')
 def normalize_cli(value):
@@ -670,7 +681,7 @@ get_capability_tier() {
     fi
 
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 try:
     with open('${CLI_ADAPTER_SETTINGS}') as f:
@@ -710,7 +721,7 @@ get_cost_group() {
     fi
 
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 try:
     with open('${CLI_ADAPTER_SETTINGS}') as f:
@@ -744,7 +755,7 @@ get_available_cost_groups() {
     local settings="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
 
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 try:
     with open('${settings}') as f:
@@ -794,7 +805,7 @@ get_recommended_model() {
 
     # Python: stdout=model name, stderr=warning (passed through to caller stderr)
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 
 def parse_bloom_range(key):
@@ -917,7 +928,7 @@ needs_model_switch() {
 
     # Check if capability_tiers section is absent (when all models return 6)
     local has_tiers
-    has_tiers=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    has_tiers=$("$PYTHON_BIN" -c "
 import yaml, sys
 try:
     with open('${CLI_ADAPTER_SETTINGS}') as f:
@@ -1007,7 +1018,7 @@ get_bloom_routing() {
     local settings="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
 
     local raw
-    raw=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    raw=$("$PYTHON_BIN" -c "
 import yaml, sys
 try:
     with open('${settings}') as f:
@@ -1047,7 +1058,7 @@ validate_oracle_analysis() {
     fi
 
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 
 try:
@@ -1174,7 +1185,7 @@ append_model_performance() {
     local qc_result="$6"
     local qc_score="$7"
 
-    "$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    "$PYTHON_BIN" -c "
 import yaml, sys, os
 from datetime import datetime, timezone
 
@@ -1217,7 +1228,7 @@ get_model_performance_summary() {
     local task_type="$2"
     local bloom_level="$3"
 
-    "$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    "$PYTHON_BIN" -c "
 import yaml, sys, os
 
 yaml_path = '${yaml_path}'
@@ -1267,7 +1278,7 @@ validate_subscription_coverage() {
     local settings="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
 
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml, sys
 
 try:
@@ -1356,7 +1367,7 @@ find_agent_for_model() {
 
     # Extract v2 task-eligible specialists using recommended_model from settings.yaml's roles:
     local candidates
-    candidates=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    candidates=$("$PYTHON_BIN" -c "
 import yaml, sys
 
 try:
@@ -1431,7 +1442,7 @@ except Exception:
     # Lord's Policy: "If Codex 5.3 is wanted but only Claude Code is idle, Claude Code is acceptable"
     # Never kill/restart. Reuse the idle pane.
     local all_agents
-    all_agents=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    all_agents=$("$PYTHON_BIN" -c "
 import yaml
 
 try:
@@ -1487,7 +1498,7 @@ except Exception:
 get_specialist_ids() {
     local settings="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
     local result
-    result=$("$CLI_ADAPTER_PROJECT_ROOT/.venv/bin/python3" -c "
+    result=$("$PYTHON_BIN" -c "
 import yaml
 try:
     with open('${settings}') as f:

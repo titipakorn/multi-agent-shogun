@@ -28,6 +28,17 @@ if [ "${__INBOX_WATCHER_TESTING__:-}" != "1" ]; then
     set -euo pipefail
 
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+    # Resolve python binary
+    if [ -z "${PYTHON_BIN:-}" ]; then
+        if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+            PYTHON_BIN="python3"
+        elif [ -f "${SCRIPT_DIR}/.venv/bin/python3" ]; then
+            PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python3"
+        else
+            PYTHON_BIN="python3"
+        fi
+    fi
     AGENT_ID="$1"
     PANE_TARGET="$2"
     CLI_TYPE="${3:-claude}"  # CLI Type (claude/codex/copilot/kimi/opencode/antigravity). Defaults to claude if unspecified (backwards compatibility)
@@ -332,7 +343,7 @@ enqueue_recovery_task_assigned() {
             exit 0
         fi
         trap release_inbox_lock EXIT
-        INBOX_PATH="$INBOX" AGENT_ID="$AGENT_ID" "$SCRIPT_DIR/.venv/bin/python3" - << 'PY'
+        INBOX_PATH="$INBOX" AGENT_ID="$AGENT_ID" "$PYTHON_BIN" - << 'PY'
 import datetime
 import os
 import uuid
@@ -422,7 +433,7 @@ no_idle_full_read() {
 
 # summary-first: unread_count fast-path before full read
 get_unread_count_fast() {
-    INBOX_PATH="$INBOX" "$SCRIPT_DIR/.venv/bin/python3" - << 'PY'
+    INBOX_PATH="$INBOX" "$PYTHON_BIN" - << 'PY'
 import json
 import os
 import yaml
@@ -450,7 +461,7 @@ get_unread_info() {
             exit 0
         fi
         trap release_inbox_lock EXIT
-        INBOX_PATH="$INBOX" "$SCRIPT_DIR/.venv/bin/python3" - << 'PY'
+        INBOX_PATH="$INBOX" "$PYTHON_BIN" - << 'PY'
 import json
 import os
 import yaml
@@ -1080,7 +1091,7 @@ process_unread() {
     local fast_info
     fast_info=$(get_unread_count_fast)
     local fast_count
-    fast_count=$(echo "$fast_info" | "$SCRIPT_DIR/.venv/bin/python3" -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
+    fast_count=$(echo "$fast_info" | "$PYTHON_BIN" -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
 
     if no_idle_full_read "$trigger" && [ "$fast_count" -eq 0 ] 2>/dev/null; then
         # no_idle_full_read guard: unread=0 and timeout path → no full inbox read
@@ -1114,7 +1125,7 @@ process_unread() {
 
     # Handle special CLI commands first (/clear, /model)
     local specials
-    specials=$(echo "$info" | "$SCRIPT_DIR/.venv/bin/python3" -c "
+    specials=$(echo "$info" | "$PYTHON_BIN" -c "
 import sys, json
 data = json.load(sys.stdin)
 for s in data.get('specials', []):
@@ -1168,11 +1179,11 @@ for s in data.get('specials', []):
 
     # Send wake-up nudge for normal messages (with escalation)
     local normal_count
-    normal_count=$(echo "$info" | "$SCRIPT_DIR/.venv/bin/python3" -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
+    normal_count=$(echo "$info" | "$PYTHON_BIN" -c "import sys,json; print(json.load(sys.stdin).get('count',0))" 2>/dev/null)
 
     # Check if unread messages include task_assigned (for context reset)
     local has_task_assigned
-    has_task_assigned=$(echo "$info" | "$SCRIPT_DIR/.venv/bin/python3" -c "import sys,json; print(1 if json.load(sys.stdin).get('has_task_assigned') else 0)" 2>/dev/null)
+    has_task_assigned=$(echo "$info" | "$PYTHON_BIN" -c "import sys,json; print(1 if json.load(sys.stdin).get('has_task_assigned') else 0)" 2>/dev/null)
 
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
         local now

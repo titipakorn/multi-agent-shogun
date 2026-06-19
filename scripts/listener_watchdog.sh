@@ -56,7 +56,15 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
-PYTHON_BIN="$SCRIPT_DIR/.venv/bin/python3"
+if [ -z "${PYTHON_BIN:-}" ]; then
+    if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="python3"
+    elif [ -f "$SCRIPT_DIR/.venv/bin/python3" ]; then
+        PYTHON_BIN="$SCRIPT_DIR/.venv/bin/python3"
+    else
+        PYTHON_BIN="python3"
+    fi
+fi
 LISTENER="$SCRIPT_DIR/scripts/telegram_listener.py"
 LOG_DIR="$SCRIPT_DIR/logs"
 RESTART_LOG="$LOG_DIR/listener_restarts.log"

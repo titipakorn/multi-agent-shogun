@@ -6,6 +6,17 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Resolve python binary
+if [ -z "${PYTHON_BIN:-}" ]; then
+    if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON_BIN="python3"
+    elif [ -f "${SCRIPT_DIR}/.venv/bin/python3" ]; then
+        PYTHON_BIN="${SCRIPT_DIR}/.venv/bin/python3"
+    else
+        PYTHON_BIN="python3"
+    fi
+fi
 TARGET="$1"
 CONTENT="$2"
 TYPE="$3"
@@ -30,10 +41,10 @@ fi
 # topology=v2 with a roles block, the target must be one of those roles.
 # v1 (legacy) accepts any role name. Hard cutover per spec — no aliases.
 SETTINGS_FILE="$SCRIPT_DIR/config/settings.yaml"
-if [ -f "$SETTINGS_FILE" ] && [ -x "$SCRIPT_DIR/.venv/bin/python3" ]; then
+if [ -f "$SETTINGS_FILE" ] && command -v "$PYTHON_BIN" &>/dev/null; then
     # Temporarily disable set -e so the inner python exit code is captured
     set +e
-    _validation="$("$SCRIPT_DIR/.venv/bin/python3" -c "
+    _validation="$("$PYTHON_BIN" -c "
 import sys, yaml
 try:
     with open('$SETTINGS_FILE', 'r', encoding='utf-8') as f:
@@ -127,7 +138,7 @@ while [ $attempt -lt $max_attempts ]; do
            TIMESTAMP="$TIMESTAMP" \
            MSG_TYPE="$TYPE" \
            CONTENT="$CONTENT" \
-           "$SCRIPT_DIR/.venv/bin/python3" -c '
+           "$PYTHON_BIN" -c '
 import yaml, sys, os
 
 try:

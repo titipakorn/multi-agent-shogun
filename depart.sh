@@ -111,18 +111,29 @@ if ! command -v tmux &> /dev/null; then
     exit 1
 fi
 
-# ─── Preflight: .venv exists? (cli_adapter.sh and others need it) ──────────
+# ─── Preflight: Python setup (prefer active conda/global environment, fallback to .venv) ───
 VENV_DIR="$SCRIPT_DIR/.venv"
-if [ ! -f "$VENV_DIR/bin/python3" ] || ! "$VENV_DIR/bin/python3" -c "import yaml" 2>/dev/null; then
-    log_war "Python venv missing or broken. Creating at $VENV_DIR..."
+ACTIVE_PYTHON=$(which python3 2>/dev/null || which python 2>/dev/null || true)
+
+if [ -n "$ACTIVE_PYTHON" ] && "$ACTIVE_PYTHON" -c "import yaml" 2>/dev/null; then
+    log_success "Active Python (conda/global) satisfies yaml requirement: $ACTIVE_PYTHON"
+    PYTHON_BIN="$ACTIVE_PYTHON"
+elif [ -f "$VENV_DIR/bin/python3" ] && "$VENV_DIR/bin/python3" -c "import yaml" 2>/dev/null; then
+    log_success "Existing Python venv satisfies yaml requirement: $VENV_DIR/bin/python3"
+    PYTHON_BIN="$VENV_DIR/bin/python3"
+else
+    log_war "Python venv missing or broken, and active python lacks 'yaml'. Creating at $VENV_DIR..."
     if command -v python3 &>/dev/null; then
+        rm -rf "$VENV_DIR" 2>/dev/null || true
         python3 -m venv "$VENV_DIR" || { echo "venv creation failed"; exit 1; }
         "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" -q || { echo "pip install failed"; exit 1; }
         log_success "Python venv ready"
+        PYTHON_BIN="$VENV_DIR/bin/python3"
     else
-        echo "python3 not found. Run ./first_setup.sh first."; exit 1
+        echo "python3 not found and active python does not satisfy requirements. Run ./first_setup.sh first."; exit 1
     fi
 fi
+export PYTHON_BIN
 
 # ─── Banner ─────────────────────────────────────────────────────────────────
 clear || true
@@ -364,7 +375,7 @@ if [ "$SETUP_ONLY" = false ]; then
 
     # ponytail: --shogun-no-thinking -> set roles.shogun.thinking=false in settings.yaml
     if [ "$SHOGUN_NO_THINKING" = true ] && [ -f ./config/settings.yaml ]; then
-        "$VENV_DIR/bin/python3" - <<'PY' 2>/dev/null && log_info "👑 shogun thinking disabled for this session" || true
+        "$PYTHON_BIN" - <<'PY' 2>/dev/null && log_info "👑 shogun thinking disabled for this session" || true
 import yaml
 f = './config/settings.yaml'
 with open(f) as fh:
@@ -471,7 +482,7 @@ fi
 
 if [ "$TELEGRAM_CONFIGURED" = true ]; then
     pkill -f "telegram_listener.py" 2>/dev/null || true
-    nohup "$VENV_DIR/bin/python3" "$SCRIPT_DIR/scripts/telegram_listener.py" \
+    nohup "$PYTHON_BIN" "$SCRIPT_DIR/scripts/telegram_listener.py" \
         >>"$LOG_DIR/telegram_listener.log" 2>&1 &
     log_success "📱 Telegram listener started (pid $!)"
 else
@@ -490,7 +501,7 @@ fi
 # STEP 8.5: Archive old ntfy_inbox (older than 7 days, processed)
 # ═════════════════════════════════════════════════════════════════════════════
 if [ -f ./queue/ntfy_inbox.yaml ]; then
-    _archive_result=$("$VENV_DIR/bin/python3" -c "
+    _archive_result=$("$PYTHON_BIN" -c "
 import yaml, sys
 from datetime import datetime, timedelta, timezone
 

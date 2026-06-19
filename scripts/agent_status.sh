@@ -152,9 +152,18 @@ if [[ -f "$SCRIPT_DIR/lib/agent_registry.sh" ]]; then
 fi
 
 # Python (PyYAML)
-PYTHON="${SCRIPT_DIR}/.venv/bin/python3"
+PYTHON="${PYTHON_BIN:-}"
+if [ -z "$PYTHON" ]; then
+    if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+        PYTHON="python3"
+    elif [[ -x "${SCRIPT_DIR}/.venv/bin/python3" ]]; then
+        PYTHON="${SCRIPT_DIR}/.venv/bin/python3"
+    else
+        PYTHON="python3"
+    fi
+fi
 PYTHON_AVAILABLE=false
-if [[ -x "$PYTHON" ]]; then
+if command -v "$PYTHON" &>/dev/null && "$PYTHON" -c "import yaml" 2>/dev/null; then
     PYTHON_AVAILABLE=true
 fi
 
