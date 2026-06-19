@@ -38,10 +38,10 @@ Two memory systems exist. Use them for different purposes:
 mcp__memory__create_entities([{
   name: "incident_pr31",
   entityType: "incident",
-  observations: ["Gunshi review skipped → venv preflight missing → deploy broke"]
+  observations: ["Critic review skipped → venv preflight missing → deploy broke"]
 }])
 mcp__memory__create_relations([{
-  from: "incident_pr31", to: "rule_always_gunshi_infra_pr", relationType: "caused"
+  from: "incident_pr31", to: "rule_always_critic_infra_pr", relationType: "caused"
 }])
 ```
 

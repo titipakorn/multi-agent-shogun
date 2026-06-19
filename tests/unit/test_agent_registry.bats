@@ -36,9 +36,9 @@ join_lines() {
       type: codex
     orchestrator:
       type: codex
-    librarian:
+    surveyor:
       type: codex
-    oracle:
+    critic:
       type: codex
     council:
       type: codex'
@@ -46,10 +46,10 @@ join_lines() {
     load_registry_with "$settings"
 
     result=$(agent_registry_agents | join_lines)
-    [ "$result" = "shogun orchestrator librarian oracle council" ]
+    [ "$result" = "shogun orchestrator surveyor critic council" ]
 
     result=$(agent_registry_multiagent_agents | join_lines)
-    [ "$result" = "orchestrator librarian oracle council" ]
+    [ "$result" = "orchestrator surveyor critic council" ]
 }
 
 @test "agent_registry: partial override config without orchestrator falls back to legacy formation" {
@@ -63,7 +63,7 @@ join_lines() {
     load_registry_with "$settings"
 
     result=$(agent_registry_multiagent_agents | join_lines)
-    [ "$result" = "orchestrator explorer librarian designer fixer observer oracle council oracle" ]
+    [ "$result" = "orchestrator architect experimentalist analyst ablation_planner surveyor critic writer observer council" ]
 }
 
 @test "agent_registry: pane mapping follows configured order and pane base" {
@@ -74,20 +74,20 @@ join_lines() {
       type: codex
     orchestrator:
       type: codex
-    fixer:
+    custom_role1:
       type: codex
-    oracle:
+    custom_role2:
       type: codex
-    council:
+    custom_role3:
       type: codex'
 
     load_registry_with "$settings"
 
     [ "$(agent_registry_pane_for_agent shogun 1)" = "shogun:main.1" ]
     [ "$(agent_registry_pane_for_agent telegram 1)" = "telegram:main.1" ]
-    [ "$(agent_registry_multiagent_pane_for_agent orchestrator 1)" = "multiagent:agents.1" ]
-    [ "$(agent_registry_multiagent_pane_for_agent fixer 1)" = "multiagent:agents.2" ]
-    [ "$(agent_registry_multiagent_pane_for_agent council 1)" = "multiagent:agents.4" ]
+    [ "$(agent_registry_multiagent_pane_for_agent orchestrator 1)" = "multiagent:ops.0" ]
+    [ "$(agent_registry_multiagent_pane_for_agent custom_role1 1)" = "multiagent:agents.2" ]
+    [ "$(agent_registry_multiagent_pane_for_agent custom_role3 1)" = "multiagent:agents.4" ]
 }
 
 @test "watcher_supervisor: --print-watchers uses dynamic settings and pane base" {
@@ -98,11 +98,11 @@ join_lines() {
       type: codex
     orchestrator:
       type: codex
-    designer:
+    custom_role1:
       type: codex
-    oracle:
+    custom_role2:
       type: codex
-    council:
+    custom_role3:
       type: codex'
 
     run env AGENT_REGISTRY_SETTINGS="$settings" SHOGUN_PANE_BASE=1 \
@@ -110,8 +110,8 @@ join_lines() {
 
     [ "$status" -eq 0 ]
     [[ "$output" == *$'shogun\tshogun:main.1\tlogs/inbox_watcher_shogun.log'* ]]
-    [[ "$output" == *$'orchestrator\tmultiagent:agents.1\tlogs/inbox_watcher_karo.log'* ]]
-    [[ "$output" == *$'designer\tmultiagent:agents.2\tlogs/inbox_watcher_ashigaru3.log'* ]]
-    [[ "$output" == *$'oracle\tmultiagent:agents.3\tlogs/inbox_watcher_gunshi.log'* ]]
-    [[ "$output" == *$'council\tmultiagent:agents.4\tlogs/inbox_watcher_gunshi2.log'* ]]
+    [[ "$output" == *$'orchestrator\tmultiagent:ops.0\tlogs/inbox_watcher_orchestrator.log'* ]]
+    [[ "$output" == *$'custom_role1\tmultiagent:agents.2\tlogs/inbox_watcher_custom_role1.log'* ]]
+    [[ "$output" == *$'custom_role2\tmultiagent:agents.3\tlogs/inbox_watcher_custom_role2.log'* ]]
+    [[ "$output" == *$'custom_role3\tmultiagent:agents.4\tlogs/inbox_watcher_custom_role3.log'* ]]
 }

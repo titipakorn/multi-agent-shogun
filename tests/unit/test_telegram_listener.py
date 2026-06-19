@@ -358,10 +358,10 @@ class TestBuildStatusTextShaping(unittest.TestCase):
         "Agent      CLI     State     Task ID                                    Status     Inbox\n"
         "---------- ------- --------- ------------------------------------------ ---------- -----\n"
         "orchestrator       antigravity N/A       ---                                        ---        0\n"
-        "explorer  antigravity N/A       subtask_006_integration                    done       0\n"
-        "librarian  antigravity N/A       subtask_006_model_state                    done       0\n"
+        "surveyor  antigravity N/A       subtask_006_integration                    done       0\n"
+        "critic     antigravity N/A       subtask_006_model_state                    done       0\n"
         "observer  antigravity N/A       None                                       idle       0\n"
-        "oracle     antigravity N/A       gunshi_qc_001                              working    2\n"
+        "council    antigravity N/A       gunshi_qc_001                              working    2\n"
     )
 
     def _run(self, stdout, returncode=0, stderr=""):
@@ -377,7 +377,7 @@ class TestBuildStatusTextShaping(unittest.TestCase):
 
     def test_done_maps_to_green(self):
         out, _ = self._run(self.REAL_TABLE)
-        self.assertIn("\U0001F7E2 explorer", out)  # green circle
+        self.assertIn("\U0001F7E2 surveyor", out)  # green circle
         self.assertIn("done", out)
 
     def test_idle_maps_to_green(self):
@@ -387,7 +387,7 @@ class TestBuildStatusTextShaping(unittest.TestCase):
 
     def test_working_maps_to_yellow(self):
         out, _ = self._run(self.REAL_TABLE)
-        self.assertIn("\U0001F7E1 oracle", out)  # yellow circle
+        self.assertIn("\U0001F7E1 council", out)  # yellow circle
 
     def test_no_status_uses_neutral_white(self):
         out, _ = self._run(self.REAL_TABLE)
@@ -1155,7 +1155,7 @@ class TestParserFailureLogging(unittest.TestCase):
             "Agent      CLI     State     Task ID                                    Status     Inbox\n"
             "---------- ------- --------- ------------------------------------------ ---------- -----\n"
             "orchestrator       antigravity N/A       ---                                        ---        0\n"
-            "explorer  antigravity N/A       subtask_006_integration                    done       0\n"
+            "surveyor  antigravity N/A       subtask_006_integration                    done       0\n"
         )
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -1410,7 +1410,7 @@ task:
             "## ✅ Achievements\n"
             f"- [cmd_007] (Completed: {fresh_ts}): Fresh dashboard entry.\n"
         )
-        self._write_yaml("explorer", """\
+        self._write_yaml("surveyor", """\
 task:
   task_id: subtask_old_done
   status: done
@@ -1429,7 +1429,7 @@ task:
             "## 🚨 Action Required\n- None\n"
         )
         ts = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
-        self._write_yaml("librarian", f"""\
+        self._write_yaml("critic", f"""\
 task:
   task_id: subtask_007_qc
   status: done
@@ -1500,7 +1500,7 @@ task:
 
     def test_active_task_takes_precedence_over_recent_done(self):
         # One agent is actively working, another just finished. Active wins.
-        self._write_yaml("explorer", f"""\
+        self._write_yaml("surveyor", f"""\
 task:
   task_id: subtask_active_007
   status: assigned
@@ -1587,8 +1587,8 @@ class TestAgentStatusShWidth(unittest.TestCase):
     POSTFIX_TABLE = (
         "Agent      CLI          State     Task ID                                                       Status     Inbox\n"
         "---------- ------------ --------- ------------------------------------------------------------ ---------- -----\n"
-        "oracle     antigravity  N/A       subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_0…        done       0\n"
-        "explorer  antigravity  N/A       subtask_006_integration                                        done       0\n"
+        "critic     antigravity  N/A       subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_0…        done       0\n"
+        "surveyor  antigravity  N/A       subtask_006_integration                                        done       0\n"
         "council  antigravity  N/A       None                                                           idle       0\n"
     )
 
@@ -1603,11 +1603,11 @@ class TestAgentStatusShWidth(unittest.TestCase):
         out = self._run(self.POSTFIX_TABLE)
         # Truncated-with-ellipsis task_id appears in the brackets.
         self.assertIn("subtask_lipsync_sophia_v6_stage1_retrain_compiled_qc_0…", out)
-        # Status and inbox are correctly identified — oracle is "done", not "0".
-        self.assertIn("🟢 oracle: done", out)
-        self.assertNotIn("oracle: 0 [", out)
-        # Summary counts done as idle, not active. All 3 rows (oracle=done,
-        # explorer=done, council=idle) qualify as idle → 3/3 idle.
+        # Status and inbox are correctly identified — critic is "done", not "0".
+        self.assertIn("🟢 critic: done", out)
+        self.assertNotIn("critic: 0 [", out)
+        # Summary counts done as idle, not active. All 3 rows (critic=done,
+        # surveyor=done, council=idle) qualify as idle → 3/3 idle.
         self.assertIn("3/3 idle", out)
         self.assertIn("0/3 active", out)
 

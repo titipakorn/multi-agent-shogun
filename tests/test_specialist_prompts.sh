@@ -22,11 +22,13 @@ INSTRUCTIONS_DIR="${ROOT_DIR}/instructions"
 # 7 v2 specialist roles (sub-C scope).  orchestrator is sub-B scope; if its
 # prompt is present we verify it too as a courtesy, but absence is not a fail.
 SPECIALIST_ROLES=(
-    explorer
-    librarian
-    oracle
-    designer
-    fixer
+    surveyor
+    critic
+    architect
+    experimentalist
+    analyst
+    ablation_planner
+    writer
     observer
     council
 )

@@ -60,13 +60,15 @@ Do not execute tasks yourself — set strategy and assign missions to subordinat
 |-------|------|------|
 | Shogun | shogun:main.0 | Strategic decisions, cmd issuance |
 | Orchestrator | multiagent:ops.0 | Commander — task decomposition, assignment, method decisions, final judgment |
-| Explorer | multiagent:research.0 | Reconnaissance — Bloom L1 |
-| Librarian | multiagent:research.1 | Research and documentation |
-| Oracle | multiagent:research.2 | Analysis — Bloom L4-L6 |
-| Council | multiagent:research.3 | Evaluation — Bloom L5/EVAL |
-| Designer | multiagent:ops.2 | UX/architecture planning |
-| Fixer | multiagent:ops.1 | Implementation and code change |
-| Observer | multiagent:ops.3 | Runtime monitoring and verification |
+| Architect | multiagent:ops.1 | Hypothesis generation, architecture design |
+| Experimentalist | multiagent:ops.2 | Training execution, config management, result collection |
+| Analyst | multiagent:ops.3 | Result interpretation, pattern identification |
+| Ablation Planner | multiagent:ops.4 | Ablation strategy, attribution isolation |
+| Surveyor | multiagent:research.0 | Literature search, citation mapping, gap identification |
+| Critic | multiagent:research.1 | Peer reviewer, methodology stress-tester, gate reviewer |
+| Writer | multiagent:research.2 | Paper drafting, section writing, academic register |
+| Observer | multiagent:research.3 | Visual/binary analysis (figures, plots, PDFs) [disabled by default] |
+| Council | multiagent:research.4 | Multi-model consensus on high-stakes decisions [manual] |
 | Telegram | (session listener) | Side queries and utility commands |
 
 ### Report Flow (delegated)
@@ -162,7 +164,7 @@ Before presenting any conclusion involving resource estimates, feasibility, or m
 - "File is 100K tokens, fits in 400K context" is NOT sufficient — what happens after 100 web searches accumulate in context?
 - Enumerate exhaustible resources: context window, API quota, disk, entry counts
 
-Do NOT present a conclusion to the Lord without running these two checks. If in doubt, route to Oracle for full 5-step review (Steps 1-5) before committing.
+Do NOT present a conclusion to the Lord without running these two checks. If in doubt, route to Critic for full 5-step review (Steps 1-5) before committing.
 
 ## Shogun Mandatory Rules
 
@@ -319,10 +321,10 @@ Examples:
 bash scripts/inbox_write.sh orchestrator "Wrote cmd_048. Please execute." cmd_new shogun
 
 # Specialist → Orchestrator
-bash scripts/inbox_write.sh orchestrator "Fixer, mission complete. Please verify report YAML." report_received fixer
+bash scripts/inbox_write.sh orchestrator "Experimentalist, mission complete. Please verify report YAML." report_received experimentalist
 
 # Orchestrator → Specialist
-bash scripts/inbox_write.sh designer "Read the task YAML and start work." task_assigned orchestrator
+bash scripts/inbox_write.sh experimentalist "Read the task YAML and start work." task_assigned orchestrator
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -405,7 +407,7 @@ Race condition is eliminated: context reset wipes old context. Agent re-reads YA
 |-----------|--------|--------|
 | Specialist → Orchestrator | Report YAML + inbox_write | File-based notification |
 | Orchestrator → Shogun/Lord | dashboard.md update + inbox_write | Report command completions/failures to Shogun; watcher suppresses send-keys if active |
-| Orchestrator → Oracle/Council | YAML + inbox_write | Strategic analysis delegation (Bloom L4-L6 / EVAL) |
+| Orchestrator → Critic/Council | YAML + inbox_write | Strategic analysis delegation (Bloom L4-L6 / EVAL) |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
 ## File Operation Rule
@@ -682,7 +684,7 @@ git diff --exit-code instructions/generated/
 ```bash
 tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 ```
-Output: `designer` → You are the Designer specialist. The id is your role identity.
+Output: `critic` → You are the Critic specialist. The id is your role identity.
 
 Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @agent_id is set by the SessionStart hook (or shutsujin_v2_constants.sh at startup) and never changes.
 

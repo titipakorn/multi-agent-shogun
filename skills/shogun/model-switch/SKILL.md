@@ -4,7 +4,7 @@ description: |
   Live-switch agent CLI and models. Automates settings.yaml update → /exit → starting new CLI →
   pane metadata update in one shot. Also controls Thinking ON/OFF.
   Triggered by: "switch model", "change to Sonnet", "change to Opus", "switch all specialists", "disable Thinking".
-argument-hint: "[agent-name target-model e.g. explorer sonnet]"
+argument-hint: "[agent-name target-model e.g. surveyor sonnet]"
 allowed-tools: Bash(bash scripts/switch_cli.sh *), Read, Edit
 ---
 
@@ -17,7 +17,7 @@ Executes a seamless pipeline: `settings.yaml` update → `build_cli_command()` �
 
 ## When to Use
 
-- "Change designer to Opus", "Switch all specialists to Sonnet"
+- "Change architect to Opus", "Switch all specialists to Sonnet"
 - "Switch model", "Change model", "Change CLI"
 - "Disable Thinking", "Enable Thinking"
 - "Restore to Claude from Codex", "Switch to Spark"
@@ -57,13 +57,13 @@ settings.yaml (source of truth)
 
 ```bash
 # Restart with current settings.yaml value (when only resetting the CLI)
-bash scripts/switch_cli.sh designer
+bash scripts/switch_cli.sh architect
 
 # Change model (settings.yaml automatically updated)
-bash scripts/switch_cli.sh designer --model claude-opus-4-6
+bash scripts/switch_cli.sh architect --model claude-opus-4-6
 
 # Change CLI type as well (Codex → Claude)
-bash scripts/switch_cli.sh designer --type claude --model claude-sonnet-4-6
+bash scripts/switch_cli.sh architect --type claude --model claude-sonnet-4-6
 
 # Claude → Codex Spark
 bash scripts/switch_cli.sh observer --type codex --model gpt-5.3-codex-spark
@@ -73,17 +73,17 @@ bash scripts/switch_cli.sh observer --type codex --model gpt-5.3-codex-spark
 
 ```bash
 # Switch all specialists to Sonnet
-for i in $(seq 1 7); do
-    bash scripts/switch_cli.sh specialist$i --type claude --model claude-sonnet-4-6
+for agent in surveyor critic architect experimentalist analyst ablation_planner writer observer council; do
+    bash scripts/switch_cli.sh "$agent" --type claude --model claude-sonnet-4-6
 done
 
 # Switch all specialists to Spark
-for i in $(seq 1 7); do
-    bash scripts/switch_cli.sh specialist$i --type codex --model gpt-5.3-codex-spark
+for agent in surveyor critic architect experimentalist analyst ablation_planner writer observer council; do
+    bash scripts/switch_cli.sh "$agent" --type codex --model gpt-5.3-codex-spark
 done
 
-# Restart all agents (including Orchestrator & Strategist)
-for agent in orchestrator explorer librarian designer fixer observer oracle council oracle; do
+# Restart all agents (including Orchestrator)
+for agent in orchestrator surveyor critic architect experimentalist analyst ablation_planner writer observer council; do
     bash scripts/switch_cli.sh "$agent"
 done
 ```
@@ -96,7 +96,7 @@ Edit the `thinking` field in `settings.yaml` first, then run `switch_cli.sh`:
 # config/settings.yaml
 cli:
   agents:
-    designer:
+    architect:
       type: claude
       model: claude-opus-4-6
       thinking: false  # ← Starts with MAX_THINKING_TOKENS=0
@@ -104,7 +104,7 @@ cli:
 
 ```bash
 # Restart after editing settings.yaml
-bash scripts/switch_cli.sh designer
+bash scripts/switch_cli.sh architect
 ```
 
 Steps for switching Thinking ON/OFF:
@@ -116,7 +116,7 @@ Steps for switching Thinking ON/OFF:
 
 ```bash
 # When Orchestrator switches a specialist's CLI
-bash scripts/inbox_write.sh designer "--type claude --model claude-opus-4-6" cli_restart orchestrator
+bash scripts/inbox_write.sh architect "--type claude --model claude-opus-4-6" cli_restart orchestrator
 ```
 
 `inbox_watcher` detects the `cli_restart` type and automatically executes `switch_cli.sh`.

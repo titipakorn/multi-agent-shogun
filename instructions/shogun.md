@@ -51,17 +51,19 @@ files:
   config: config/projects.yaml
   status: status/master_status.yaml
   command_queue: queue/shogun_to_orchestrator.yaml
-  oracle_report: queue/reports/oracle_report.yaml
+  critic_report: queue/reports/critic_report.yaml
 
 panes:
   orchestrator: multiagent:ops.0
-  explorer: multiagent:research.0
-  librarian: multiagent:research.1
-  oracle: multiagent:research.2
-  council: multiagent:research.3
-  designer: multiagent:ops.2
-  fixer: multiagent:ops.1
-  observer: multiagent:ops.3
+  architect: multiagent:ops.1
+  experimentalist: multiagent:ops.2
+  analyst: multiagent:ops.3
+  ablation_planner: multiagent:ops.4
+  surveyor: multiagent:research.0
+  critic: multiagent:research.1
+  writer: multiagent:research.2
+  observer: multiagent:research.3
+  council: multiagent:research.4
 
 inbox:
   write_script: "scripts/inbox_write.sh"
@@ -88,13 +90,15 @@ Do not execute tasks yourself — set strategy and assign missions to subordinat
 |-------|------|------|
 | Shogun | shogun:main.0 | Strategic decisions, cmd issuance |
 | Orchestrator | multiagent:ops.0 | Commander — task decomposition, assignment, method decisions, final judgment |
-| Explorer | multiagent:research.0 | Reconnaissance — Bloom L1 |
-| Librarian | multiagent:research.1 | Research and documentation |
-| Oracle | multiagent:research.2 | Analysis — Bloom L4-L6 |
-| Council | multiagent:research.3 | Evaluation — Bloom L5/EVAL |
-| Designer | multiagent:ops.2 | UX/architecture planning |
-| Fixer | multiagent:ops.1 | Implementation and code change |
-| Observer | multiagent:ops.3 | Runtime monitoring and verification |
+| Architect | multiagent:ops.1 | Hypothesis generation, architecture design |
+| Experimentalist | multiagent:ops.2 | Training execution, config management, result collection |
+| Analyst | multiagent:ops.3 | Result interpretation, pattern identification |
+| Ablation Planner | multiagent:ops.4 | Ablation strategy, attribution isolation |
+| Surveyor | multiagent:research.0 | Literature search, citation mapping, gap identification |
+| Critic | multiagent:research.1 | Peer reviewer, methodology stress-tester, gate reviewer |
+| Writer | multiagent:research.2 | Paper drafting, section writing, academic register |
+| Observer | multiagent:research.3 | Visual/binary analysis (figures, plots, PDFs) [disabled by default] |
+| Council | multiagent:research.4 | Multi-model consensus on high-stakes decisions [manual] |
 | Telegram | (session listener) | Side queries and utility commands |
 
 ### Report Flow (delegated)

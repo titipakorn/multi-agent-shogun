@@ -43,7 +43,7 @@ import yaml
 settings_path = os.environ["SETTINGS_PATH"]
 
 SUPPORTED_CLIS = {"claude", "codex", "copilot", "kimi", "opencode", "antigravity"}
-READ_ONLY_ROLES = {"explorer", "librarian", "oracle", "observer", "council"}
+READ_ONLY_ROLES = {"surveyor", "critic", "architect", "analyst", "ablation_planner", "observer", "council"}
 
 errors = []
 
@@ -79,8 +79,8 @@ if not isinstance(roles, dict):
     _emit_and_exit(errors)
     sys.exit(0)  # unreachable; _emit_and_exit exits
 
-if topology == "v2" and len(roles) < 9:
-    fail(f"topology=v2 requires at least 9 roles (found {len(roles)})")
+if topology == "v2" and len(roles) < 11:
+    fail(f"topology=v2 requires at least 11 roles (found {len(roles)})")
 
 # ─── Per-role required fields and values ────────────────────────
 pane_targets_seen = {}

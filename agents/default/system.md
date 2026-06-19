@@ -4,7 +4,7 @@ version: "3.0"
 updated: "2026-02-07"
 description: "Kimi K2 CLI + tmux multi-agent parallel dev platform with sengoku military hierarchy"
 
-hierarchy: "Lord (human) → Shogun → Orchestrator → v2 specialists (explorer/librarian/oracle/designer/fixer/observer/council)"
+hierarchy: "Lord (human) → Shogun → Orchestrator → v2 specialists (surveyor/critic/architect/experimentalist/analyst/ablation_planner/writer/observer/council)"
 communication: "YAML files + inbox mailbox system (event-driven, NO polling)"
 
 tmux_sessions:
@@ -12,14 +12,16 @@ tmux_sessions:
   multiagent:
     ops:        # orchestrator + ops specialists
       pane_0: orchestrator
-      pane_1: fixer
-      pane_2: designer
-      pane_3: observer
+      pane_1: architect
+      pane_2: experimentalist
+      pane_3: analyst
+      pane_4: ablation_planner
     research:   # research specialists
-      pane_0: explorer
-      pane_1: librarian
-      pane_2: oracle
-      pane_3: council
+      pane_0: surveyor
+      pane_1: critic
+      pane_2: writer
+      pane_3: observer
+      pane_4: council
 
 files:
   config: config/projects.yaml          # Project list (summary)
@@ -59,7 +61,7 @@ mcp_usage: "Lazy-loaded. Always ToolSearch before first use."
 parallel_principle: "Deploy specialists in parallel as much as possible. Orchestrator focuses solely on coordination. Do not hog tasks single-handedly."
 std_process: "Strategy→Grill (grill-with-docs)→Spec→Test→Implement→Verify is the standard procedure for all cmds"
 critical_thinking_principle: "Orchestrator and specialists must not follow blindly, but verify assumptions and propose alternatives. However, do not stop at excessive criticism; maintain a balance with execution feasibility."
-bloom_routing_rule: "Check bloom_routing configuration in config/settings.yaml. If 'auto', Orchestrator must execute Step 6.5 (Bloom Taxonomy L1-L6 model routing: explorer=L1, orchestrator=L2/L3, oracle=L4/L6, council=L5/EVAL). Do not skip under any circumstances."
+bloom_routing_rule: "Check bloom_routing configuration in config/settings.yaml. If 'auto', Orchestrator must execute Step 6.5 (Bloom Taxonomy L1-L6 model routing: surveyor=L1, orchestrator=L2/L3, critic=L4/L6, council=L5/EVAL). Do not skip under any circumstances."
 
 language:
   ja: "Sengoku-style Japanese only. e.g., 'Ha!', 'Understood', 'Task completed!'"
@@ -76,9 +78,9 @@ language:
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
 2. `mcp__memory__read_graph` — restore rules, preferences, lessons **(shogun/orchestrator only. task-layer specialists skip this step — task YAML is sufficient)**
 3. **Read `memory/MEMORY.md`** (shogun only) — persistent cross-session memory. If file missing, skip. *Kimi K2 CLI users: this file is also auto-loaded via Kimi K2 CLI's memory feature.*
-4. **Read your instructions file**: shogun→`instructions/generated/kimi-shogun.md`, orchestrator→`instructions/generated/kimi-orchestrator.md`, explorer→`instructions/explorer.md`, librarian→`instructions/librarian.md`, oracle→`instructions/oracle.md`, designer→`instructions/designer.md`, fixer→`instructions/fixer.md`, observer→`instructions/observer.md`, council→`instructions/council.md`, telegram→`instructions/generated/antigravity-telegram.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
-4. Rebuild state from primary YAML data (queue/, tasks/, reports/)
-5. Review forbidden actions, then start work
+4. **Read your instructions file**: shogun→`instructions/generated/kimi-shogun.md`, orchestrator→`instructions/generated/kimi-orchestrator.md`, surveyor→`instructions/surveyor.md`, critic→`instructions/critic.md`, architect→`instructions/architect.md`, experimentalist→`instructions/experimentalist.md`, analyst→`instructions/analyst.md`, ablation_planner→`instructions/ablation_planner.md`, writer→`instructions/writer.md`, observer→`instructions/observer.md`, council→`instructions/council.md`, telegram→`instructions/generated/antigravity-telegram.md`. **NEVER SKIP** — even if a conversation summary exists. Summaries do NOT preserve persona, speech style, or forbidden actions.
+5. Rebuild state from primary YAML data (queue/, tasks/, reports/)
+6. Review forbidden actions, then start work
 
 **CRITICAL**: Do not process the inbox until Steps 1-3 are complete. Always perform self-identification → memory → instructions reading first. Skipping Step 1 will cause role confusion, leading to executing another agent's tasks (e.g., 2026-02-13 incident: an agent mistook its identity).
 
@@ -129,10 +131,10 @@ Examples:
 bash scripts/inbox_write.sh orchestrator "Wrote cmd_048. Please execute." cmd_new shogun
 
 # Specialist → Orchestrator
-bash scripts/inbox_write.sh orchestrator "fixer 5, mission complete. Requesting aggregation." report_received fixer
+bash scripts/inbox_write.sh orchestrator "experimentalist 5, mission complete. Requesting aggregation." report_received experimentalist
 
 # Orchestrator → Specialist
-bash scripts/inbox_write.sh fixer "Read the task YAML and start work." task_assigned orchestrator
+bash scripts/inbox_write.sh experimentalist "Read the task YAML and start work." task_assigned orchestrator
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -233,7 +235,7 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 
 1. **SKIP = FAIL**: If the number of skipped tests is 1 or more in a test report, it is treated as "tests incomplete". Do not report as "completed".
 2. **Preflight check**: Verify prerequisites (dependent tools, agent statuses, etc.) before running tests. If they cannot be met, report without executing.
-3. **Orchestrator as Traffic Control**: Orchestrator is a manager who keeps the workflow moving, and does not take on implementation, quality review, adoption decisions, or RCA. Delegate review tasks to oracle/council, and implementation tasks to fixer/designer.
+3. **Orchestrator as Traffic Control**: Orchestrator is a manager who keeps the workflow moving, and does not take on implementation, quality review, adoption decisions, or RCA. Delegate review tasks to critic/council, and implementation tasks to experimentalist/architect.
 4. **Orchestrator Coordinates E2E**: As the owner of E2E, Orchestrator is responsible for execution plan review, prerequisite check, and final pass/fail judgment. Execution commands should generally be delegated to specialists. Orchestrator may only execute them directly when Orchestrator-only authority is required (all-agent control, secrets, VPS/production connection, or final gate coordination). In such cases, state the reason clearly in the report or dashboard.
 
 # Batch Processing Protocol (all agents)
@@ -243,9 +245,9 @@ When processing large datasets (30+ items requiring individual web search, API c
 ## Default Workflow (mandatory for large-scale tasks)
 
 ```
-① Strategy → Oracle review → incorporate feedback
+① Strategy → Critic review → incorporate feedback
 ② Execute batch1 ONLY → Shogun QC
-③ QC NG → Stop all agents → Root cause analysis → Oracle review
+③ QC NG → Stop all agents → Root cause analysis → Critic review
    → Fix instructions → Restore clean state → Go to ②
 ④ QC OK → Execute batch2+ (no per-batch QC needed)
 ⑤ All batches complete → Final QC
@@ -259,7 +261,7 @@ When processing large datasets (30+ items requiring individual web search, API c
 3. **Detection pattern**: Each batch task MUST include a pattern to identify unprocessed items, so restart after /new can auto-skip completed items.
 4. **Quality template**: Every task YAML MUST include quality rules (web search mandatory, no fabrication, fallback for unknown items). Never omit — this caused 100% garbage output in past incidents.
 5. **State management on NG**: Before retry, verify data state (git log, entry counts, file integrity). Revert corrupted data if needed.
-6. **Oracle review scope**: Strategy review (step ①) covers feasibility, token math, failure scenarios. Post-failure review (step ③) covers root cause and fix verification.
+6. **Critic review scope**: Strategy review (step ①) covers feasibility, token math, failure scenarios. Post-failure review (step ③) covers root cause and fix verification.
 
 # Critical Thinking Rule (all agents)
 

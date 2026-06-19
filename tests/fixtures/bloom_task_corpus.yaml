@@ -186,8 +186,8 @@ bloom_tasks:
     bloom_level: 5
     category: evaluate
     description: |
-      We propose a mixed CLI configuration (explorer-3=Codex-Spark, fixer-5=Sonnet,
-      oracle-7=Opus) for Bloom routing testing on VPS. Evaluate the validity of this design.
+      We propose a mixed CLI configuration (surveyor-3=Codex-Spark, experimentalist-5=Sonnet,
+      critic-7=Opus) for Bloom routing testing on VPS. Evaluate the validity of this design.
       Include the following perspectives:
       (1) Coverage for each Bloom level, (2) Parallel processing capability, (3) Cost efficiency,
       (4) Propose improvement plans if any.

@@ -59,11 +59,13 @@ multi-agent-shogun/
 ├── instructions/         # Agent behavior definitions
 │   ├── shogun.md            # Shogun (commander) instructions
 │   ├── orchestrator.md      # Orchestrator (manager) instructions
-│   ├── explorer.md          # Local code search
-│   ├── librarian.md         # External research
-│   ├── oracle.md            # Strategic advisor (read-only)
-│   ├── designer.md          # Plans / specs / designs
-│   ├── fixer.md             # Tactical implementation
+│   ├── surveyor.md          # Local code/literature search
+│   ├── critic.md            # Peer reviewer / stress-tester
+│   ├── architect.md         # Spec/design architect
+│   ├── experimentalist.md   # Implementation specialist
+│   ├── analyst.md           # Results analyzer
+│   ├── ablation_planner.md  # Component isolation analyst
+│   ├── writer.md            # Documentation/paper author
 │   ├── observer.md          # Visual / media analysis
 │   ├── council.md           # Multi-model consensus
 │   ├── cli_specific/        # CLI-specific tool descriptions
@@ -82,7 +84,7 @@ multi-agent-shogun/
 │   └── integ_*.md        # Integration report templates
 │
 ├── queue/                # Communication and task data
-│   ├── shogun_to_karo.yaml  # Command queue
+│   ├── shogun_to_orchestrator.yaml  # Command queue
 │   ├── inbox/            # Per-agent mailboxes
 │   ├── tasks/            # Per-worker task assignments
 │   └── reports/          # Completion reports
@@ -207,7 +209,7 @@ All shell scripts must adhere to these standards:
    # Function: send_message
    # Description: Writes a message to an agent's inbox
    # Arguments:
-   #   $1 - target_agent (shogun|orchestrator|explorer|librarian|oracle|designer|fixer|observer|council)
+   #   $1 - target_agent (shogun|orchestrator|surveyor|critic|architect|experimentalist|analyst|ablation_planner|writer|observer|council)
    #   $2 - message content
    # Returns: 0 on success, 1 on error
    send_message() {
@@ -242,7 +244,7 @@ All shell scripts must adhere to these standards:
 
 Example:
 ```yaml
-# Task assignment for fixer
+# Task assignment for experimentalist
 task:
   task_id: subtask_001
   description: "Research React 19 features"

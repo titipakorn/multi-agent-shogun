@@ -1,0 +1,13 @@
+# task_critic_blocked.yaml — Blocked task for critic
+# Depends on surveyor's task completing first
+task:
+  task_id: subtask_test_002b
+  parent_cmd: cmd_test_001
+  type: implementation
+  blocked_by:
+    - subtask_test_001a
+  description: |
+    E2E test task for critic: blocked until surveyor completes.
+    Mock CLI will process this after blocked_by is resolved.
+  status: blocked
+  timestamp: "2026-01-01T00:00:00"

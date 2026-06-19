@@ -32,12 +32,9 @@ Examples:
   PERMISSION_FLAG=--yolo ./depart.sh  # Use --yolo for Copilot
 
 Formations (V2 specialist team):
-  shogun                  → Opus   (Commander)
-  orchestrator            → Opus   (Task manager)
-  oracle                  → Opus   (Analysis L4-L6)
-  council                 → Opus   (Evaluation)
-  explorer                → Haiku  (Recon)
-  librarian, designer, fixer, observer → Sonnet (Execution)
+  shogun, orchestrator, critic, architect, council → Opus (Reasoning)
+  surveyor → Haiku (Retrieval)
+  experimentalist, analyst, ablation_planner, writer, observer → Sonnet (Execution/Writing)
 
 Display:
   tmux attach -t shogun        # Shogun's camp
@@ -343,21 +340,21 @@ start_specialist_pane() {
     tmux select-pane -t "$target" -P "bg=${color}"
 }
 
-# Ops window: orchestrator, fixer, designer, observer
-OPS_ROLES=(orchestrator fixer designer observer)
+# Ops window: orchestrator, architect, experimentalist, analyst, ablation_planner
+OPS_ROLES=(orchestrator architect experimentalist analyst ablation_planner)
 for idx in "${!OPS_ROLES[@]}"; do
     start_specialist_pane "${OPS_ROLES[$idx]}" "multiagent" "ops" "$idx" "$CLI_DEFAULT"
 done
 tmux select-layout -t multiagent:ops even-horizontal
-log_success "⚔️  ops window: orchestrator, fixer, designer, observer"
+log_success "⚔️  ops window: orchestrator, architect, experimentalist, analyst, ablation_planner"
 
-# Research window: explorer, librarian, oracle, council
-RESEARCH_ROLES=(explorer librarian oracle council)
+# Research window: surveyor, critic, writer, observer, council
+RESEARCH_ROLES=(surveyor critic writer observer council)
 for idx in "${!RESEARCH_ROLES[@]}"; do
     start_specialist_pane "${RESEARCH_ROLES[$idx]}" "multiagent" "research" "$idx" "$CLI_DEFAULT"
 done
 tmux select-layout -t multiagent:research even-horizontal
-log_success "🔬 research window: explorer, librarian, oracle, council"
+log_success "🔬 research window: surveyor, critic, writer, observer, council"
 
 # ═════════════════════════════════════════════════════════════════════════════
 # STEP 5: Launch CLIs (skip if --setup-only)
@@ -579,17 +576,17 @@ echo "     ┌──────────────────────
 echo "     │  shogun:main.0              │  ← Commander / Project Overseer"
 echo "     └─────────────────────────────┘"
 echo ""
-echo "     [multiagent session] ops window (4 specialists)"
-echo "     ┌─────────┬─────────┬─────────┬─────────┐"
-echo "     │orchestr.│  fixer  │designer │observer │"
-echo "     │  (Opus) │ (Sonnet)│ (Sonnet)│ (Sonnet)│"
-echo "     └─────────┴─────────┴─────────┴─────────┘"
+echo "     [multiagent session] ops window (5 specialists)"
+echo "     ┌─────────┬─────────┬─────────┬─────────┬─────────┐"
+echo "     │orchestr.│architect│experim. │ analyst │ablation │"
+echo "     │  (Opus) │  (Opus) │ (Sonnet)│ (Sonnet)│ (Sonnet)│"
+echo "     └─────────┴─────────┴─────────┴─────────┴─────────┘"
 echo ""
-echo "     [multiagent session] research window (4 specialists)"
-echo "     ┌─────────┬─────────┬─────────┬─────────┐"
-echo "     │ explorer│librarian│ oracle  │ council │"
-echo "     │ (Haiku) │ (Sonnet)│  (Opus) │  (Opus) │"
-echo "     └─────────┴─────────┴─────────┴─────────┘"
+echo "     [multiagent session] research window (5 specialists)"
+echo "     ┌─────────┬─────────┬─────────┬─────────┬─────────┐"
+echo "     │surveyor │ critic  │ writer  │observer │ council │"
+echo "     │ (Haiku) │  (Opus) │ (Sonnet)│ (Sonnet)│  (Opus) │"
+echo "     └─────────┴─────────┴─────────┴─────────┴─────────┘"
 echo ""
 echo "  ╔══════════════════════════════════════════════════════════╗"
 echo "  ║  🏯 DEPARTURE PREPARATIONS COMPLETE! TENKA FUBU!         ║"

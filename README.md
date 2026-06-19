@@ -26,7 +26,7 @@ Run 10 AI coding agents in parallel — **Claude Code, OpenAI Codex, GitHub Copi
   <img src="images/company-creed-all-panes.png" alt="Orchestrator and Specialist panes reacting in parallel" width="520">
 </p>
 
-<p align="center"><i>One Orchestrator (manager) coordinating 7 specialists + Oracle (advisor) + Council (consensus) — real session, no mock data.</i></p>
+<p align="center"><i>One Orchestrator (manager) coordinating 9 specialists (including Council consensus) — real session, no mock data.</i></p>
 
 ---
 
@@ -61,7 +61,7 @@ You watch the dashboard. That's it.
 **multi-agent-shogun** is a system that runs multiple AI coding CLI instances simultaneously, orchestrating them like a feudal Japanese army. Supports **Claude Code**, **OpenAI Codex**, **GitHub Copilot**, **Kimi Code**, **OpenCode**, **Cursor**, and **Antigravity**.
 
 **Why use it?**
-- One command spawns 7 AI specialists + 1 orchestrator executing in parallel
+- One command spawns 9 AI specialists + 1 orchestrator executing in parallel
 - Zero wait time — give your next order while tasks run in the background
 - AI remembers your preferences across sessions (Memory MCP)
 - Real-time progress on a dashboard
@@ -78,11 +78,11 @@ You watch the dashboard. That's it.
       │ ORCHESTRATOR │  ← Coordinates specialists, owns dashboard
       └──────┬──────┘
              │
-   ┌────┬────┼────┬────┬────┬────┐
-   │    │    │    │    │    │    │
-   ▼    ▼    ▼    ▼    ▼    ▼    ▼
-explorer librarian oracle designer fixer observer council
-  (search) (research) (advisor) (plan) (impl) (visual) (consensus)
+   ┌───┬───┬─┴─┬───┬───┬───┬───┬───┐
+   │   │   │   │   │   │   │   │   │
+   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼
+surveyor critic architect experimentalist analyst ablation_planner writer observer council
+ (find) (review) (design)  (experiment)   (analyze)   (ablate)    (write) (observe) (consensus)
 ```
 
 ---
@@ -138,7 +138,7 @@ Shogun isn't locked to one vendor. The system supports 7 CLI tools, each with un
 | **Cursor** | Auto-loads `CLAUDE.md`/`AGENTS.md`/`.cursor/rules/`, built-in web search, `inbox-write` skill via `.cursor/skills/`, `/model` live switching, `--yolo` auto-run | Varies |
 | **Antigravity CLI** | Google Antigravity CLI integration via `agy`, host-managed auth, YOLO-style launch, `gemini`/`agy` legacy aliases | host default / last-used |
 
-OpenCode sessions load the agent-specific `.opencode/agents/<agent_id>.md` definition via `--agent` and keep automation resets on `/new`; model changes require a relaunch. Automation uses the repository-provided `config/opencode-tui.json` via `OPENCODE_TUI_CONFIG`, which disables `app_exit` and pins `session_interrupt`/`input_clear` to known bindings. Role boundaries are embedded in the generated agent frontmatter: Shogun can read `queue/reports/*` for oversight but cannot write them, Orchestrator is limited to coordination files plus report aggregation, and task-layer specialists (explorer/librarian/oracle/designer/fixer/observer/council) only touch their own task/report pair.
+OpenCode sessions load the agent-specific `.opencode/agents/<agent_id>.md` definition via `--agent` and keep automation resets on `/new`; model changes require a relaunch. Automation uses the repository-provided `config/opencode-tui.json` via `OPENCODE_TUI_CONFIG`, which disables `app_exit` and pins `session_interrupt`/`input_clear` to known bindings. Role boundaries are embedded in the generated agent frontmatter: Shogun can read `queue/reports/*` for oversight but cannot write them, Orchestrator is limited to coordination files plus report aggregation, and task-layer specialists (surveyor/critic/architect/experimentalist/analyst/ablation_planner/writer/observer/council) only touch their own task/report pair.
 
 Antigravity sessions launch with `agy --dangerously-skip-permissions`. Shogun treats `type: antigravity`, `type: agy`, and legacy `type: gemini` as Antigravity. Authentication and default model selection stay in the host user's Antigravity CLI setup; `settings.yaml` may optionally pass a concrete `model`, but `auto` uses the host default or last-used model.
 
@@ -430,17 +430,17 @@ If you prefer to install dependencies manually:
 
 ### After Setup
 
-Whichever option you chose, **10 AI agents** are automatically launched:
+Whichever option you chose, **11 AI agents** are automatically launched:
 
 | Agent | Role | Count |
 |-------|------|-------|
 | 🏯 Shogun | Supreme commander — receives your orders | 1 |
 | 📋 Orchestrator | Manager — coordinates specialists, owns the dashboard | 1 |
-| ⚔️ Specialists | Workers — 7 roles: explorer, librarian, oracle, designer, fixer, observer, council | 7 |
+| ⚔️ Specialists | Workers — 9 roles: surveyor, critic, architect, experimentalist, analyst, ablation_planner, writer, observer, council | 9 |
 
 Two tmux sessions are created:
 - `shogun` — connect here to give commands
-- `multiagent` (split into `ops` and `research` windows) — Orchestrator + 7 specialists running in the background
+- `multiagent` (split into `ops` and `research` windows) — Orchestrator + 9 specialists running in the background
 
 ---
 
@@ -479,9 +479,9 @@ Open `dashboard.md` in your editor for a real-time status view:
 ## In Progress
 | Worker | Task | Status |
 |--------|------|--------|
-| Explorer | Research React | Running |
-| Librarian | Research Vue | Running |
-| Oracle | Research Angular | Completed |
+| Surveyor | Research React | Running |
+| Critic | Research Vue | Running |
+| Architect | Research Angular | Completed |
 ```
 
 ### Project-Unit Operation (Equivalent to Visual Studio "Solution")
@@ -527,13 +527,13 @@ The agent formation (which CLI each agent uses) lives in `config/settings.yaml`:
 ```yaml
 cli:
   agents:
-    explorer:
+    surveyor:
       type: codex          # codex / claude / copilot / kimi / opencode / antigravity
       model: gpt-5.5
-    fixer:
+    experimentalist:
       type: claude
       model: claude-sonnet-4-6
-    # Same for librarian, oracle, designer, observer, council, orchestrator
+    # Same for critic, architect, analyst, ablation_planner, writer, observer, council, orchestrator
 ```
 
 OpenCode uses provider-qualified model IDs:
@@ -541,7 +541,7 @@ OpenCode uses provider-qualified model IDs:
 ```yaml
 cli:
   agents:
-    designer:
+    architect:
       type: opencode
       model: openrouter/openai/gpt-4o-mini
       variant: high  # optional provider-specific reasoning variant
@@ -559,9 +559,9 @@ When OpenCode is selected, `lib/cli_adapter.sh` launches it with `--agent <agent
 To switch on the fly, use `scripts/switch_cli.sh`:
 
 ```bash
-bash scripts/switch_cli.sh designer --type claude --model claude-sonnet-4-6
-bash scripts/switch_cli.sh designer --type opencode --model openrouter/openai/gpt-4o-mini
-bash scripts/switch_cli.sh designer --type opencode --model openrouter/minimax/minimax-m2.5 --variant xhigh
+bash scripts/switch_cli.sh architect --type claude --model claude-sonnet-4-6
+bash scripts/switch_cli.sh architect --type opencode --model openrouter/openai/gpt-4o-mini
+bash scripts/switch_cli.sh architect --type opencode --model openrouter/minimax/minimax-m2.5 --variant xhigh
 ```
 
 #### 4. Switching or closing a project
@@ -598,11 +598,11 @@ The Orchestrator breaks the task into subtasks:
 
 | Worker | Assignment |
 |--------|-----------|
-| Librarian | Research Notion MCP |
-| Librarian | Research GitHub MCP |
-| Librarian | Research Playwright MCP |
-| Librarian | Research Memory MCP |
-| Librarian | Research Sequential Thinking MCP |
+| Surveyor | Research Notion MCP |
+| Surveyor | Research GitHub MCP |
+| Surveyor | Research Playwright MCP |
+| Surveyor | Research Memory MCP |
+| Surveyor | Research Sequential Thinking MCP |
 
 All 5 Specialist research simultaneously. You can watch them work in real time:
 
@@ -657,14 +657,14 @@ Session 2: AI loads memory on startup
 Agents talk to each other by writing YAML files — like passing notes. **No polling loops, no wasted API calls.**
 
 ```
-Orchestrator wants to wake Fixer:
+Orchestrator wants to wake Architect:
 
 Step 1: Write the message          Step 2: Wake the agent up
 ┌──────────────────────┐           ┌──────────────────────────┐
 │ inbox_write.sh       │           │ inbox_watcher.sh         │
 │                      │           │                          │
 │ Writes full message  │  file     │ Detects file change      │
-│ to fixer.yaml        │──change──▶│ (inotifywait, not poll)  │
+│ to architect.yaml    │──change──▶│ (inotifywait, not poll)  │
 │ with flock (no race) │           │                          │
 └──────────────────────┘           │ Wakes agent via:         │
                                    │  1. Self-watch (skip)    │
@@ -674,7 +674,7 @@ Step 1: Write the message          Step 2: Wake the agent up
 
 Step 3: Agent reads its own inbox
 ┌──────────────────────────────────┐
-│ Fixer reads fixer.yaml            │
+│ Architect reads architect.yaml   │
 │ → Finds unread messages          │
 │ → Processes them                 │
 │ → Marks as read                  │
@@ -738,9 +738,9 @@ bash scripts/agent_status.sh --session mysession --lang en
 Agent         CLI     Pane      Task ID                                    Status     Inbox
 ------------ ------- --------- ------------------------------------------ ---------- -----
 orchestrator  claude  idle      ---                                        ---        0
-explorer      codex   busy      subtask_042a_research                      assigned   0
-fixer         codex   idle      subtask_042b_review                        done       0
-oracle        claude  busy      subtask_042c_analysis                      assigned   0
+surveyor      codex   busy      subtask_042a_research                      assigned   0
+critic        codex   idle      subtask_042b_review                        done       0
+architect     claude  busy      subtask_042c_analysis                      assigned   0
 ```
 
 **Standalone mode output** (no project config needed):
@@ -748,8 +748,8 @@ oracle        claude  busy      subtask_042c_analysis                      assig
 Pane                           State      Agent ID
 ------------------------------ ---------- ----------
 multiagent:ops.0               IDLE       orchestrator
-multiagent:ops.1               BUSY       fixer
-multiagent:research.2          BUSY       oracle
+multiagent:ops.1               BUSY       architect
+multiagent:research.2          BUSY       critic
 ```
 
 Detection works for **Claude Code**, **Codex CLI**, and **OpenCode** by checking CLI-specific prompt/spinner patterns near the bottom of each tmux pane. The detection logic lives in `lib/agent_status.sh` — source it in your own scripts:
@@ -998,19 +998,19 @@ Behavioral psychology-driven motivation through your notification feed:
 Each tmux pane shows the agent's current task directly on its border:
 
 ```
-┌ explorer Sonnet+T VF requirements ──┬ designer Opus+T API research ─────────┐
+┌ surveyor Sonnet+T VF requirements ──┬ architect Opus+T API research ────────┐
 │                                      │                                     │
 │  Working on SayTask requirements     │  Researching REST API patterns      │
 │                                      │                                     │
-├ librarian Sonnet ───────────────────┼ fixer Spark DB schema design ────────┤
+├ critic Sonnet ──────────────────────┼ experimentalist Spark DB schema ─────┤
 │                                      │                                     │
 │  (idle — waiting for assignment)     │  Designing database schema          │
 │                                      │                                     │
 └──────────────────────────────────────┴─────────────────────────────────────┘
 ```
 
-- **Working**: `explorer Sonnet+T VF requirements` — agent name, model (with Thinking indicator), and task summary
-- **Idle**: `librarian Sonnet` — model name only, no task
+- **Working**: `surveyor Sonnet+T VF requirements` — agent name, model (with Thinking indicator), and task summary
+- **Idle**: `critic Sonnet` — model name only, no task
 - **Display names**: Sonnet, Opus, Haiku, Codex, Spark — `+T` suffix = Extended Thinking enabled
 - Updated automatically by the Orchestrator when assigning or completing tasks
 - Glance at all 9 panes to instantly know who's doing what
@@ -1020,10 +1020,10 @@ Each tmux pane shows the agent's current task directly on its border:
 When a specialist completes a task, it shouts a personalized battle cry in the tmux pane — a visual reminder that your army is working hard.
 
 ```
-┌ explorer (Sonnet) ──────────┬ librarian (Sonnet) ──────────┐
+┌ surveyor (Sonnet) ──────────┬ critic (Sonnet) ─────────────┐
 │                               │                               │
-│  ⚔️ Explorer took the lead!     │  🔥 Librarian shows second-spear pride!   │
-│  Hachiba Isshi!                   │  Hachiba Isshi!                   │
+│  ⚔️ Surveyor took the lead!    │  🔥 Critic shows second-spear pride!      │
+│  Hachiba Isshi!               │  Hachiba Isshi!               │
 │  ❯                            │  ❯                            │
 └───────────────────────────────┴───────────────────────────────┘
 ```
@@ -1037,7 +1037,7 @@ The Orchestrator writes an `echo_message` field in each task YAML. After complet
 task:
   task_id: subtask_001
   description: "Create comparison table"
-  echo_message: "🔥 Fixer, taking the lead! Hachiba Isshi!"
+  echo_message: "🔥 Architect, taking the lead! Hachiba Isshi!"
 ```
 
 **Shout mode is the default.** To disable (saves API tokens on the echo call):
@@ -1145,15 +1145,14 @@ SayTask handles personal productivity (capture → schedule → remind). The cmd
 | Agent | Default Model | Thinking | Role |
 |-------|--------------|----------|------|
 | Shogun | Opus | **Enabled (high)** | Strategic advisor to the Lord. Use `--shogun-no-thinking` for relay-only mode |
-| Orchestrator | Sonnet | Enabled | Task distribution, simple QC, dashboard management |
-| Oracle | Opus | Enabled | Deep analysis, design review, architecture evaluation |
-| Specialists (7 roles) | Sonnet 4.6 | Enabled | Implementation: code, research, file operations |
+| Orchestrator | Opus | Enabled | Task distribution, simple QC, dashboard management |
+| Specialists (9 roles) | Varies (Opus/Sonnet/Haiku) | Enabled | Implementation: code, research, review, evaluation |
 
 **Thinking control**: Set `thinking: true/false` per agent in `config/settings.yaml`. When `thinking: false`, the agent starts with `MAX_THINKING_TOKENS=0` to disable Extended Thinking. Pane borders show `+T` suffix when Thinking is enabled (e.g., `Sonnet+T`, `Opus+T`).
 
 **Live model switching**: Use `/model-switch` to change any agent's CLI type, model, or Thinking setting without restarting the entire system. See the Skills section for details.
 
-The system routes work by **cognitive complexity** at two levels: **Agent routing** (Specialist for L1–L3, Oracle for L4–L6) and **Model routing within Specialist** via `capability_tiers` (see Dynamic Model Routing below).
+The system routes work by **cognitive complexity** at two levels: **Agent routing** (L1 to surveyor, L2/L3 to orchestrator, L4/L6 to critic, L5/EVAL to council) and **Model routing within Specialist** via `capability_tiers` (see Dynamic Model Routing below).
 
 ### Bloom's Taxonomy → Agent Routing
 
@@ -1161,24 +1160,24 @@ Tasks are classified using Bloom's Taxonomy and routed to the appropriate **agen
 
 | Level | Category | Description | Routed To |
 |-------|----------|-------------|-----------|
-| L1 | Remember | Recall facts, copy, list | **Specialist** |
-| L2 | Understand | Explain, summarize, paraphrase | **Specialist** |
-| L3 | Apply | Execute procedures, implement known patterns | **Specialist** |
-| L4 | Analyze | Compare, investigate, deconstruct | **Oracle** |
-| L5 | Evaluate | Judge, critique, recommend | **Oracle** |
-| L6 | Create | Design, build, synthesize new solutions | **Oracle** |
+| L1 | Remember | Recall facts, copy, list | **Surveyor** |
+| L2 | Understand | Explain, summarize, paraphrase | **Orchestrator** |
+| L3 | Apply | Execute procedures, implement known patterns | **Orchestrator** |
+| L4 | Analyze | Compare, investigate, deconstruct | **Critic** |
+| L5 | Evaluate | Judge, critique, recommend | **Council** |
+| L6 | Create | Design, build, synthesize new solutions | **Critic** |
 
-The Orchestrator assigns each subtask a Bloom level and routes it to the appropriate agent. L1–L3 tasks go to Specialist for parallel execution; L4–L6 tasks go to the Oracle for deeper analysis. Simple L4 tasks (e.g., small code review) may still go to Specialist when the Orchestrator judges it appropriate.
+The Orchestrator assigns each subtask a Bloom level and routes it to the appropriate agent. L1–L3 tasks go to Specialist for parallel execution; L4/L6 tasks go to the critic and L5/EVAL to the council for deeper analysis/evaluation. Simple L4 tasks (e.g., small code review) may still go to Specialist when the Orchestrator judges it appropriate.
 
 ### Task Dependencies (blockedBy)
 
 Tasks can declare dependencies on other tasks using `blockedBy`:
 
 ```yaml
-# queue/tasks/fixer.yaml
+# queue/tasks/experimentalist.yaml
 task:
   task_id: subtask_010b
-  blockedBy: ["subtask_010a"]  # Waits for explorer's task to complete
+  blockedBy: ["subtask_010a"]  # Waits for surveyor's task to complete
   description: "Integrate the API client built by subtask_010a"
 ```
 
@@ -1261,7 +1260,7 @@ Why use files instead of direct messaging between agents?
 
 ### Agent Identification (@agent_id)
 
-Each pane has a `@agent_id` tmux user option (e.g., `orchestrator`, `fixer`). While `pane_index` can shift when panes are rearranged, `@agent_id` is set at startup by `lib/agent_registry.sh` and never changes.
+Each pane has a `@agent_id` tmux user option (e.g., `orchestrator`, `architect`). While `pane_index` can shift when panes are rearranged, `@agent_id` is set at startup by `lib/agent_registry.sh` and never changes.
 
 Agent self-identification:
 ```bash
@@ -1381,11 +1380,11 @@ You: "Research the top 5 AI coding assistants and compare them"
 What happens:
 1. Shogun delegates to Orchestrator
 2. Orchestrator assigns:
-   - Explorer: Research GitHub Copilot
-   - Explorer: Research Cursor
-   - Explorer: Research Claude Code
-   - Explorer: Research Codeium
-   - Explorer: Research Amazon CodeWhisperer
+   - Surveyor: Research GitHub Copilot
+   - Surveyor: Research Cursor
+   - Surveyor: Research Claude Code
+   - Surveyor: Research Codeium
+   - Surveyor: Research Amazon CodeWhisperer
 3. All 5 research simultaneously
 4. Results compiled in dashboard.md
 ```
@@ -1397,9 +1396,9 @@ You: "Prepare a PoC for the project on this Notion page: [URL]"
 
 What happens:
 1. Orchestrator fetches Notion content via MCP
-2. Librarian: Lists items to verify
-3. Oracle: Investigates technical feasibility
-4. Designer: Drafts a PoC plan
+2. Surveyor: Lists items to verify
+3. Critic: Investigates technical feasibility
+4. Architect: Drafts a PoC plan
 5. All results compiled in dashboard.md — meeting prep done
 ```
 
@@ -1601,11 +1600,13 @@ multi-agent-shogun/
 ├── instructions/             # Agent behavior definitions
 │   ├── shogun.md             # Shogun instructions
 │   ├── orchestrator.md       # Orchestrator instructions
-│   ├── explorer.md           # Local code search
-│   ├── librarian.md          # External research
-│   ├── oracle.md             # Strategic advisor (read-only)
-│   ├── designer.md           # Plans / specs / designs
-│   ├── fixer.md              # Tactical implementation
+│   ├── surveyor.md           # Literature search / citation mapping
+│   ├── critic.md             # Stress-testing / review gates
+│   ├── architect.md          # Architecture design / specs
+│   ├── experimentalist.md    # Experiment execution
+│   ├── analyst.md            # Result analysis / pattern ID
+│   ├── ablation_planner.md   # Ablation strategy / isolation
+│   ├── writer.md             # Paper drafting
 │   ├── observer.md           # Visual / media analysis
 │   ├── council.md            # Multi-model consensus
 │   └── cli_specific/         # CLI-specific tool descriptions
@@ -1639,7 +1640,7 @@ multi-agent-shogun/
 │   ├── inbox/                # Per-agent inbox files
 │   │   ├── shogun.yaml       # Messages to Shogun
 │   │   ├── orchestrator.yaml # Messages to Orchestrator
-│   │   └── <role>.yaml       # Messages to each specialist (explorer/librarian/oracle/designer/fixer/observer/council)
+│   │   └── <role>.yaml       # Messages to each specialist (surveyor/critic/architect/experimentalist/analyst/ablation_planner/writer/observer/council)
 │   ├── tasks/                # Per-worker task files
 │   └── reports/              # Worker reports
 │
@@ -1825,10 +1826,10 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ## What's New in v5.1.0 — Orchestrator as Traffic Controller
 
-> **Keep the manager out of the work queue.** Orchestrator now has a sharper management boundary: it keeps the workflow moving, delegates execution to Specialist, routes review and RCA to Oracle, and owns E2E only as plan reviewer and final judge.
+> **Keep the manager out of the work queue.** Orchestrator now has a sharper management boundary: it keeps the workflow moving, delegates execution to Specialist, routes review and RCA to Critic, and owns E2E only as plan reviewer and final judge.
 
 - **Orchestrator is traffic control** — Orchestrator acknowledges cmds, decomposes work, tracks dependencies, updates dashboard/daily logs, and makes final acceptance decisions without becoming the execution bottleneck
-- **Oracle owns review work** — quality review, evidence review, RCA, adoption/drop decisions, architecture/design review, and deploy blocker classification are routed to Oracle
+- **Critic owns review work** — quality review, evidence review, RCA, adoption/drop decisions, architecture/design review, and deploy blocker classification are routed to Critic
 - **Specialist execute** — implementation, shell execution, deploy steps, and test commands are delegated to Specialist by default
 - **E2E responsibility clarified** — Orchestrator reviews the E2E plan, checks prerequisites, and makes the final pass/fail judgment; direct execution is now an explicit exception that must be justified in reports
 - **Generated instructions refreshed** — Claude, Codex, Copilot, Kimi, and OpenCode instruction outputs were rebuilt from the updated role definitions
@@ -1837,7 +1838,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 > **Run the Shogun formation on OpenCode.** OpenCode is now a first-class CLI alongside Claude Code, Codex, Copilot, and Kimi, with generated role agents, tmux-safe startup, provider-qualified model routing, and VPS-verified end-to-end operation.
 
-- **OpenCode agent generation** — `scripts/build_instructions.sh` generates `.opencode/agents/*.md` for Shogun, Orchestrator, telegram, and the 7 specialists (explorer/librarian/oracle/designer/fixer/observer/council) from the same shared instruction source used by other CLIs
+- **OpenCode agent generation** — `scripts/build_instructions.sh` generates `.opencode/agents/*.md` for Shogun, Orchestrator, telegram, and the 9 specialists (surveyor/critic/architect/experimentalist/analyst/ablation_planner/writer/observer/council) from the same shared instruction source used by other CLIs
 - **Role boundary permissions** — `config/opencode-permissions.yaml` drives OpenCode frontmatter permissions so each role can read/write only the files it owns
 - **tmux-safe OpenCode launch** — `lib/cli_adapter.sh` launches OpenCode with `--agent <agent_id>` and repository-pinned `OPENCODE_TUI_CONFIG=config/opencode-tui.json` for deterministic keybindings
 - **Provider-qualified models** — `settings.yaml` can route OpenCode agents to models such as `opencode/qwen3.6-plus-free` or `openrouter/openai/gpt-4o-mini`
@@ -1847,7 +1848,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 <summary><b>What was in v3.5 — Dynamic Model Routing</b></summary>
 
 - **Bloom Dynamic Model Routing** — `capability_tiers` in `config/settings.yaml` maps each model to its Bloom ceiling. L1-L3 → Spark, L4 → Sonnet 4.6, L5 → Sonnet 4.6 + extended thinking, L6 → Opus. Routing happens without agent restarts — the system finds the right idle agent by model capability
-- **Sonnet 4.6 as the new standard** — SWE-bench 79.6%, only 1.2pp below Opus 4.6. Oracle downgraded Opus → Sonnet 4.6. All Specialist default to Sonnet 4.6. One YAML line change, no restarts required
+- **Sonnet 4.6 as the new standard** — SWE-bench 79.6%, only 1.2pp below Opus 4.6. Critic downgraded Opus → Sonnet 4.6. All Specialist default to Sonnet 4.6. One YAML line change, no restarts required
 - **`/model-list` skill** — Complete reference table: all CLI tools × models × subscriptions × Bloom max level. Updated for Sonnet 4.6 and Spark positioning
 - **`/bloom-config` skill** — Interactive configurator: answer 2 questions about your subscriptions → get ready-to-paste `capability_tiers` YAML
 
@@ -1856,11 +1857,11 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 <details>
 <summary><b>What was in v3.4 — Bloom→Agent Routing, E2E Tests, Stop Hook</b></summary>
 
-- **Bloom → Agent routing** — Replaced dynamic model switching with agent-level routing. L1–L3 tasks go to Specialist, L4–L6 tasks go to Oracle. No more mid-session `/model opus` promotions
-- **Oracle as first-class agent** — Strategic advisor on pane 8. Handles deep analysis, design review, architecture evaluation, and complex QC
+- **Bloom → Agent routing** — Replaced dynamic model switching with agent-level routing. L1–L3 tasks go to Specialist, L4–L6 tasks go to Critic. No more mid-session `/model opus` promotions
+- **Critic as first-class agent** — Strategic advisor. Handles deep analysis, design review, architecture evaluation, and complex QC
 - **E2E test suite (19 tests, 7 scenarios)** — Mock CLI framework simulates agent behavior in isolated tmux sessions
 - **Stop hook inbox delivery** — Claude Code agents automatically check inbox at turn end via `.claude/settings.json` Stop hook. Eliminates the `send-keys` interruption problem
-- **Model defaults updated** — Orchestrator: Opus → Sonnet. Oracle: Opus (deep reasoning). Specialist: Sonnet (uniform tier)
+- **Model defaults updated** — Orchestrator: Opus → Sonnet. Critic: Opus (deep reasoning). Specialist: Sonnet (uniform tier)
 - **Escape escalation disabled for Claude Code** — Phase 2 escalation was interrupting active Claude Code turns; Stop hook handles delivery instead
 - **Codex/OpenCode startup integration** — Codex uses `get_startup_prompt()` / `get_startup_prompt_arg()` for Session Start recovery, while OpenCode loads agent definitions through generated `.opencode/agents/*.md` files
 - **YAML slimming utility** — `scripts/slim_yaml.sh` archives read messages and terminal commands, supports current top-level and legacy task YAML, and keeps `--dry-run` filesystem-safe for queue cleanup audits

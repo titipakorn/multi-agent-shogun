@@ -26,6 +26,6 @@ bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from>
 
 ```bash
 bash scripts/inbox_write.sh orchestrator "Wrote cmd_048. Please execute." cmd_new shogun
-bash scripts/inbox_write.sh fixer "Read the task YAML and start work." task_assigned orchestrator
-bash scripts/inbox_write.sh oracle "Mission complete. Requesting strategic review." report_received fixer
+bash scripts/inbox_write.sh experimentalist "Read the task YAML and start work." task_assigned orchestrator
+bash scripts/inbox_write.sh critic "Mission complete. Requesting strategic review." report_received experimentalist
 ```

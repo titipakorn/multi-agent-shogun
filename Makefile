@@ -23,11 +23,11 @@ test:
 	fi
 	@if ls tests/*.bats 1>/dev/null 2>&1; then \
 		echo "--- Root-level tests ---"; \
-		bats tests/*.bats --timing; \
+		bats -T tests/*.bats; \
 	fi
 	@if [ -d tests/unit ] && ls tests/unit/*.bats 1>/dev/null 2>&1; then \
 		echo "--- Unit tests ---"; \
-		bats tests/unit/ --timing; \
+		bats -T tests/unit/; \
 	fi
 
 # Run integration tests
@@ -41,7 +41,7 @@ test-int:
 		echo "ERROR: bats not installed. Run 'make install-deps' first."; \
 		exit 1; \
 	fi
-	bats tests/integration/ --filter-tags '!copilot,!codex' --timing
+	bats -T tests/integration/ --filter-tags '!copilot,!codex'
 
 # Run all tests
 test-all: test test-int

@@ -60,7 +60,7 @@
 #   T-SHOOK-002: Claude Code count change bypasses throttle (stop-hook-supplementary)
 #   T-SHOOK-003: Non-Claude CLIs still bypass throttle on count change
 #   T-CRESET-001: send_context_reset — suppresses /clear for orchestrator
-#   T-CRESET-002: send_context_reset — suppresses /clear for oracle
+#   T-CRESET-002: send_context_reset — suppresses /clear for critic
 #   T-CRESET-003: send_context_reset — sends /clear for specialist
 #   T-CRESET-004: send_context_reset — sends /new for opencode
 #   T-COPILOT-001: send_cli_command — copilot /clear → Ctrl-C + restart
@@ -1312,12 +1312,12 @@ YAML
     echo "$output" | grep -q "SKIP.*orchestrator"
 }
 
-# --- T-CRESET-002: send_context_reset suppresses /clear for oracle ---
+# --- T-CRESET-002: send_context_reset suppresses /clear for critic ---
 
-@test "T-CRESET-002: send_context_reset suppresses /clear for oracle" {
+@test "T-CRESET-002: send_context_reset suppresses /clear for critic" {
     run bash -c '
         source "'"$TEST_HARNESS"'"
-        AGENT_ID="oracle"
+        AGENT_ID="critic"
         send_context_reset
     '
     [ "$status" -eq 0 ]
@@ -1326,7 +1326,7 @@ YAML
     ! grep -q "send-keys" "$MOCK_LOG"
 
     # SKIP message in stderr
-    echo "$output" | grep -q "SKIP.*oracle"
+    echo "$output" | grep -q "SKIP.*critic"
 }
 
 # --- T-CRESET-003: send_context_reset sends /clear for specialist ---
@@ -1334,7 +1334,7 @@ YAML
 @test "T-CRESET-003: send_context_reset sends /clear for specialist" {
     run bash -c '
         source "'"$TEST_HARNESS"'"
-        AGENT_ID="designer"
+        AGENT_ID="architect"
         CLI_TYPE="claude"
         send_context_reset
     '
@@ -1349,7 +1349,7 @@ YAML
 @test "T-CRESET-004: send_context_reset sends /new for opencode" {
     run bash -c '
         source "'"$TEST_HARNESS"'"
-        AGENT_ID="designer"
+        AGENT_ID="architect"
         CLI_TYPE="opencode"
         send_context_reset
     '

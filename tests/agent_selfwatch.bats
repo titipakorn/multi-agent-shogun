@@ -16,7 +16,7 @@ setup_file() {
 
     export WATCHER_SCRIPT="$PROJECT_ROOT/scripts/inbox_watcher.sh"
     export INBOX_WRITE_SCRIPT="$PROJECT_ROOT/scripts/inbox_write.sh"
-    export SPECIALIST_INSTR="$PROJECT_ROOT/instructions/generated/codex-fixer.md"
+    export SPECIALIST_INSTR="$PROJECT_ROOT/instructions/generated/codex-experimentalist.md"
 
     [ -f "$WATCHER_SCRIPT" ] || return 1
     [ -f "$INBOX_WRITE_SCRIPT" ] || return 1

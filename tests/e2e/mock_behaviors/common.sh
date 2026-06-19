@@ -6,12 +6,17 @@ set -euo pipefail
 
 # ─── YAML helpers (python3-yaml based) ───
 
+MOCK_PYTHON="${MOCK_PROJECT_ROOT:-.}/.venv/bin/python3"
+if [ ! -x "$MOCK_PYTHON" ]; then
+    MOCK_PYTHON="python3"
+fi
+
 # Read a YAML field value
 # Usage: yaml_read <file> <dotted.key.path>
 yaml_read() {
     local file="$1" key_path="$2"
     local result
-    result=$(python3 -c "
+    result=$("$MOCK_PYTHON" -c "
 import yaml, sys
 try:
     with open('$file') as f:
@@ -49,8 +54,10 @@ yaml_update() {
     local lockfile="${file}.lock"
 
     (
-        flock -w 5 200 || { echo "[mock] flock timeout on $file" >&2; return 1; }
-        python3 -c "
+        if command -v flock &>/dev/null; then
+            flock -w 5 200 || { echo "[mock] flock timeout on $file" >&2; return 1; }
+        fi
+        "$MOCK_PYTHON" -c "
 import yaml, os, tempfile
 try:
     with open('$file') as f:
@@ -84,8 +91,10 @@ inbox_mark_all_read() {
     local lockfile="${inbox_file}.lock"
 
     (
-        flock -w 5 200 || return 1
-        python3 -c "
+        if command -v flock &>/dev/null; then
+            flock -w 5 200 || return 1
+        fi
+        "$MOCK_PYTHON" -c "
 import yaml, os, tempfile
 try:
     with open('$inbox_file') as f:

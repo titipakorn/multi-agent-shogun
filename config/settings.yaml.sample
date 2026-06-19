@@ -5,10 +5,10 @@
 # is gitignored (per project convention); only this sample template
 # is committed to the repository.
 #
-# The default topology is v2 (shogun + orchestrator + 7 specialists).
-# Exactly 9 roles must be defined:
-#   shogun, orchestrator, explorer, librarian, oracle, designer,
-#   fixer, observer, council.
+# The default topology is v2 (shogun + orchestrator + 9 specialists).
+# Exactly 11 roles must be defined:
+#   shogun, orchestrator, surveyor, critic, architect, experimentalist,
+#   analyst, ablation_planner, writer, observer, council.
 # ═══════════════════════════════════════════════════════════════
 
 language: en
@@ -61,70 +61,94 @@ roles:
       edit_deny:
         - "queue/reports/*.yaml"
 
-  explorer:
+  architect:
+    model: opus
+    cli_variant: claude
+    pane_target: "multiagent:ops.1"
+    color: "#1e3a1e"
+    title: "architect"
+    prompt_path: "instructions/architect.md"
+    temperature: 0.1
+    skills: [spec-driven-development, api-and-interface-design]
+    permissions_override:
+      edit_deny: ["**/*"]
+
+  experimentalist:
+    model: sonnet
+    cli_variant: claude
+    pane_target: "multiagent:ops.2"
+    color: "#1e3a3a"
+    title: "experimentalist"
+    prompt_path: "instructions/experimentalist.md"
+    temperature: 0.2
+    skills: [subagent-driven-development, test-driven-development, incremental-implementation, debugging-and-error-recovery]
+    permissions_override: {}
+
+  analyst:
+    model: sonnet
+    cli_variant: claude
+    pane_target: "multiagent:ops.3"
+    color: "#3a1e3a"
+    title: "analyst"
+    prompt_path: "instructions/analyst.md"
+    temperature: 0.1
+    skills: []
+    permissions_override:
+      edit_deny: ["**/*"]
+
+  ablation_planner:
+    model: sonnet
+    cli_variant: claude
+    pane_target: "multiagent:ops.4"
+    color: "#503515"
+    title: "ablation_planner"
+    prompt_path: "instructions/ablation_planner.md"
+    temperature: 0.1
+    skills: []
+    permissions_override:
+      edit_deny: ["**/*"]
+
+  surveyor:
     model: haiku
     cli_variant: claude
     pane_target: "multiagent:research.0"
     color: "#454510"
-    title: "explorer"
-    prompt_path: "instructions/explorer.md"
+    title: "surveyor"
+    prompt_path: "instructions/surveyor.md"
     temperature: 0.1
-    skills: [codemap]
+    skills: [web-search, doc-fetch]
     permissions_override:
       read_allow: ["context/*"]
       edit_deny: ["**/*"]
 
-  librarian:
-    model: sonnet
-    cli_variant: claude
-    pane_target: "multiagent:research.1"
-    color: "#503515"
-    title: "librarian"
-    prompt_path: "instructions/librarian.md"
-    temperature: 0.2
-    skills: [web-search, doc-fetch]
-    permissions_override:
-      edit_deny: ["**/*"]
-
-  oracle:
+  critic:
     model: opus
     cli_variant: claude
-    pane_target: "multiagent:research.2"
+    pane_target: "multiagent:research.1"
     color: "#9e7c0a"
-    title: "oracle"
-    prompt_path: "instructions/oracle.md"
+    title: "critic"
+    prompt_path: "instructions/critic.md"
     temperature: 0.1
-    skills: [grill-with-docs]
+    skills: [doubt-driven-development]
     permissions_override:
       edit_deny: ["**/*"]
 
-  designer:
+  writer:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:ops.2"
-    color: "#3a1e3a"
-    title: "designer"
-    prompt_path: "instructions/designer.md"
-    temperature: 0.3
-    skills: [frontend-design]
-    permissions_override: {}
-
-  fixer:
-    model: sonnet
-    cli_variant: claude
-    pane_target: "multiagent:ops.1"
-    color: "#1e3a1e"
-    title: "fixer"
-    prompt_path: "instructions/fixer.md"
+    pane_target: "multiagent:research.2"
+    color: "#353535"
+    title: "writer"
+    prompt_path: "instructions/writer.md"
     temperature: 0.2
-    skills: [subagent-driven-development]
+    skills: []
     permissions_override: {}
 
   observer:
     model: sonnet
     cli_variant: claude
-    pane_target: "multiagent:ops.3"
-    color: "#1e3a3a"
+    pane_target: "multiagent:research.3"
+    color: "#1c2a38"
     title: "observer"
     prompt_path: "instructions/observer.md"
     temperature: 0.2
@@ -135,8 +159,8 @@ roles:
   council:
     model: opus
     cli_variant: claude
-    pane_target: "multiagent:research.3"
-    color: "#353535"
+    pane_target: "multiagent:research.4"
+    color: "#2b2b2b"
     title: "council"
     prompt_path: "instructions/council.md"
     temperature: 0.1

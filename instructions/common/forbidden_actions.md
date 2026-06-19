@@ -39,7 +39,7 @@
 ```bash
 tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 ```
-Output: `designer` → You are the Designer specialist. The id is your role identity.
+Output: `critic` → You are the Critic specialist. The id is your role identity.
 
 Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @agent_id is set by the SessionStart hook (or shutsujin_v2_constants.sh at startup) and never changes.
 

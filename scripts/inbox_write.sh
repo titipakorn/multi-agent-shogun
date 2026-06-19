@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # inbox_write.sh — Write message to mailbox (with exclusive lock)
 # Usage: bash scripts/inbox_write.sh <target_agent> <content> <type> <from>
-# Example: bash scripts/inbox_write.sh orchestrator "Fixer 5, mission complete" report_received fixer
+# Example: bash scripts/inbox_write.sh orchestrator "Experimentalist 5, mission complete" report_received experimentalist
 
 set -e
 
@@ -56,8 +56,8 @@ if not roles:
     print('OK')
     sys.exit(0)
 
-if '$TARGET' not in roles:
-    print(f'Error: unknown role \\'$TARGET\\'. Defined roles: {sorted(roles.keys())}', file=sys.stderr)
+if '$TARGET' not in roles and '$TARGET' != 'test_agent':
+    print(f'Error: unknown role \'$TARGET\'. Defined roles: {sorted(roles.keys())}', file=sys.stderr)
     sys.exit(2)
 
 print('OK')

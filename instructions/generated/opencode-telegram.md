@@ -188,10 +188,10 @@ Examples:
 bash scripts/inbox_write.sh orchestrator "Wrote cmd_048. Please execute." cmd_new shogun
 
 # Specialist → Orchestrator
-bash scripts/inbox_write.sh orchestrator "Fixer, mission complete. Please verify report YAML." report_received fixer
+bash scripts/inbox_write.sh orchestrator "Experimentalist, mission complete. Please verify report YAML." report_received experimentalist
 
 # Orchestrator → Specialist
-bash scripts/inbox_write.sh designer "Read the task YAML and start work." task_assigned orchestrator
+bash scripts/inbox_write.sh experimentalist "Read the task YAML and start work." task_assigned orchestrator
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -274,7 +274,7 @@ Race condition is eliminated: context reset wipes old context. Agent re-reads YA
 |-----------|--------|--------|
 | Specialist → Orchestrator | Report YAML + inbox_write | File-based notification |
 | Orchestrator → Shogun/Lord | dashboard.md update + inbox_write | Report command completions/failures to Shogun; watcher suppresses send-keys if active |
-| Orchestrator → Oracle/Council | YAML + inbox_write | Strategic analysis delegation (Bloom L4-L6 / EVAL) |
+| Orchestrator → Critic/Council | YAML + inbox_write | Strategic analysis delegation (Bloom L4-L6 / EVAL) |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
 ## File Operation Rule
@@ -551,7 +551,7 @@ git diff --exit-code instructions/generated/
 ```bash
 tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 ```
-Output: `designer` → You are the Designer specialist. The id is your role identity.
+Output: `critic` → You are the Critic specialist. The id is your role identity.
 
 Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @agent_id is set by the SessionStart hook (or shutsujin_v2_constants.sh at startup) and never changes.
 

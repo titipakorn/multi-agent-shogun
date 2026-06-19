@@ -62,40 +62,40 @@ dump_watcher_log() {
 
     # 1. Respawn pane with codex mock (clean restart)
     tmux respawn-pane -k -t "$ashigaru1_pane" \
-        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=explorer MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
+        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=surveyor MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
     sleep 2
     tmux set-option -p -t "$ashigaru1_pane" @agent_cli "codex"
 
     # 2. Place assigned task YAML
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
     # 3. Send task_assigned message via inbox_write
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     # 4. Start inbox_watcher with codex CLI type
     local watcher_pid log_file
-    watcher_pid=$(start_inbox_watcher "explorer" 1 "codex")
+    watcher_pid=$(start_inbox_watcher "surveyor" 1 "codex")
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_$$.log"
 
     # 5. Wait for task to complete
     #    Flow: watcher detects unread → sends /new → polls idle (5s) → sends startup prompt → mock processes
     #    Expected time: ~10-15s
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 45
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 45
     if [ "$status" -ne 0 ]; then
-        dump_pane_for_debug "$ashigaru1_pane" "explorer-codex"
+        dump_pane_for_debug "$ashigaru1_pane" "surveyor-codex"
         dump_watcher_log "$log_file"
     fi
     assert_success
 
     # 6. Verify report was written
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
 
     # 7. Verify report content
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "status" "done"
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "task_id" "subtask_test_001a"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "status" "done"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "task_id" "subtask_test_001a"
 
     # 8. Verify startup prompt appeared in pane output (scrollback search)
     run wait_for_pane_text "$ashigaru1_pane" "Startup prompt received" 10
@@ -119,32 +119,32 @@ dump_watcher_log() {
 
     # 1. Respawn pane with codex mock
     tmux respawn-pane -k -t "$ashigaru1_pane" \
-        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=explorer MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
+        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=surveyor MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
     sleep 2
     tmux set-option -p -t "$ashigaru1_pane" @agent_cli "codex"
 
     # 2. Place task and send inbox message
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     # 3. Start watcher (codex CLI type)
     local watcher_pid log_file
-    watcher_pid=$(start_inbox_watcher "explorer" 1 "codex")
+    watcher_pid=$(start_inbox_watcher "surveyor" 1 "codex")
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_$$.log"
 
     # 4. Wait for processing
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 45
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 45
     if [ "$status" -ne 0 ]; then
-        dump_pane_for_debug "$ashigaru1_pane" "explorer-codex-B"
+        dump_pane_for_debug "$ashigaru1_pane" "surveyor-codex-B"
         dump_watcher_log "$log_file"
     fi
     assert_success
 
     # 5. Check watcher log for startup prompt delivery
-    run grep "Sending startup prompt to explorer" "$log_file"
+    run grep "Sending startup prompt to surveyor" "$log_file"
     if [ "$status" -ne 0 ]; then
         dump_watcher_log "$log_file"
     fi
@@ -173,26 +173,26 @@ dump_watcher_log() {
 
     # 1. Respawn pane with claude mock
     tmux respawn-pane -k -t "$ashigaru1_pane" \
-        "MOCK_CLI_TYPE=claude MOCK_AGENT_ID=explorer MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
+        "MOCK_CLI_TYPE=claude MOCK_AGENT_ID=surveyor MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
     sleep 2
     tmux set-option -p -t "$ashigaru1_pane" @agent_cli "claude"
 
     # 2. Place task and send inbox message
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     # 3. Start watcher (claude CLI type)
     local watcher_pid log_file
-    watcher_pid=$(start_inbox_watcher "explorer" 1 "claude")
+    watcher_pid=$(start_inbox_watcher "surveyor" 1 "claude")
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_$$.log"
 
     # 4. Wait for task to complete (claude uses /clear → auto-recovery via mock handle_clear)
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 45
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 45
     if [ "$status" -ne 0 ]; then
-        dump_pane_for_debug "$ashigaru1_pane" "explorer-claude-C"
+        dump_pane_for_debug "$ashigaru1_pane" "surveyor-claude-C"
         dump_watcher_log "$log_file"
     fi
     assert_success
@@ -223,27 +223,27 @@ dump_watcher_log() {
 
     # 1. Respawn pane with codex mock
     tmux respawn-pane -k -t "$ashigaru1_pane" \
-        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=explorer MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
+        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=surveyor MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
     sleep 2
     tmux set-option -p -t "$ashigaru1_pane" @agent_cli "codex"
 
     # 2. Place assigned task YAML
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
     # 3. Send clear_command via inbox_write (simulates orchestrator sending /clear)
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "/clear" "clear_command" "orchestrator"
 
     # 4. Start inbox_watcher with codex CLI type
     local watcher_pid log_file
-    watcher_pid=$(start_inbox_watcher "explorer" 1 "codex")
+    watcher_pid=$(start_inbox_watcher "surveyor" 1 "codex")
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_$$.log"
 
     # 5. Wait for task to complete
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 60
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 60
     if [ "$status" -ne 0 ]; then
-        dump_pane_for_debug "$ashigaru1_pane" "explorer-codex-D"
+        dump_pane_for_debug "$ashigaru1_pane" "surveyor-codex-D"
         dump_watcher_log "$log_file"
     fi
     assert_success
@@ -259,7 +259,7 @@ dump_watcher_log() {
 
     # 7. Verify startup prompt was sent exactly once
     local startup_count
-    startup_count=$(grep -c "Sending startup prompt to explorer" "$log_file" 2>/dev/null || true)
+    startup_count=$(grep -c "Sending startup prompt to surveyor" "$log_file" 2>/dev/null || true)
     if [ "$startup_count" -ne 1 ]; then
         echo "Expected 1 startup prompt, got $startup_count" >&2
         dump_watcher_log "$log_file"
@@ -290,31 +290,31 @@ dump_watcher_log() {
 
     # 1. Respawn pane with codex mock
     tmux respawn-pane -k -t "$ashigaru1_pane" \
-        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=explorer MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
+        "MOCK_CLI_TYPE=codex MOCK_AGENT_ID=surveyor MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
     sleep 2
     tmux set-option -p -t "$ashigaru1_pane" @agent_cli "codex"
 
     # 2. Place assigned task YAML
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
     # 3. Send THREE clear_commands in rapid succession (simulates orchestrator bug)
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "/clear" "clear_command" "orchestrator"
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "/clear" "clear_command" "orchestrator"
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "/clear" "clear_command" "orchestrator"
 
     # 4. Start inbox_watcher with codex CLI type
     local watcher_pid log_file
-    watcher_pid=$(start_inbox_watcher "explorer" 1 "codex")
+    watcher_pid=$(start_inbox_watcher "surveyor" 1 "codex")
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_$$.log"
 
     # 5. Wait for task to complete
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 60
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 60
     if [ "$status" -ne 0 ]; then
-        dump_pane_for_debug "$ashigaru1_pane" "explorer-codex-E"
+        dump_pane_for_debug "$ashigaru1_pane" "surveyor-codex-E"
         dump_watcher_log "$log_file"
     fi
     assert_success
@@ -361,7 +361,7 @@ dump_watcher_log() {
 
     # 1. Respawn pane with claude mock
     tmux respawn-pane -k -t "$ashigaru1_pane" \
-        "IDLE_FLAG_DIR=$flag_dir MOCK_CLI_TYPE=claude MOCK_AGENT_ID=explorer MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
+        "IDLE_FLAG_DIR=$flag_dir MOCK_CLI_TYPE=claude MOCK_AGENT_ID=surveyor MOCK_PROCESSING_DELAY=1 MOCK_PROJECT_ROOT=$E2E_QUEUE bash $PROJECT_ROOT/tests/e2e/mock_cli.sh"
     sleep 2
     tmux set-option -p -t "$ashigaru1_pane" @agent_cli "claude"
 
@@ -373,11 +373,11 @@ dump_watcher_log() {
     [ ! -f "$flag_dir/shogun_idle_ashigaru1" ]
 
     # 3. Place assigned task YAML
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
     # 4. Send task_assigned message (unread message waiting)
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     # 5. Start inbox_watcher — this is where the fix kicks in:
@@ -389,22 +389,22 @@ dump_watcher_log() {
     ESCALATE_PHASE2="${E2E_ESCALATE_PHASE2:-20}" \
     ESCALATE_COOLDOWN="${E2E_ESCALATE_COOLDOWN:-25}" \
     INOTIFY_TIMEOUT="${E2E_INOTIFY_TIMEOUT:-5}" \
-    bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "explorer" "$ashigaru1_pane" "claude" \
+    bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "surveyor" "$ashigaru1_pane" "claude" \
         > "$log_file" 2>&1 &
     watcher_pid=$!
 
     # 6. Wait for task to complete (proves initial flag + nudge chain worked)
     #    The initial idle flag is created, then consumed by context-reset→nudge,
     #    so we verify via log + task completion rather than flag file existence.
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 45
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 45
     if [ "$status" -ne 0 ]; then
-        dump_pane_for_debug "$ashigaru1_pane" "explorer-claude-F"
+        dump_pane_for_debug "$ashigaru1_pane" "surveyor-claude-F"
         dump_watcher_log "$log_file"
     fi
     assert_success
 
     # 7. Verify initial flag creation was logged (proves the fix is active)
-    run grep "Created initial idle flag for explorer" "$log_file"
+    run grep "Created initial idle flag for surveyor" "$log_file"
     if [ "$status" -ne 0 ]; then
         dump_watcher_log "$log_file"
     fi
@@ -412,7 +412,7 @@ dump_watcher_log() {
 
     # 8. Verify NO "agent is busy" log for this agent
     #    (without the fix, this would show repeated "busy" messages)
-    run grep "unread for explorer but agent is busy (claude)" "$log_file"
+    run grep "unread for surveyor but agent is busy (claude)" "$log_file"
     assert_failure
 
     # Cleanup

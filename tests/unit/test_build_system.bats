@@ -67,8 +67,8 @@ setup() {
     [ -f "$OUTPUT_DIR/orchestrator.md" ]
 }
 
-@test "claude: specialist.md generated" {
-    [ -f "$OUTPUT_DIR/specialist.md" ]
+@test "claude: critic.md generated" {
+    [ -f "$OUTPUT_DIR/critic.md" ]
 }
 
 # =============================================================================
@@ -83,8 +83,8 @@ setup() {
     [ -f "$OUTPUT_DIR/codex-orchestrator.md" ]
 }
 
-@test "codex: codex-specialist.md generated" {
-    [ -f "$OUTPUT_DIR/codex-specialist.md" ]
+@test "codex: codex-critic.md generated" {
+    [ -f "$OUTPUT_DIR/codex-critic.md" ]
 }
 
 @test "opencode: opencode-shogun.md generated [R6]" {
@@ -95,12 +95,12 @@ setup() {
     [ -f "$OUTPUT_DIR/opencode-orchestrator.md" ]
 }
 
-@test "opencode: opencode-specialist.md generated [R6]" {
-    [ -f "$OUTPUT_DIR/opencode-specialist.md" ]
+@test "opencode: opencode-critic.md generated [R6]" {
+    [ -f "$OUTPUT_DIR/opencode-critic.md" ]
 }
 
-@test "opencode: opencode-oracle.md generated [R6]" {
-    [ -f "$OUTPUT_DIR/opencode-oracle.md" ]
+@test "opencode: opencode-surveyor.md generated [R6]" {
+    [ -f "$OUTPUT_DIR/opencode-surveyor.md" ]
 }
 
 @test "antigravity: antigravity-shogun.md generated" {
@@ -111,12 +111,12 @@ setup() {
     [ -f "$OUTPUT_DIR/antigravity-orchestrator.md" ]
 }
 
-@test "antigravity: antigravity-specialist.md generated" {
-    [ -f "$OUTPUT_DIR/antigravity-specialist.md" ]
+@test "antigravity: antigravity-critic.md generated" {
+    [ -f "$OUTPUT_DIR/antigravity-critic.md" ]
 }
 
-@test "antigravity: antigravity-oracle.md generated" {
-    [ -f "$OUTPUT_DIR/antigravity-oracle.md" ]
+@test "antigravity: antigravity-surveyor.md generated" {
+    [ -f "$OUTPUT_DIR/antigravity-surveyor.md" ]
 }
 
 @test "opencode: generated markdown is LF-only and has no trailing whitespace [R6]" {
@@ -149,8 +149,8 @@ setup() {
     [ -f "$OUTPUT_DIR/copilot-orchestrator.md" ]
 }
 
-@test "copilot: copilot-specialist.md generated [Phase 2+3]" {
-    [ -f "$OUTPUT_DIR/copilot-specialist.md" ]
+@test "copilot: copilot-critic.md generated [Phase 2+3]" {
+    [ -f "$OUTPUT_DIR/copilot-critic.md" ]
 }
 
 # =============================================================================
@@ -165,8 +165,8 @@ setup() {
     [ -s "$OUTPUT_DIR/orchestrator.md" ]
 }
 
-@test "content: specialist.md is not empty" {
-    [ -s "$OUTPUT_DIR/specialist.md" ]
+@test "content: critic.md is not empty" {
+    [ -s "$OUTPUT_DIR/critic.md" ]
 }
 
 @test "content: codex-shogun.md is not empty" {
@@ -177,8 +177,8 @@ setup() {
     [ -s "$OUTPUT_DIR/codex-orchestrator.md" ]
 }
 
-@test "content: codex-specialist.md is not empty" {
-    [ -s "$OUTPUT_DIR/codex-specialist.md" ]
+@test "content: codex-critic.md is not empty" {
+    [ -s "$OUTPUT_DIR/codex-critic.md" ]
 }
 
 @test "content: opencode-shogun.md is not empty" {
@@ -189,12 +189,12 @@ setup() {
     [ -s "$OUTPUT_DIR/opencode-orchestrator.md" ]
 }
 
-@test "content: opencode-specialist.md is not empty" {
-    [ -s "$OUTPUT_DIR/opencode-specialist.md" ]
+@test "content: opencode-critic.md is not empty" {
+    [ -s "$OUTPUT_DIR/opencode-critic.md" ]
 }
 
-@test "content: opencode-oracle.md is not empty" {
-    [ -s "$OUTPUT_DIR/opencode-oracle.md" ]
+@test "content: opencode-surveyor.md is not empty" {
+    [ -s "$OUTPUT_DIR/opencode-surveyor.md" ]
 }
 
 @test "content: antigravity-shogun.md is not empty" {
@@ -213,8 +213,8 @@ setup() {
     grep -qi "orchestrator\\|Karo" "$OUTPUT_DIR/orchestrator.md"
 }
 
-@test "content: specialist.md contains specialist role reference" {
-    grep -qi "specialist\\|Ashigaru" "$OUTPUT_DIR/specialist.md"
+@test "content: critic.md contains critic role reference" {
+    grep -qi "critic\\|Critic" "$OUTPUT_DIR/critic.md"
 }
 
 @test "content: codex-shogun.md contains shogun role reference" {
@@ -225,8 +225,8 @@ setup() {
     grep -qi "orchestrator\\|Karo" "$OUTPUT_DIR/codex-orchestrator.md"
 }
 
-@test "content: codex-specialist.md contains specialist role reference" {
-    grep -qi "specialist\\|Ashigaru" "$OUTPUT_DIR/codex-specialist.md"
+@test "content: codex-critic.md contains critic role reference" {
+    grep -qi "critic\\|Critic" "$OUTPUT_DIR/codex-critic.md"
 }
 
 @test "content: opencode-shogun.md contains shogun role reference" {
@@ -237,12 +237,12 @@ setup() {
     grep -qi "orchestrator\\|Karo" "$OUTPUT_DIR/opencode-orchestrator.md"
 }
 
-@test "content: opencode-specialist.md contains specialist role reference" {
-    grep -qi "specialist\\|Ashigaru" "$OUTPUT_DIR/opencode-specialist.md"
+@test "content: opencode-critic.md contains critic role reference" {
+    grep -qi "critic\\|Critic" "$OUTPUT_DIR/opencode-critic.md"
 }
 
-@test "content: opencode-oracle.md contains oracle role reference" {
-    grep -qi "oracle\\|Gunshi" "$OUTPUT_DIR/opencode-oracle.md"
+@test "content: opencode-surveyor.md contains surveyor role reference" {
+    grep -qi "surveyor\\|Surveyor" "$OUTPUT_DIR/opencode-surveyor.md"
 }
 
 @test "content: antigravity-shogun.md contains shogun role reference" {
@@ -298,12 +298,12 @@ setup() {
     [ -f "$OUTPUT_DIR/opencode-orchestrator.md" ]
 }
 
-@test "opencode-inst: instructions/generated/opencode-specialist.md generated [R6]" {
-    [ -f "$OUTPUT_DIR/opencode-specialist.md" ]
+@test "opencode-inst: instructions/generated/opencode-critic.md generated [R6]" {
+    [ -f "$OUTPUT_DIR/opencode-critic.md" ]
 }
 
-@test "opencode-inst: instructions/generated/opencode-oracle.md generated [R6]" {
-    [ -f "$OUTPUT_DIR/opencode-oracle.md" ]
+@test "opencode-inst: instructions/generated/opencode-surveyor.md generated [R6]" {
+    [ -f "$OUTPUT_DIR/opencode-surveyor.md" ]
 }
 
 @test "opencode-agent: .opencode/agents/shogun.md generated [R6]" {
@@ -332,33 +332,33 @@ for path in sorted(agents_dir.glob("*.md")):
 PYEOF
 }
 
-@test "opencode-agent: explorer read permissions allow own inbox/report/task [R6]" {
+@test "opencode-agent: critic read permissions allow own inbox/report/task [R6]" {
     PROJECT_ROOT="$PROJECT_ROOT" "$PROJECT_ROOT/.venv/bin/python3" - <<'PYEOF'
 from pathlib import Path
 import os
 import yaml
 
 project_root = Path(os.environ["PROJECT_ROOT"])
-text = (project_root / ".opencode/agents/explorer.md").read_text(encoding="utf-8")
+text = (project_root / ".opencode/agents/critic.md").read_text(encoding="utf-8")
 parts = text.split("---", 2)
 frontmatter = yaml.safe_load(parts[1])
 perm = frontmatter["permission"]
 
 assert perm["question"] == "deny"
 assert perm["read"]["queue/inbox/*"] == "deny"
-assert perm["read"]["queue/inbox/explorer.yaml"] == "allow"
+assert perm["read"]["queue/inbox/critic.yaml"] == "allow"
 assert perm["read"]["queue/tasks/*"] == "deny"
-assert perm["read"]["queue/tasks/explorer.yaml"] == "allow"
+assert perm["read"]["queue/tasks/critic.yaml"] == "allow"
 assert perm["read"]["queue/reports/*"] == "deny"
-assert perm["read"]["queue/reports/ashigaru1_report.yaml"] == "allow"
+assert perm["read"]["queue/reports/critic_report.yaml"] == "allow"
 
 for tool_name in ("glob", "list"):
     assert perm[tool_name]["queue/inbox/*"] == "deny"
-    assert perm[tool_name]["queue/inbox/explorer.yaml"] == "allow"
+    assert perm[tool_name]["queue/inbox/critic.yaml"] == "allow"
     assert perm[tool_name]["queue/tasks/*"] == "deny"
-    assert perm[tool_name]["queue/tasks/explorer.yaml"] == "allow"
+    assert perm[tool_name]["queue/tasks/critic.yaml"] == "allow"
     assert perm[tool_name]["queue/reports/*"] == "deny"
-    assert perm[tool_name]["queue/reports/ashigaru1_report.yaml"] == "allow"
+    assert perm[tool_name]["queue/reports/critic_report.yaml"] == "allow"
 PYEOF
 }
 
@@ -503,26 +503,22 @@ PYEOF
     [ "$output" = "0" ]
 }
 
-@test "codex-clear: codex-specialist.md has no bare '/clear' in escalation table" {
+@test "codex-clear: codex-telegram.md has no bare '/clear' in escalation table" {
     # /clear must not appear as a command except in the comparison table (from codex_tools.md)
     # NG if "/clear sent" is in the escalation line
-    run grep -c '`/clear` sent (max once' "$OUTPUT_DIR/codex-specialist.md"
+    run grep -c '`/clear` sent (max once' "$OUTPUT_DIR/codex-telegram.md"
     [ "$output" = "0" ]
 }
 
-@test "codex-clear: codex-specialist.md protocol uses CLI-neutral context reset" {
+@test "codex-clear: codex-telegram.md protocol uses CLI-neutral context reset" {
     # clear_command line in protocol.md is in CLI-neutral expression
-    grep -q "context reset command via send-keys" "$OUTPUT_DIR/codex-specialist.md"
+    grep -q "context reset command via send-keys" "$OUTPUT_DIR/codex-telegram.md"
 }
 
 @test "codex-clear: codex-orchestrator.md has no bare '/clear' in redo protocol" {
     # In Redo Protocol, "delivers /clear to the agent ->" must not remain as is
     run grep -c 'delivers `/clear` to the agent →' "$OUTPUT_DIR/codex-orchestrator.md"
     [ "$output" = "0" ]
-}
-
-@test "codex-clear: codex-oracle.md protocol uses CLI-neutral context reset" {
-    grep -q "context reset command via send-keys" "$OUTPUT_DIR/codex-oracle.md"
 }
 
 @test "codex-clear: codex-shogun.md protocol uses CLI-neutral context reset" {
@@ -544,5 +540,12 @@ PYEOF
     local checksums_second
     checksums_second=$(find "$OUTPUT_DIR" -name "*.md" -type f -exec md5sum {} \; | sort)
 
+    if [ "$checksums_first" != "$checksums_second" ]; then
+        echo "First build checksums:"
+        echo "$checksums_first"
+        echo "Second build checksums:"
+        echo "$checksums_second"
+        diff <(echo "$checksums_first") <(echo "$checksums_second")
+    fi
     [ "$checksums_first" = "$checksums_second" ]
 }

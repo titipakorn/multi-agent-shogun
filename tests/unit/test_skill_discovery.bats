@@ -34,17 +34,17 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
-@test "all 8 role skill folders exist" {
-  for role in common orchestrator explorer librarian oracle \
-              designer fixer observer council; do
+@test "all 10 role skill folders exist" {
+  for role in common orchestrator surveyor critic architect \
+              experimentalist analyst ablation_planner writer observer council; do
     [ -d "$PROJECT_ROOT/skills/$role" ] || \
       { echo "MISSING: skills/$role"; return 1; }
   done
 }
 
 @test "every specialist instruction file has Available Skills section" {
-  for role in orchestrator explorer librarian oracle \
-              designer fixer observer council; do
+  for role in orchestrator surveyor critic architect \
+              experimentalist analyst ablation_planner writer observer council; do
     grep -q "^## Available Skills" "$PROJECT_ROOT/instructions/$role.md" || \
       { echo "MISSING section in instructions/$role.md"; return 1; }
   done

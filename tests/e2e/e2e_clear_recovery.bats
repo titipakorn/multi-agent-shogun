@@ -46,26 +46,26 @@ setup() {
 # ═══════════════════════════════════════════════════════════════
 
 @test "E2E-003-A: /clear with assigned task triggers auto-recovery" {
-    # 1. Place task YAML for explorer (status: assigned)
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    # 1. Place task YAML for surveyor (status: assigned)
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    # 2. Send /clear to explorer (not inbox nudge — direct /clear)
+    # 2. Send /clear to surveyor (not inbox nudge — direct /clear)
     local ashigaru1_pane
     ashigaru1_pane=$(pane_target 1)
     send_to_pane "$ashigaru1_pane" "/clear"
 
     # 3. Wait for task to complete (handle_clear detects assigned task)
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 30
     assert_success
 
     # 4. Verify report was written
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
 
     # 5. Verify report content
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "status" "done"
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "task_id" "subtask_test_001a"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "status" "done"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "task_id" "subtask_test_001a"
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -73,7 +73,7 @@ setup() {
 # ═══════════════════════════════════════════════════════════════
 
 @test "E2E-003-B: /clear without assigned task does not crash" {
-    # 1. No task YAML placed — explorer has nothing to do
+    # 1. No task YAML placed — surveyor has nothing to do
 
     # 2. Send /clear
     local ashigaru1_pane
@@ -84,7 +84,7 @@ setup() {
     sleep 3
 
     # 4. No report should be created (no task was processed)
-    [ ! -f "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" ]
+    [ ! -f "$E2E_QUEUE/queue/reports/surveyor_report.yaml" ]
 
     # 5. Verify mock is still alive — send test input, check it's processed
     send_to_pane "$ashigaru1_pane" "health_check"
@@ -106,19 +106,19 @@ setup() {
     sleep 3
 
     # 2. Now place task and send normal inbox nudge
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     send_to_pane "$ashigaru1_pane" "inbox1"
 
     # 3. Task should complete normally
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 30
     assert_success
 
     # 4. Report should exist
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
 }

@@ -70,22 +70,22 @@ wait_for_log() {
     flag_dir="$(mktemp -d "/tmp/e2e_idle_flags_XXXXXX")"
     local ashigaru_idle_flag="$flag_dir/shogun_idle_ashigaru1"
 
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-        "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+        "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_clear_${BASHPID}.log"
     watcher_pid=$(
         IDLE_FLAG_DIR="$flag_dir" \
-        bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "explorer" "$ashigaru1_pane" "claude" \
+        bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "surveyor" "$ashigaru1_pane" "claude" \
             > "$log_file" 2>&1 &
         echo $!
     )
     sleep 1
 
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "/clear" "clear_command" "orchestrator"
 
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 45
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 45
     assert_success
 
     run wait_for_file_within "$ashigaru_idle_flag" 10
@@ -110,17 +110,17 @@ wait_for_log() {
     send_to_pane "$ashigaru1_pane" "busy_hold 12"
     sleep 1
 
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-        "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+        "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     log_file="/tmp/e2e_inbox_watcher_ashigaru1_stale_busy_${BASHPID}.log"
     watcher_pid=$(
         IDLE_FLAG_DIR="$flag_dir" \
         FIRST_UNREAD_SEEN="$first_unread_seen" \
-        bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "explorer" "$ashigaru1_pane" "copilot" \
+        bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "surveyor" "$ashigaru1_pane" "copilot" \
             > "$log_file" 2>&1 &
         echo $!
     )
@@ -131,7 +131,7 @@ wait_for_log() {
     run wait_for_file_within "$ashigaru_idle_flag" 10
     assert_success
 
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 45
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 45
     assert_success
 
     stop_inbox_watcher "$watcher_pid"

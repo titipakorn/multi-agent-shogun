@@ -6,13 +6,15 @@ set -euo pipefail
 
 EXPECTED=(
     "multiagent:ops.0:orchestrator"
-    "multiagent:ops.1:fixer"
-    "multiagent:ops.2:designer"
-    "multiagent:ops.3:observer"
-    "multiagent:research.0:explorer"
-    "multiagent:research.1:librarian"
-    "multiagent:research.2:oracle"
-    "multiagent:research.3:council"
+    "multiagent:ops.1:architect"
+    "multiagent:ops.2:experimentalist"
+    "multiagent:ops.3:analyst"
+    "multiagent:ops.4:ablation_planner"
+    "multiagent:research.0:surveyor"
+    "multiagent:research.1:critic"
+    "multiagent:research.2:writer"
+    "multiagent:research.3:observer"
+    "multiagent:research.4:council"
     "shogun:main.0:shogun"
 )
 

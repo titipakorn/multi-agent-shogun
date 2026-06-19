@@ -17,22 +17,22 @@ cli:
       type: claude
       model: claude-sonnet-4-6
       thinking: true
-    explorer:
+    surveyor:
       type: claude
       model: claude-sonnet-4-6
       thinking: true
-    librarian:
+    critic:
       type: claude
       model: claude-sonnet-4-6
       thinking: false
-    designer:
+    architect:
       type: codex
       model: gpt-5.3-codex-spark
     observer:
       type: claude
       model: claude-opus-4-6
       thinking: true
-    oracle:
+    council:
       type: claude
       model: claude-opus-4-6
       thinking: true
@@ -59,16 +59,17 @@ load_resolve_pane() {
         local agent_id="$1"
         local pane_base="${MOCK_PANE_BASE:-0}"
         case "$agent_id" in
-            orchestrator)       echo "multiagent:agents.$((pane_base + 0))" ;;
-            explorer)  echo "multiagent:agents.$((pane_base + 1))" ;;
-            librarian)  echo "multiagent:agents.$((pane_base + 2))" ;;
-            designer)  echo "multiagent:agents.$((pane_base + 3))" ;;
-            fixer)  echo "multiagent:agents.$((pane_base + 4))" ;;
-            observer)  echo "multiagent:agents.$((pane_base + 5))" ;;
-            oracle)  echo "multiagent:agents.$((pane_base + 6))" ;;
-            council)  echo "multiagent:agents.$((pane_base + 7))" ;;
-            oracle)     echo "multiagent:agents.$((pane_base + 8))" ;;
-            *)          return 1 ;;
+            orchestrator)      echo "multiagent:agents.$((pane_base + 0))" ;;
+            architect)         echo "multiagent:agents.$((pane_base + 1))" ;;
+            experimentalist)   echo "multiagent:agents.$((pane_base + 2))" ;;
+            analyst)           echo "multiagent:agents.$((pane_base + 3))" ;;
+            ablation_planner)  echo "multiagent:agents.$((pane_base + 4))" ;;
+            surveyor)          echo "multiagent:agents.$((pane_base + 5))" ;;
+            critic)            echo "multiagent:agents.$((pane_base + 6))" ;;
+            writer)            echo "multiagent:agents.$((pane_base + 7))" ;;
+            observer)          echo "multiagent:agents.$((pane_base + 8))" ;;
+            council)           echo "multiagent:agents.$((pane_base + 9))" ;;
+            *)                 return 1 ;;
         esac
     }
     '
@@ -81,25 +82,25 @@ load_resolve_pane() {
     [ "$result" = "multiagent:agents.0" ]
 }
 
-@test "resolve_pane: explorer → multiagent:agents.1" {
+@test "resolve_pane: surveyor → multiagent:agents.5" {
     load_resolve_pane
     MOCK_PANE_BASE=0
-    result=$(resolve_pane "explorer")
-    [ "$result" = "multiagent:agents.1" ]
+    result=$(resolve_pane "surveyor")
+    [ "$result" = "multiagent:agents.5" ]
 }
 
-@test "resolve_pane: council → multiagent:agents.7" {
+@test "resolve_pane: council → multiagent:agents.9" {
     load_resolve_pane
     MOCK_PANE_BASE=0
     result=$(resolve_pane "council")
-    [ "$result" = "multiagent:agents.7" ]
+    [ "$result" = "multiagent:agents.9" ]
 }
 
-@test "resolve_pane: oracle → multiagent:agents.8" {
+@test "resolve_pane: critic → multiagent:agents.6" {
     load_resolve_pane
     MOCK_PANE_BASE=0
-    result=$(resolve_pane "oracle")
-    [ "$result" = "multiagent:agents.8" ]
+    result=$(resolve_pane "critic")
+    [ "$result" = "multiagent:agents.6" ]
 }
 
 @test "resolve_pane: unknown agent → return 1" {
@@ -114,10 +115,10 @@ load_resolve_pane() {
     MOCK_PANE_BASE=2
     result=$(resolve_pane "orchestrator")
     [ "$result" = "multiagent:agents.2" ]
-    result=$(resolve_pane "designer")
-    [ "$result" = "multiagent:agents.5" ]
-    result=$(resolve_pane "oracle")
-    [ "$result" = "multiagent:agents.10" ]
+    result=$(resolve_pane "architect")
+    [ "$result" = "multiagent:agents.3" ]
+    result=$(resolve_pane "critic")
+    [ "$result" = "multiagent:agents.8" ]
 }
 
 # =============================================================================
@@ -136,8 +137,8 @@ path = "${TEST_TMP}/settings_update.yaml"
 with open(path, 'r') as f:
     data = yaml.safe_load(f) or {}
 
-data['cli']['agents']['explorer']['type'] = 'codex'
-data['cli']['agents']['explorer']['model'] = 'gpt-5.3-codex-spark'
+data['cli']['agents']['surveyor']['type'] = 'codex'
+data['cli']['agents']['surveyor']['model'] = 'gpt-5.3-codex-spark'
 
 with open(path, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
@@ -147,10 +148,10 @@ PYEOF
     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_update.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "codex" ]
 
-    result=$(get_agent_model "explorer")
+    result=$(get_agent_model "surveyor")
     [ "$result" = "gpt-5.3-codex-spark" ]
 }
 
@@ -164,7 +165,7 @@ path = "${TEST_TMP}/settings_update2.yaml"
 with open(path, 'r') as f:
     data = yaml.safe_load(f) or {}
 
-data['cli']['agents']['explorer']['model'] = 'claude-opus-4-6'
+data['cli']['agents']['surveyor']['model'] = 'claude-opus-4-6'
 
 with open(path, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
@@ -173,7 +174,7 @@ PYEOF
     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_update2.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [[ "$result" == *"claude-opus-4-6"* ]]
     [[ "$result" == *"--dangerously-skip-permissions"* ]]
 }
@@ -188,7 +189,7 @@ path = "${TEST_TMP}/settings_update3.yaml"
 with open(path, 'r') as f:
     data = yaml.safe_load(f) or {}
 
-data['cli']['agents']['explorer']['thinking'] = False
+data['cli']['agents']['surveyor']['thinking'] = False
 
 with open(path, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
@@ -197,7 +198,7 @@ PYEOF
     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_update3.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [[ "$result" == MAX_THINKING_TOKENS=0* ]]
 }
 
@@ -227,12 +228,12 @@ PYEOF
 }
 
 @test "switch_cli.sh invalid type -> error" {
-    run bash "${PROJECT_ROOT}/scripts/switch_cli.sh" explorer --type invalid_cli
+    run env AGENT_REGISTRY_SETTINGS="${TEST_TMP}/settings.yaml" CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings.yaml" bash "${PROJECT_ROOT}/scripts/switch_cli.sh" surveyor --type invalid_cli
     [ "$status" -ne 0 ]
 }
 
 @test "switch_cli.sh invalid effort -> error" {
-    run bash "${PROJECT_ROOT}/scripts/switch_cli.sh" explorer --effort turbo
+    run env AGENT_REGISTRY_SETTINGS="${TEST_TMP}/settings.yaml" CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings.yaml" bash "${PROJECT_ROOT}/scripts/switch_cli.sh" surveyor --effort turbo
     [ "$status" -ne 0 ]
     [[ "$output" == *"Invalid effort"* ]]
 }
@@ -252,7 +253,7 @@ PYEOF
 }
 
 @test "switch_cli.sh provider-qualified model without --type on non-opencode agent -> error" {
-    run bash "${PROJECT_ROOT}/scripts/switch_cli.sh" explorer --model openai/gpt-5.4-mini
+    run env AGENT_REGISTRY_SETTINGS="${TEST_TMP}/settings.yaml" CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings.yaml" bash "${PROJECT_ROOT}/scripts/switch_cli.sh" surveyor --model openai/gpt-5.4-mini
     [ "$status" -ne 0 ]
     [[ "$output" == *"provider-qualified model IDs are ambiguous without --type"* ]]
 }
@@ -263,7 +264,7 @@ PYEOF
 
 @test "display_name: display name changes correctly before and after switch" {
     # original: Sonnet+T
-    result=$(get_model_display_name "explorer")
+    result=$(get_model_display_name "surveyor")
     [ "$result" = "Sonnet+T" ]
 
     # simulate settings update: to Opus+T
@@ -271,7 +272,7 @@ PYEOF
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-opus-4-6
       thinking: true
@@ -279,13 +280,13 @@ YAML
     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_switched.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 
-    result=$(get_model_display_name "explorer")
+    result=$(get_model_display_name "surveyor")
     [ "$result" = "Opus+T" ]
 }
 
 @test "display_name: update display name on Codex -> Claude switch" {
-    # designer is Codex Spark
-    result=$(get_model_display_name "designer")
+    # architect is Codex Spark
+    result=$(get_model_display_name "architect")
     [ "$result" = "Spark" ]
 
     # switch to Claude Sonnet+T
@@ -293,7 +294,7 @@ YAML
 cli:
   default: claude
   agents:
-    designer:
+    architect:
       type: claude
       model: claude-sonnet-4-6
       thinking: true
@@ -301,13 +302,13 @@ YAML
     export CLI_ADAPTER_SETTINGS="${TEST_TMP}/settings_codex_to_claude.yaml"
     source "${PROJECT_ROOT}/lib/cli_adapter.sh"
 
-    result=$(get_model_display_name "designer")
+    result=$(get_model_display_name "architect")
     [ "$result" = "Sonnet+T" ]
 }
 
 @test "display_name: +T disappears when thinking:false" {
-    # librarian is thinking:false
-    result=$(get_model_display_name "librarian")
+    # critic is thinking:false
+    result=$(get_model_display_name "critic")
     [ "$result" = "Sonnet" ]
 
     # observer is thinking:true

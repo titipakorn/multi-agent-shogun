@@ -166,7 +166,7 @@ if declare -f agent_registry_multiagent_agents >/dev/null 2>&1; then
     done < <(agent_registry_multiagent_agents)
 fi
 if [ "${#AGENTS[@]}" -eq 0 ]; then
-    AGENTS=("orchestrator" "explorer" "librarian" "oracle" "designer" "fixer" "observer" "council")
+    AGENTS=("orchestrator" "surveyor" "critic" "architect" "experimentalist" "analyst" "ablation_planner" "writer" "observer" "council")
 fi
 
 # pane-base-index

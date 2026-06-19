@@ -10,9 +10,9 @@ cli:
     orchestrator:
       type: claude
       model: sonnet
-    explorer:
+    surveyor:
       type: codex
-    librarian:
+    critic:
       type: claude
       model: sonnet
   validation:

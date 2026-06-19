@@ -4,7 +4,7 @@
 # Verifies the orchestrator can dispatch to 3 specialists in parallel.
 #
 # Test strategy:
-#   1. Snapshot inbox message counts for explorer, fixer, observer.
+#   1. Snapshot inbox message counts for surveyor, experimentalist, observer.
 #   2. Use bash & to launch 3 inbox_write calls in parallel (true concurrency).
 #   3. Time the wall clock of the parallel block.
 #   4. Verify all 3 inboxes received the new dispatch message.
@@ -37,7 +37,7 @@ fi
 
 mkdir -p "$INBOX_DIR"
 
-ROLES=(explorer fixer observer)
+ROLES=(surveyor experimentalist observer)
 MARKER="parallel-dispatch-marker-$(date +%s)-$$"
 FAIL=0
 

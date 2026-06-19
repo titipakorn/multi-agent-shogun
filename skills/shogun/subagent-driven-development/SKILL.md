@@ -2,7 +2,7 @@
 name: subagent-driven-development
 description: |
   Decomposes high-level Shogun commands into subtasks and delegates them to v2 task-layer
-  specialists (explorer/librarian/designer/fixer/observer) via Orchestrator, with Oracle
+  specialists (surveyor, critic, architect, experimentalist, analyst, ablation_planner, writer, observer, council) via Orchestrator, with Critic
   providing strategic review (Bloom L4-L6) using YAML files and inbox mailbox system.
   Triggered by: "delegate tasks", "distribute tasks to specialists", "subagent-driven-development", "multi-agent task delegation".
   Do NOT use for: Direct single-agent execution by Orchestrator without delegation, or direct coding tasks by Shogun.
@@ -10,7 +10,7 @@ description: |
 
 # Subagent-Driven Development (Sengoku Version, v2)
 
-Decompose high-level commands from Shogun and delegate subtasks to **task-layer specialists** (implementation) via the **Orchestrator**, with **Oracle** providing strategic review (Bloom L4-L6) and **Council** providing multi-model consensus, via `queue/tasks/` YAML files and `scripts/inbox_write.sh`.
+Decompose high-level commands from Shogun and delegate subtasks to **task-layer specialists** (surveyor, critic, architect, experimentalist, analyst, ablation_planner, writer, observer, council) via the **Orchestrator**, with **Critic** providing strategic review (Bloom L4-L6) and **Council** providing multi-model consensus, via `queue/tasks/` YAML files and `scripts/inbox_write.sh`.
 
 ## North Star
 **High-efficiency parallel task execution and strict quality gates (QC) utilizing the v2 Sengoku multi-agent specialist team without direct execution by Orchestrator.**
@@ -29,7 +29,7 @@ graph TD
 ```
 
 - **Sengoku Task Delegation:** Use when Orchestrator needs to coordinate parallel execution of multiple subtasks across specialists.
-- **Strict Quality Control (QC):** Use when every deliverable must pass Oracle review (strategic / L4-L6 / spec compliance + code quality) and optionally Council consensus (EVAL) before being marked complete.
+- **Strict Quality Control (QC):** Use when every deliverable must pass Critic review (strategic / L4-L6 / spec compliance + code quality) and optionally Council consensus (EVAL) before being marked complete.
 
 ---
 
@@ -41,20 +41,20 @@ sequenceDiagram
     actor Lord as Lord (Human)
     participant Shogun as Shogun
     participant Orch as Orchestrator (Traffic Control)
-    participant Spec as Specialists (fixer/designer/explorer/librarian/observer)
-    participant Oracle as Oracle (Strategic Reviewer)
+    participant Spec as Specialists (surveyor/critic/architect/experimentalist/analyst/ablation_planner/writer/observer/council)
+    participant Critic as Critic (Strategic Reviewer)
     participant Council as Council (Multi-Model Consensus)
 
     Shogun->>Orch: Writes cmd to shogun_to_orchestrator.yaml + inbox nudge
-    Note over Orch: Decomposes cmd into subtasks (Bloom L1-L3 → specialist, L4-L6 → Oracle, EVAL → Council)
+    Note over Orch: Decomposes cmd into subtasks (Bloom L1-L3 → specialist, L4-L6 → Critic, EVAL → Council)
     Orch->>Spec: Writes queue/tasks/<role>.yaml + inbox nudge
     Note over Orch: Goes Idle (Non-Blocking)
     Note over Spec: Performs task, runs tests & build verify
     Spec->>Orch: Writes queue/reports/<role>_report.yaml + inbox nudge
-    Note over Orch: For strategic items, dispatches Oracle review
-    Orch->>Oracle: Writes queue/tasks/oracle.yaml + inbox nudge
-    Note over Oracle: Performs QC (Spec Compliance & Quality)
-    Oracle->>Orch: Writes queue/reports/oracle_report.yaml + inbox nudge
+    Note over Orch: For strategic items, dispatches Critic review
+    Orch->>Critic: Writes queue/tasks/critic.yaml + inbox nudge
+    Note over Critic: Performs QC (Spec Compliance & Quality)
+    Critic->>Orch: Writes queue/reports/critic_report.yaml + inbox nudge
     alt QC Passes
         Note over Orch: Marks subtask as done
     else QC Fails
@@ -68,27 +68,28 @@ sequenceDiagram
 - Orchestrator decomposes the command into independent, testable subtasks.
 - Orchestrator writes subtasks to `queue/tasks/<role>.yaml` (maximum 1 active task per specialist to prevent concurrency conflicts).
 - Orchestrator follows **Bloom Routing**:
-  - L1 (recall) → `explorer` (local search)
-  - L2 (comprehension) → `librarian` (external research)
-  - L3 (application) → `fixer` (tactical implementation) or `designer` (planning)
-  - L4 (analysis) → `oracle` (strategic advisor)
-  - L5 (synthesis) → `oracle` (or `designer` for design synthesis)
-  - L6 (evaluation) → `oracle` for strategic review; `council` for multi-model consensus
+  - L1 (remember) → surveyor
+  - L2 (understand) → orchestrator
+  - L3 (apply) → orchestrator
+  - L4 (analyze) → critic
+  - L5 (evaluate) → council
+  - L6 (create) → critic
+  - EVAL → council
 
 ### 2. Implementation & Self-Verification (Specialist)
 - Specialist reads its assigned YAML, updates status to `in_progress`, and sets the `@current_task` tmux label.
 - Specialist implements the task, runs build verification/tests, writes `queue/reports/<role>_report.yaml`, sets status to `done`, and notifies Orchestrator via `inbox_write.sh`.
 - Specialist checks its own inbox for any immediate redo/cancellation instructions before going idle.
 
-### 3. Strategic Quality Review (Oracle)
-- Oracle reads `queue/tasks/<role>.yaml` and `queue/reports/<role>_report.yaml`.
-- Oracle performs **Spec Compliance Check** (ensuring all requirements are met line-by-line, without over-engineering or extra features) and **Code Quality Check** (cleanliness, tests, size limits).
-- Oracle writes `queue/reports/oracle_report.yaml` containing the XML `<advice>` block and notifies Orchestrator via `inbox_write.sh`.
+### 3. Strategic Quality Review (Critic)
+- Critic reads `queue/tasks/<role>.yaml` and `queue/reports/<role>_report.yaml`.
+- Critic performs **Spec Compliance Check** (ensuring all requirements are met line-by-line, without over-engineering or extra features) and **Code Quality Check** (cleanliness, tests, size limits).
+- Critic writes `queue/reports/critic_report.yaml` containing the XML `<advice>` block and notifies Orchestrator via `inbox_write.sh`.
 
 ### 4. Integration and Resolution (Orchestrator)
 - Orchestrator scans all report files upon wakeup.
-- If Oracle's review passes, Orchestrator marks the subtask as completed.
-- If Oracle's review flags issues, Orchestrator triggers the **Redo Protocol**:
+- If Critic's review passes, Orchestrator marks the subtask as completed.
+- If Critic's review flags issues, Orchestrator triggers the **Redo Protocol**:
   - Writes a new task YAML with an incremented task_id (e.g. `subtask_001b2`) and `redo_of` field.
   - Sends a `clear_command` inbox message to the specialist to wipe its volatile context.
 - Once all tasks are complete, Orchestrator updates the dashboard, records the daily log, and notifies Shogun.
@@ -113,11 +114,11 @@ task:
   timestamp: "2026-06-12T00:00:00Z"
 ```
 
-### 2. Oracle Review Task Template (`queue/tasks/oracle.yaml`)
+### 2. Critic Review Task Template (`queue/tasks/critic.yaml`)
 
 ```yaml
 task:
-  task_id: "oracle_review_subtask_{cmd_id}_{task_name}"
+  task_id: "critic_review_subtask_{cmd_id}_{task_name}"
   parent_cmd: "cmd_{cmd_id}"
   bloom_level: L4
   description: |
@@ -125,7 +126,7 @@ task:
     Verify:
     1. Spec compliance: [Criteria 1]
     2. Code quality: [Criteria 2]
-    Write XML <advice> block to queue/reports/oracle_report.yaml.
+    Write XML <advice> block to queue/reports/critic_report.yaml.
   target_path: "path/to/target/file"
   project: "project_name"
   status: assigned
@@ -134,17 +135,17 @@ task:
 
 ### 3. Council Consensus Task Template (`queue/tasks/council.yaml`)
 
-For high-stakes decisions requiring multi-model consensus (Bloom L5/EVAL), Orchestrator dispatches Council instead of Oracle. Council gathers input from multiple LLM providers and writes a consensus `<advice>` block to `queue/reports/council_report.yaml`.
+For high-stakes decisions requiring multi-model consensus (Bloom L5/EVAL), Orchestrator dispatches Council instead of Critic. Council gathers input from multiple LLM providers and writes a consensus `<advice>` block to `queue/reports/council_report.yaml`.
 
 ---
 
 ## Handling Status and Blocker Escalation
 
 ### done
-Proceed to Oracle review (or directly to dashboard if no review needed).
+Proceed to Critic review (or directly to dashboard if no review needed).
 
 ### done_with_concerns
-Specialist flags concerns (e.g., file getting too large, pre-existing code is tangled). Oracle analyzes these concerns during review and recommends a path forward in the report.
+Specialist flags concerns (e.g., file getting too large, pre-existing code is tangled). Critic analyzes these concerns during review and recommends a path forward in the report.
 
 ### blocked / needs_context
 Specialist cannot proceed. Orchestrator must:
@@ -159,6 +160,6 @@ Specialist cannot proceed. Orchestrator must:
 
 - **Never bypass Orchestrator:** Shogun/Lord must never assign tasks directly to specialists.
 - **Never perform direct implementation:** Orchestrator must remain a pure manager/traffic controller.
-- **Never trust reports blindly:** Oracle must verify specialist work by reading the actual code diffs.
+- **Never trust reports blindly:** Critic must verify specialist work by reading the actual code diffs.
 - **No Concurrent Writes:** Never assign multiple specialists to modify the same file concurrently (prevents git conflicts).
 - **Ensure Clean Slate on Redo:** Always send `clear_command` inbox message before re-assigning a task to avoid context pollution.

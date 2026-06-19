@@ -17,8 +17,9 @@ import yaml
 
 # v2 specialist team — 7 task-eligible specialists (excludes shogun, orchestrator)
 CANONICAL_TASKS = {
-    'explorer', 'librarian', 'oracle', 'designer',
-    'fixer', 'observer', 'council',
+    'surveyor', 'critic', 'architect', 'experimentalist',
+    'analyst', 'ablation_planner', 'writer', 'observer',
+    'council',
 }
 CANONICAL_REPORTS = {f'{r}_report' for r in CANONICAL_TASKS}
 IDLE_STUB = {'task': {'status': 'idle'}}

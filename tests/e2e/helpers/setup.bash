@@ -5,7 +5,7 @@
 # ─── Constants ───
 E2E_SESSION_PREFIX="e2e_test"
 DEFAULT_PROCESSING_DELAY="${MOCK_PROCESSING_DELAY:-1}"
-DEFAULT_AGENTS=("orchestrator" "fixer" "explorer")
+DEFAULT_AGENTS=("orchestrator" "surveyor" "critic")
 
 # ─── setup_e2e_session ───
 # Creates a tmux session with mock CLIs running in panes.

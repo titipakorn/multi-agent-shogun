@@ -3,16 +3,17 @@
 # Issue #53 Phase 2 — find_agent_for_model() + orchestrator bloom routing Integration Verification
 #
 # Assumed execution only on VPS. The tmux session "multiagent" is already started,
-# and a mixed CLI configuration (explorer-3=Spark, fixer-5=Sonnet, oracle-7=Opus) is
+# and a mixed CLI configuration (surveyor-3=Spark, experimentalist-5=Sonnet, critic-7=Opus) is
 # required.
 #
 # Prerequisites:
-#   - VPS configuration: explorer-3=codex/spark, fixer-5=claude/sonnet, oracle-7=claude/opus
+#   - VPS configuration: surveyor-3=codex/spark, experimentalist-5=claude/sonnet, critic-7=claude/opus
 #   - bloom_routing: "manual" or "auto"
 #   - All Ashigaru are idle (before starting test)
 #
 # Execution method:
 #   bats tests/e2e/e2e_bloom_routing.bats
+#
 
 PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
@@ -37,7 +38,7 @@ teardown() {
 }
 
 # ─────────────────────────────────────────────
-# TC-BLOOM-001: L1 task -> assigned to Spark Ashigaru (explorer/2/3)
+# TC-BLOOM-001: L1 task -> assigned to Spark Agent
 # ─────────────────────────────────────────────
 @test "TC-BLOOM-001: L1 task -> assigned to Spark Agent" {
     run get_recommended_model 1
@@ -48,12 +49,12 @@ teardown() {
     recommended="$output"
     run find_agent_for_model "$recommended"
     [ "$status" -eq 0 ]
-    # Spark Ashigaru is one of explorer, 2, or 3
-    [[ "$output" =~ ^specialist[1-3]$ ]]
+    # Spark Agent is surveyor
+    [ "$output" = "surveyor" ]
 }
 
 # ─────────────────────────────────────────────
-# TC-BLOOM-002: L5 task -> assigned to Sonnet Ashigaru (fixer/5)
+# TC-BLOOM-002: L5 task -> assigned to Sonnet Agent
 # ─────────────────────────────────────────────
 @test "TC-BLOOM-002: L5 task -> assigned to Sonnet Agent" {
     run get_recommended_model 5
@@ -63,11 +64,11 @@ teardown() {
     recommended="$output"
     run find_agent_for_model "$recommended"
     [ "$status" -eq 0 ]
-    [[ "$output" =~ ^specialist[4-5]$ ]]
+    [[ "$output" =~ ^(experimentalist|analyst|ablation_planner|writer|observer)$ ]]
 }
 
 # ─────────────────────────────────────────────
-# TC-BLOOM-003: L6 task -> assigned to Opus Ashigaru (oracle/7)
+# TC-BLOOM-003: L6 task -> assigned to Opus Agent
 # ─────────────────────────────────────────────
 @test "TC-BLOOM-003: L6 task -> assigned to Opus Agent" {
     run get_recommended_model 6
@@ -77,20 +78,20 @@ teardown() {
     recommended="$output"
     run find_agent_for_model "$recommended"
     [ "$status" -eq 0 ]
-    [[ "$output" =~ ^specialist[6-7]$ ]]
+    [[ "$output" =~ ^(critic|architect|council)$ ]]
 }
 
 # ─────────────────────────────────────────────
-# TC-BLOOM-004: fixer busy + L5 task -> assigned to observer
+# TC-BLOOM-004: When experimentalist is busy, L5 task is assigned to analyst
 # No kill/restart occurs (verify busy pane remains unchanged)
 # ─────────────────────────────────────────────
-@test "TC-BLOOM-004: When fixer is busy, L5 task is assigned to observer" {
-    # Get pane target of fixer
+@test "TC-BLOOM-004: When experimentalist is busy, L5 task is assigned to analyst" {
+    # Get pane target of experimentalist
     pane4=$(tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{@agent_id}' \
-        | awk '$2 == "fixer" {print $1}')
+        | awk '$2 == "experimentalist" {print $1}')
 
     if [[ -z "$pane4" ]]; then
-        skip "fixer pane not found"
+        skip "experimentalist pane not found"
     fi
 
     # Create busy state using sleep (teardown guaranteed by trap)
@@ -103,7 +104,7 @@ teardown() {
     busy_rc=0
     agent_is_busy_check "$pane4" && true || busy_rc=$?
     if [[ $busy_rc -ne 0 ]]; then
-        skip "Could not set fixer to busy state (busy_rc=${busy_rc})"
+        skip "Could not set experimentalist to busy state (busy_rc=${busy_rc})"
     fi
 
     # L5 task routing
@@ -111,61 +112,54 @@ teardown() {
     run find_agent_for_model "$recommended"
     [ "$status" -eq 0 ]
 
-    # fixer is busy so it should be assigned to observer
-    [ "$output" = "observer" ] || \
-        { echo "Expected: observer, Actual: $output"; return 1; }
+    # experimentalist is busy so it should be assigned to analyst
+    [ "$output" = "analyst" ] || \
+        { echo "Expected: analyst, Actual: $output"; return 1; }
 
-    # Verify fixer is still running (not killed/restarted)
+    # Verify experimentalist is still running (not killed/restarted)
     still_busy=0
     agent_is_busy_check "$pane4" && true || still_busy=$?
-    [[ $still_busy -eq 0 ]] || echo "WARNING: fixer state changed (possible kill/restart)"
+    [[ $still_busy -eq 0 ]] || echo "WARNING: experimentalist state changed (possible kill/restart)"
 }
 
 # ─────────────────────────────────────────────
-# TC-BLOOM-005: both fixer/5 busy + L5 task -> QUEUE (no downgrade to Codex)
+# TC-BLOOM-005: When all Sonnet Ashigaru are busy, placed in QUEUE (verify no downgrade to Codex)
 # ─────────────────────────────────────────────
 @test "TC-BLOOM-005: When all Sonnet Ashigaru are busy, placed in QUEUE (verify no downgrade to Codex)" {
-    pane4=$(tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{@agent_id}' \
-        | awk '$2 == "fixer" {print $1}')
-    pane5=$(tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{@agent_id}' \
-        | awk '$2 == "observer" {print $1}')
+    local sonnet_agents=(experimentalist analyst ablation_planner writer observer)
+    local panes=()
+    local p
+    for a in "${sonnet_agents[@]}"; do
+        p=$(tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{@agent_id}' \
+            | awk -v agent="$a" '$2 == agent {print $1}')
+        if [[ -n "$p" ]]; then
+            panes+=("$p")
+        fi
+    done
 
-    if [[ -z "$pane4" || -z "$pane5" ]]; then
-        skip "fixer or observer pane not found"
+    if [[ ${#panes[@]} -lt 5 ]]; then
+        skip "not all Sonnet specialist panes found"
     fi
 
-    # Create busy state for fixer/5 using sleep (teardown guaranteed by trap)
+    # Create busy state for all Sonnet specialists
     # shellcheck disable=SC2064
-    trap "tmux send-keys -t '$pane4' '' C-c; tmux send-keys -t '$pane5' '' C-c; sleep 0.3" EXIT
-    tmux send-keys -t "$pane4" "echo 'Working...'; sleep 30" Enter
-    tmux send-keys -t "$pane5" "echo 'Working...'; sleep 30" Enter
+    trap "for pane in \"\${panes[@]}\"; do tmux send-keys -t \"\$pane\" '' C-c; done; sleep 0.3" EXIT
+    for pane in "${panes[@]}"; do
+        tmux send-keys -t "$pane" "echo 'Working...'; sleep 30" Enter
+    done
     sleep 1
 
-    # Verify both are busy
-    rc4=0; agent_is_busy_check "$pane4" && true || rc4=$?
-    rc5=0; agent_is_busy_check "$pane5" && true || rc5=$?
-
-    if [[ $rc4 -ne 0 || $rc5 -ne 0 ]]; then
-        skip "Could not set either fixer or observer to busy state (rc4=${rc4}, rc5=${rc5})"
-    fi
+    # Verify they are busy
+    for pane in "${panes[@]}"; do
+        agent_is_busy_check "$pane" || { skip "Could not set Sonnet pane $pane to busy state"; }
+    done
 
     # L5 task routing
     recommended=$(get_recommended_model 5)
-    # All Sonnet Ashigaru busy -> fallback or QUEUE
     result=$(find_agent_for_model "$recommended")
 
-    # Fallback (other idle Ashigaru) or QUEUE is allowed
-    # In case of fallback to non-Sonnet Ashigaru, output model quality warning
-    if [[ "$result" =~ ^specialist[1-3]$ ]]; then
-        echo "Fallback destination: $result (Spark agent - watch out for quality degradation)"
-    elif [[ "$result" = "QUEUE" ]]; then
-        echo "QUEUE: All Ashigaru busy"
-    else
-        echo "Fallback destination: $result"
-    fi
-
-    # Confirm it returns QUEUE or specialist (doing nothing is invalid)
-    [[ "$result" = "QUEUE" ]] || [[ "$result" =~ ^specialist[0-9]+$ ]]
+    # Confirm it returns QUEUE (doing nothing is invalid)
+    [ "$result" = "QUEUE" ]
 }
 
 # ─────────────────────────────────────────────
@@ -183,6 +177,6 @@ teardown() {
     run find_agent_for_model "$recommended"
     [ "$status" -eq 0 ]
 
-    # Spark Ashigaru (explorer-3) only
-    [[ "$output" =~ ^specialist[1-3]$ ]]
+    # Spark Ashigaru is surveyor
+    [ "$output" = "surveyor" ]
 }

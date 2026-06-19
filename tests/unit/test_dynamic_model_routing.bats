@@ -14,10 +14,10 @@ setup() {
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: codex
       model: gpt-5.3-codex-spark
-    librarian:
+    critic:
       type: claude
       model: claude-sonnet-4-5-20250929
 capability_tiers:
@@ -40,7 +40,7 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: codex
       model: gpt-5.3-codex-spark
 YAML
@@ -228,28 +228,28 @@ cli:
     orchestrator:
       type: claude
       model: claude-sonnet-4-5-20250929
-    explorer:
+    surveyor:
       type: codex
       model: gpt-5.3-codex-spark
-    librarian:
+    critic:
       type: codex
       model: gpt-5.3-codex-spark
-    designer:
+    architect:
       type: codex
       model: gpt-5.3-codex-spark
-    fixer:
+    experimentalist:
       type: claude
       model: claude-sonnet-4-6
     observer:
       type: claude
       model: claude-sonnet-4-6
-    oracle:
+    analyst:
+      type: claude
+      model: claude-opus-4-6
+    ablation_planner:
       type: claude
       model: claude-opus-4-6
     council:
-      type: claude
-      model: claude-opus-4-6
-    oracle:
       type: claude
       model: opus
 capability_tiers:
@@ -270,13 +270,13 @@ YAML
 cli:
   default: codex
   agents:
-    explorer:
+    surveyor:
       type: codex
       model: gpt-5.3-codex-spark
-    librarian:
+    critic:
       type: codex
       model: gpt-5.3-codex-spark
-    designer:
+    architect:
       type: codex
       model: gpt-5.3-codex-spark
 capability_tiers:
@@ -567,13 +567,13 @@ load_adapter_with() {
 @test "TC-DMR-040: NFR-01 No regression in existing get_cli_type" {
     load_adapter_with "${TEST_TMP}/settings_no_tiers.yaml"
     # Existing functions operate normally even after adding capability_tiers
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "codex" ]
 }
 
 @test "TC-DMR-041: NFR-01 No regression in existing get_agent_model" {
     load_adapter_with "${TEST_TMP}/settings_no_tiers.yaml"
-    result=$(get_agent_model "explorer")
+    result=$(get_agent_model "surveyor")
     [ "$result" = "gpt-5.3-codex-spark" ]
 }
 
@@ -761,28 +761,28 @@ load_adapter_with() {
 
 @test "TC-DMR-200: FR-07 Normal YAML - all fields defined" {
     load_adapter_with "${TEST_TMP}/settings_with_tiers.yaml"
-    run validate_gunshi_analysis "${TEST_TMP}/analysis_valid.yaml"
+    run validate_oracle_analysis "${TEST_TMP}/analysis_valid.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "valid" ]
 }
 
 @test "TC-DMR-201: FR-07 #48 fields omitted - no parse error" {
     load_adapter_with "${TEST_TMP}/settings_with_tiers.yaml"
-    run validate_gunshi_analysis "${TEST_TMP}/analysis_no48.yaml"
+    run validate_oracle_analysis "${TEST_TMP}/analysis_no48.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "valid" ]
 }
 
 @test "TC-DMR-202: FR-07 bloom_level out of range(0,7) — validation error" {
     load_adapter_with "${TEST_TMP}/settings_with_tiers.yaml"
-    run validate_gunshi_analysis "${TEST_TMP}/analysis_bad_bloom.yaml"
+    run validate_oracle_analysis "${TEST_TMP}/analysis_bad_bloom.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"bloom_level"* ]]
 }
 
 @test "TC-DMR-203: FR-07 confidence out of range(-1, 2.0) — validation error" {
     load_adapter_with "${TEST_TMP}/settings_with_tiers.yaml"
-    run validate_gunshi_analysis "${TEST_TMP}/analysis_bad_confidence.yaml"
+    run validate_oracle_analysis "${TEST_TMP}/analysis_bad_confidence.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"confidence"* ]]
 }
@@ -1008,22 +1008,22 @@ print(len(doc.get('history', [])))
 #       pane_target is empty -> returns first candidate immediately (by design).
 #       tmux integration is verified in E2E tests.
 
-@test "TC-FAM-001: Ashigaru with exact match exists -> returns explorer (Spark)" {
+@test "TC-FAM-001: Ashigaru with exact match exists -> returns surveyor (Spark)" {
     load_adapter_with "${TEST_TMP}/settings_mixed_cli.yaml"
     result=$(find_agent_for_model "gpt-5.3-codex-spark")
-    [ "$result" = "explorer" ]
+    [ "$result" = "surveyor" ]
 }
 
-@test "TC-FAM-002: Sonnet Ashigaru exists -> returns fixer" {
+@test "TC-FAM-002: Sonnet Ashigaru exists -> returns experimentalist" {
     load_adapter_with "${TEST_TMP}/settings_mixed_cli.yaml"
     result=$(find_agent_for_model "claude-sonnet-4-6")
-    [ "$result" = "fixer" ]
+    [ "$result" = "experimentalist" ]
 }
 
-@test "TC-FAM-003: Opus Ashigaru exists -> returns oracle" {
+@test "TC-FAM-003: Opus Ashigaru exists -> returns analyst" {
     load_adapter_with "${TEST_TMP}/settings_mixed_cli.yaml"
     result=$(find_agent_for_model "claude-opus-4-6")
-    [ "$result" = "oracle" ]
+    [ "$result" = "analyst" ]
 }
 
 @test "TC-FAM-004: No Ashigaru with matching model + other Ashigaru exist -> fallback (any Ashigaru)" {
@@ -1031,7 +1031,7 @@ print(len(doc.get('history', [])))
     result=$(find_agent_for_model "gpt-5.1-codex-max")
     # No exact match -> returns Ashigaru with smallest index as fallback
     [ -n "$result" ]
-    [[ "$result" =~ ^specialist[0-9]+$ ]]
+    [[ "$result" =~ ^[a-z_]+$ ]]
 }
 
 @test "TC-FAM-005: No arguments -> exit code 1" {
@@ -1046,17 +1046,17 @@ print(len(doc.get('history', [])))
     [ "$status" -eq 1 ]
 }
 
-@test "TC-FAM-007: Multiple Ashigaru with same model -> returns smallest index (explorer)" {
+@test "TC-FAM-007: Multiple Ashigaru with same model -> returns smallest index (surveyor)" {
     load_adapter_with "${TEST_TMP}/settings_all_spark.yaml"
     result=$(find_agent_for_model "gpt-5.3-codex-spark")
-    [ "$result" = "explorer" ]
+    [ "$result" = "surveyor" ]
 }
 
 @test "TC-FAM-008: Works even with no capability_tiers settings (backward compatibility)" {
     load_adapter_with "${TEST_TMP}/settings_no_tiers.yaml"
     # Even with no_tiers, if agents are defined, search and return Spark Ashigaru
     result=$(find_agent_for_model "gpt-5.3-codex-spark")
-    [ "$result" = "explorer" ]
+    [ "$result" = "surveyor" ]
 }
 
 @test "TC-FAM-009: Only Ashigaru are target (Karo, Gunshi are excluded)" {
@@ -1065,7 +1065,7 @@ print(len(doc.get('history', [])))
     result=$(find_agent_for_model "claude-sonnet-4-5-20250929")
     # Karo (claude-sonnet-4-5-20250929) is not included in the candidates
     # Fallback because no other Ashigaru has this model
-    [[ "$result" =~ ^specialist[0-9]+$ ]]
+    [[ "$result" =~ ^[a-z_]+$ ]]
 }
 
 # =============================================================================

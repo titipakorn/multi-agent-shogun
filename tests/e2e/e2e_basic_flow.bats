@@ -4,10 +4,10 @@
 # ═══════════════════════════════════════════════════════════════
 # Validates the core orchestration flow:
 #   1. cmd YAML placed → orchestrator inbox notified
-#   2. orchestrator processes cmd → creates subtask for explorer
-#   3. explorer receives task_assigned → processes task
-#   4. explorer writes completion report
-#   5. explorer notifies orchestrator → orchestrator receives report_received
+#   2. orchestrator processes cmd → creates subtask for surveyor
+#   3. surveyor receives task_assigned → processes task
+#   4. surveyor writes completion report
+#   5. surveyor notifies orchestrator → orchestrator receives report_received
 #
 # Uses mock_cli.sh (no real AI APIs needed).
 # ═══════════════════════════════════════════════════════════════
@@ -49,35 +49,35 @@ setup() {
 # ═══════════════════════════════════════════════════════════════
 # Simplified flow: place task YAML + send inbox nudge → specialist processes
 
-@test "E2E-001-A: explorer processes assigned task via inbox nudge" {
-    # 1. Place task YAML for explorer
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+@test "E2E-001-A: surveyor processes assigned task via inbox nudge" {
+    # 1. Place task YAML for surveyor
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    # 2. Write task_assigned to explorer's inbox
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    # 2. Write task_assigned to surveyor's inbox
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
-    # 3. Send inbox nudge to explorer
+    # 3. Send inbox nudge to surveyor
     local ashigaru1_pane
     ashigaru1_pane=$(pane_target 1)
     send_to_pane "$ashigaru1_pane" "inbox1"
 
     # 4. Wait for task to complete (status → done)
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 30
     assert_success
 
     # 5. Verify report was written
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
 
     # 6. Verify report content
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "status" "done"
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "worker_id" "explorer"
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "task_id" "subtask_test_001a"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "status" "done"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "worker_id" "surveyor"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "task_id" "subtask_test_001a"
 
     # 7. Verify inbox was processed (all read)
-    run assert_inbox_unread_count "$E2E_QUEUE/queue/inbox/explorer.yaml" 0
+    run assert_inbox_unread_count "$E2E_QUEUE/queue/inbox/surveyor.yaml" 0
     assert_success
 }
 
@@ -88,7 +88,7 @@ setup() {
 @test "E2E-001-B: orchestrator receives cmd, decomposes into specialist subtask" {
     # 1. Place cmd YAML for orchestrator
     cp "$PROJECT_ROOT/tests/e2e/fixtures/cmd_basic.yaml" \
-       "$E2E_QUEUE/queue/shogun_to_karo.yaml"
+       "$E2E_QUEUE/queue/shogun_to_orchestrator.yaml"
 
     # 2. Write cmd_new to orchestrator's inbox
     bash "$E2E_QUEUE/scripts/inbox_write.sh" "orchestrator" \
@@ -99,17 +99,17 @@ setup() {
     karo_pane=$(pane_target 0)
     send_to_pane "$karo_pane" "inbox1"
 
-    # 4. Wait for orchestrator to create subtask for explorer
-    run wait_for_file "$E2E_QUEUE/queue/tasks/explorer.yaml" 20
+    # 4. Wait for orchestrator to create subtask for surveyor
+    run wait_for_file "$E2E_QUEUE/queue/tasks/surveyor.yaml" 20
     assert_success
 
     # 5. Verify subtask was created with correct structure
-    assert_yaml_field "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "assigned"
-    assert_yaml_field "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.parent_cmd" "cmd_test_001"
+    assert_yaml_field "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "assigned"
+    assert_yaml_field "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.parent_cmd" "cmd_test_001"
 
-    # 6. Wait and verify explorer received task_assigned inbox
+    # 6. Wait and verify surveyor received task_assigned inbox
     sleep 3
-    run assert_inbox_message_exists "$E2E_QUEUE/queue/inbox/explorer.yaml" "orchestrator" "task_assigned"
+    run assert_inbox_message_exists "$E2E_QUEUE/queue/inbox/surveyor.yaml" "orchestrator" "task_assigned"
     assert_success
 }
 
@@ -120,7 +120,7 @@ setup() {
 @test "E2E-001-C: full flow from cmd to completion report" {
     # 1. Place cmd YAML
     cp "$PROJECT_ROOT/tests/e2e/fixtures/cmd_basic.yaml" \
-       "$E2E_QUEUE/queue/shogun_to_karo.yaml"
+       "$E2E_QUEUE/queue/shogun_to_orchestrator.yaml"
 
     local karo_pane ashigaru1_pane
     karo_pane=$(pane_target 0)
@@ -132,25 +132,25 @@ setup() {
     send_to_pane "$karo_pane" "inbox1"
 
     # 3. Wait for subtask creation
-    run wait_for_file "$E2E_QUEUE/queue/tasks/explorer.yaml" 20
+    run wait_for_file "$E2E_QUEUE/queue/tasks/surveyor.yaml" 20
     assert_success
 
-    # 4. Trigger explorer to process
+    # 4. Trigger surveyor to process
     send_to_pane "$ashigaru1_pane" "inbox1"
 
     # 5. Wait for completion
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 30
     assert_success
 
     # 6. Verify report exists
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
 
     # 7. Verify report fields
-    assert_yaml_field "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" "status" "done"
+    assert_yaml_field "$E2E_QUEUE/queue/reports/surveyor_report.yaml" "status" "done"
 
     # 8. Verify orchestrator received report notification
     sleep 2
-    run assert_inbox_message_exists "$E2E_QUEUE/queue/inbox/orchestrator.yaml" "explorer" "report_received"
+    run assert_inbox_message_exists "$E2E_QUEUE/queue/inbox/orchestrator.yaml" "surveyor" "report_received"
     assert_success
 }

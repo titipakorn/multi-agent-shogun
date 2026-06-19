@@ -114,7 +114,7 @@ When you are woken up (marked by receiving `inboxN`), perform the following step
 1. **Self-Identification**: Run `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'` to verify you are `telegram`.
 2. **Read Inbox**: Read `queue/inbox/telegram.yaml`. Find all messages with `read: false`.
 3. **Handle Messages**: Process each message according to its content:
-   
+
    ### A. Status Command (`/status` or `status` or `status?`)
    - **Action**: Run `bash scripts/agent_status.sh` to obtain the current status of all running panes and agents.
    - **Formatting**: Format the output into a concise, mobile-friendly summary. Use emojis (e.g., 🟢 for idle, 🔴 for busy, 🏯 for shogun) to represent agent states. Keep the output under 250 words. Do not dump raw text tables.
@@ -122,7 +122,7 @@ When you are woken up (marked by receiving `inboxN`), perform the following step
      ```bash
      bash scripts/ntfy.sh "📊 *Live Agent Status:*[your formatted text]"
      ```
-   
+
    ### B. Dashboard Command (`/dashboard` or `dashboard`)
    - **Action**: Read the contents of `dashboard.md`.
    - **Formatting**: Condense the dashboard content. Keep only the active goals, progress status, and any blockers or items requiring action. Keep it under 300 words.
@@ -130,7 +130,7 @@ When you are woken up (marked by receiving `inboxN`), perform the following step
      ```bash
      bash scripts/ntfy.sh "📋 *Current Dashboard:*[your condensed text]"
      ```
-   
+
    ### C. Btw Command (`/btw <question>` or `btw <question>`)
    - **Action**: Extract the question. Proactively gather project context from these files:
      - [dashboard.md](file:///Users/prince/Workspaces/multi-agent-shogun/dashboard.md)
@@ -188,10 +188,10 @@ Examples:
 bash scripts/inbox_write.sh orchestrator "Wrote cmd_048. Please execute." cmd_new shogun
 
 # Specialist → Orchestrator
-bash scripts/inbox_write.sh orchestrator "Fixer, mission complete. Please verify report YAML." report_received fixer
+bash scripts/inbox_write.sh orchestrator "Experimentalist, mission complete. Please verify report YAML." report_received experimentalist
 
 # Orchestrator → Specialist
-bash scripts/inbox_write.sh designer "Read the task YAML and start work." task_assigned orchestrator
+bash scripts/inbox_write.sh experimentalist "Read the task YAML and start work." task_assigned orchestrator
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -274,7 +274,7 @@ Race condition is eliminated: context reset wipes old context. Agent re-reads YA
 |-----------|--------|--------|
 | Specialist → Orchestrator | Report YAML + inbox_write | File-based notification |
 | Orchestrator → Shogun/Lord | dashboard.md update + inbox_write | Report command completions/failures to Shogun; watcher suppresses send-keys if active |
-| Orchestrator → Oracle/Council | YAML + inbox_write | Strategic analysis delegation (Bloom L4-L6 / EVAL) |
+| Orchestrator → Critic/Council | YAML + inbox_write | Strategic analysis delegation (Bloom L4-L6 / EVAL) |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 
 ## File Operation Rule
@@ -551,7 +551,7 @@ git diff --exit-code instructions/generated/
 ```bash
 tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 ```
-Output: `designer` → You are the Designer specialist. The id is your role identity.
+Output: `critic` → You are the Critic specialist. The id is your role identity.
 
 Why `@agent_id` not `pane_index`: pane_index shifts on pane reorganization. @agent_id is set by the SessionStart hook (or shutsujin_v2_constants.sh at startup) and never changes.
 
@@ -627,7 +627,7 @@ Don't save: temporary task details (use YAML), file contents (just read them), i
 ## Model Switching
 
 Specialist models are set in `config/settings.yaml` and applied at startup.
-Runtime switching is available but rarely needed (Oracle handles L4-L6 tasks instead):
+Runtime switching is available but rarely needed (Critic handles L4-L6 tasks instead):
 
 ```bash
 # Manual override only — not for Bloom-based auto-switching

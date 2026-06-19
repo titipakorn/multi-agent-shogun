@@ -38,7 +38,7 @@ function resolveInboxPath(worktree: string, agentId: string): string {
   const normalizedAgentId = agentId.trim();
   if (!AGENT_ID_RE.test(normalizedAgentId)) {
     throw new Error(
-      `Invalid agentId ${JSON.stringify(agentId)}. Expected a simple inbox name such as orchestrator or fixer.`,
+      `Invalid agentId ${JSON.stringify(agentId)}. Expected a simple inbox name such as orchestrator or surveyor.`,
     );
   }
 
@@ -274,7 +274,7 @@ export default tool({
       .trim()
       .regex(
         AGENT_ID_RE,
-        "Agent IDs must match an inbox file name such as orchestrator or fixer",
+        "Agent IDs must match an inbox file name such as orchestrator or surveyor",
       )
       .describe("Target inbox owner"),
     messageId: tool.schema

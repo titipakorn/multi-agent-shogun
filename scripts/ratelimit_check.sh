@@ -41,7 +41,7 @@ CODEX_CONTEXT_CRIT=10
 CODEX_LIMIT_HITS_WARN=3
 
 # ─── Agent list (dynamic from settings.yaml) ───
-_specialist_ids_str=$(get_specialist_ids 2>/dev/null || echo "explorer librarian oracle designer fixer observer council")
+_specialist_ids_str=$(get_specialist_ids 2>/dev/null || echo "surveyor critic architect experimentalist analyst ablation_planner writer observer council")
 ALL_AGENTS=("shogun" "orchestrator")
 for _aid in $_specialist_ids_str; do ALL_AGENTS+=("$_aid"); done
 

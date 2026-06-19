@@ -61,7 +61,7 @@ Don't save: temporary task details (use YAML), file contents (just read them), i
 ## Model Switching
 
 Specialist models are set in `config/settings.yaml` and applied at startup.
-Runtime switching is available but rarely needed (Oracle handles L4-L6 tasks instead):
+Runtime switching is available but rarely needed (Critic handles L4-L6 tasks instead):
 
 ```bash
 # Manual override only — not for Bloom-based auto-switching

@@ -81,11 +81,11 @@ seed_yaml() {
     build_tmp_project "$root"
     cp "$PROJECT_ROOT/scripts/slim_yaml.py" "$root/scripts/"
 
-    seed_yaml "$root/queue/shogun_to_karo.yaml" $'commands:\n  - id: cmd_test\n    status: pending\n'
+    seed_yaml "$root/queue/shogun_to_orchestrator.yaml" $'commands:\n  - id: cmd_test\n    status: pending\n'
     seed_yaml "$root/queue/reports/ashigaru1_cmd_test_report.yaml" $'parent_cmd: cmd_test\nstatus: done\n'
-    seed_yaml "$root/queue/reports/ashigaru1_report.yaml" $'parent_cmd: cmd_ignored\nstatus: done\n'
+    seed_yaml "$root/queue/reports/surveyor_report.yaml" $'parent_cmd: cmd_ignored\nstatus: done\n'
 
-    python3 -c "import os, time; p1 = '$root/queue/reports/ashigaru1_cmd_test_report.yaml'; p2 = '$root/queue/reports/ashigaru1_report.yaml'; t = time.time() - 172800; os.utime(p1, (t, t)); os.utime(p2, (t, t))"
+    python3 -c "import os, time; p1 = '$root/queue/reports/ashigaru1_cmd_test_report.yaml'; p2 = '$root/queue/reports/surveyor_report.yaml'; t = time.time() - 172800; os.utime(p1, (t, t)); os.utime(p2, (t, t))"
 
     run run_slim_yaml "$root" orchestrator
     assert_success
@@ -93,7 +93,7 @@ seed_yaml() {
     # Active parent_cmd means this report is kept.
     [ -f "$root/queue/reports/ashigaru1_cmd_test_report.yaml" ]
     # Canonical report is always preserved.
-    [ -f "$root/queue/reports/ashigaru1_report.yaml" ]
+    [ -f "$root/queue/reports/surveyor_report.yaml" ]
 
     rm -rf "$root"
 }
@@ -104,11 +104,11 @@ seed_yaml() {
     build_tmp_project "$root"
     cp "$PROJECT_ROOT/scripts/slim_yaml.py" "$root/scripts/"
 
-    seed_yaml "$root/queue/shogun_to_karo.yaml" $'commands:\n  - id: cmd_test\n    status: done\n'
+    seed_yaml "$root/queue/shogun_to_orchestrator.yaml" $'commands:\n  - id: cmd_test\n    status: done\n'
     seed_yaml "$root/queue/reports/ashigaru1_cmd_test_report.yaml" $'parent_cmd: cmd_test\nstatus: done\n'
-    seed_yaml "$root/queue/reports/ashigaru1_report.yaml" $'parent_cmd: cmd_ignored\nstatus: done\n'
+    seed_yaml "$root/queue/reports/surveyor_report.yaml" $'parent_cmd: cmd_ignored\nstatus: done\n'
 
-    python3 -c "import os, time; p1 = '$root/queue/reports/ashigaru1_cmd_test_report.yaml'; p2 = '$root/queue/reports/ashigaru1_report.yaml'; t = time.time() - 172800; os.utime(p1, (t, t)); os.utime(p2, (t, t))"
+    python3 -c "import os, time; p1 = '$root/queue/reports/ashigaru1_cmd_test_report.yaml'; p2 = '$root/queue/reports/surveyor_report.yaml'; t = time.time() - 172800; os.utime(p1, (t, t)); os.utime(p2, (t, t))"
 
     run run_slim_yaml "$root" orchestrator
     assert_success
@@ -117,7 +117,7 @@ seed_yaml() {
     [ ! -f "$root/queue/reports/ashigaru1_cmd_test_report.yaml" ]
     [ -f "$root/queue/archive/reports/ashigaru1_cmd_test_report.yaml" ]
     # Canonical report remains.
-    [ -f "$root/queue/reports/ashigaru1_report.yaml" ]
+    [ -f "$root/queue/reports/surveyor_report.yaml" ]
 
     rm -rf "$root"
 }
@@ -128,15 +128,15 @@ seed_yaml() {
     build_tmp_project "$root"
     cp "$PROJECT_ROOT/scripts/slim_yaml.py" "$root/scripts/"
 
-    seed_yaml "$root/queue/shogun_to_karo.yaml" $'commands:\n  - id: cmd_test\n    status: done\n'
-    seed_yaml "$root/queue/reports/ashigaru1_report.yaml" $'parent_cmd: cmd_done\nstatus: done\n'
-    python3 -c "import os, time; p = '$root/queue/reports/ashigaru1_report.yaml'; t = time.time() - 172800; os.utime(p, (t, t))"
+    seed_yaml "$root/queue/shogun_to_orchestrator.yaml" $'commands:\n  - id: cmd_test\n    status: done\n'
+    seed_yaml "$root/queue/reports/surveyor_report.yaml" $'parent_cmd: cmd_done\nstatus: done\n'
+    python3 -c "import os, time; p = '$root/queue/reports/surveyor_report.yaml'; t = time.time() - 172800; os.utime(p, (t, t))"
 
     run run_slim_yaml "$root" orchestrator
     assert_success
 
     # Canonical report is always retained.
-    [ -f "$root/queue/reports/ashigaru1_report.yaml" ]
+    [ -f "$root/queue/reports/surveyor_report.yaml" ]
 
     rm -rf "$root"
 }

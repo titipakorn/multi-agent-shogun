@@ -37,21 +37,21 @@ cli:
     orchestrator:
       type: claude
       model: opus
-    explorer:
+    surveyor:
       type: claude
       model: sonnet
-    librarian:
+    writer:
       type: claude
       model: sonnet
-    designer:
+    architect:
       type: claude
       model: sonnet
-    fixer:
+    experimentalist:
       type: claude
       model: sonnet
     observer:
       type: codex
-    oracle:
+    critic:
       type: codex
     council:
       type: copilot
@@ -73,7 +73,7 @@ YAML
 cli:
   default: claudee
   agents:
-    explorer: invalid_cli
+    surveyor: invalid_cli
 YAML
 
     # Codex default
@@ -98,7 +98,7 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: haiku
     observer:
@@ -113,10 +113,10 @@ YAML
 cli:
   default: claude
   agents:
-    designer:
+    architect:
       type: kimi
       model: k2.5
-    fixer:
+    experimentalist:
       type: kimi
 YAML
 
@@ -137,19 +137,19 @@ cli:
     orchestrator:
       type: opencode
       model: gpt-5.4
-    oracle:
+    critic:
       type: opencode
       model: anthropic/claude-opus-4-6
-    explorer:
+    surveyor:
       type: opencode
       model: k2.5
-    librarian:
+    writer:
       type: opencode
       model: moonshot-k2.5
-    designer:
+    architect:
       type: opencode
       model: claude-sonnet-4-6
-    fixer:
+    experimentalist:
       type: opencode
       model: gpt-5.3-codex-spark
     observer:
@@ -168,7 +168,7 @@ cli:
     orchestrator:
       type: agy
       model: gemini-latest
-    explorer:
+    surveyor:
       type: gemini
 YAML
 }
@@ -241,7 +241,7 @@ load_adapter_with() {
 
 @test "get_cli_type: claude only configuration -> claude" {
     load_adapter_with "${TEST_TMP}/settings_claude_only.yaml"
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "claude" ]
 }
 
@@ -263,9 +263,9 @@ load_adapter_with() {
     [ "$result" = "copilot" ]
 }
 
-@test "get_cli_type: mixed config explorer -> claude (individual config)" {
+@test "get_cli_type: mixed config surveyor -> claude (individual config)" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "claude" ]
 }
 
@@ -281,21 +281,21 @@ load_adapter_with() {
     [ "$result" = "copilot" ]
 }
 
-@test "get_cli_type: kimi config designer -> kimi" {
+@test "get_cli_type: kimi config architect -> kimi" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(get_cli_type "designer")
+    result=$(get_cli_type "architect")
     [ "$result" = "kimi" ]
 }
 
-@test "get_cli_type: kimi config fixer -> kimi (no model specified)" {
+@test "get_cli_type: kimi config experimentalist -> kimi (no model specified)" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(get_cli_type "fixer")
+    result=$(get_cli_type "experimentalist")
     [ "$result" = "kimi" ]
 }
 
 @test "get_cli_type: default settings kimi -> kimi" {
     load_adapter_with "${TEST_TMP}/settings_kimi_default.yaml"
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "kimi" ]
 }
 
@@ -315,13 +315,13 @@ load_adapter_with() {
     load_adapter_with "${TEST_TMP}/settings_antigravity.yaml"
     [ "$(get_cli_type shogun)" = "antigravity" ]
     [ "$(get_cli_type orchestrator)" = "antigravity" ]
-    [ "$(get_cli_type explorer)" = "antigravity" ]
-    [ "$(get_cli_type librarian)" = "antigravity" ]
+    [ "$(get_cli_type surveyor)" = "antigravity" ]
+    [ "$(get_cli_type writer)" = "antigravity" ]
 }
 
 @test "get_cli_type: undefined agent -> inherits default" {
     load_adapter_with "${TEST_TMP}/settings_codex_default.yaml"
-    result=$(get_cli_type "designer")
+    result=$(get_cli_type "architect")
     [ "$result" = "codex" ]
 }
 
@@ -333,14 +333,14 @@ load_adapter_with() {
 
 # --- All Ashigaru patterns ---
 
-@test "get_cli_type: mixed configuration explorer-8 all patterns" {
+@test "get_cli_type: mixed configuration surveyor-8 all patterns" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
-    [ "$(get_cli_type explorer)" = "claude" ]
-    [ "$(get_cli_type librarian)" = "claude" ]
-    [ "$(get_cli_type designer)" = "claude" ]
-    [ "$(get_cli_type fixer)" = "claude" ]
+    [ "$(get_cli_type surveyor)" = "claude" ]
+    [ "$(get_cli_type writer)" = "claude" ]
+    [ "$(get_cli_type architect)" = "claude" ]
+    [ "$(get_cli_type experimentalist)" = "claude" ]
     [ "$(get_cli_type observer)" = "codex" ]
-    [ "$(get_cli_type oracle)" = "codex" ]
+    [ "$(get_cli_type critic)" = "codex" ]
     [ "$(get_cli_type council)" = "copilot" ]
     [ "$(get_cli_type ashigaru8)" = "copilot" ]
 }
@@ -349,7 +349,7 @@ load_adapter_with() {
 
 @test "get_cli_type: Invalid CLI name -> claude fallback" {
     load_adapter_with "${TEST_TMP}/settings_invalid_cli.yaml"
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "claude" ]
 }
 
@@ -367,7 +367,7 @@ load_adapter_with() {
 
 @test "get_cli_type: YAML syntax error -> claude" {
     load_adapter_with "${TEST_TMP}/settings_broken.yaml"
-    result=$(get_cli_type "explorer")
+    result=$(get_cli_type "surveyor")
     [ "$result" = "claude" ]
 }
 
@@ -399,13 +399,13 @@ load_adapter_with() {
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-opus-4-8
       effort: max
 YAML
     load_adapter_with "${TEST_TMP}/settings_claude_effort.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [ "$result" = "claude --model claude-opus-4-8 --effort max --dangerously-skip-permissions" ]
 }
 
@@ -424,13 +424,13 @@ YAML
 
 @test "build_cli_command: kimi + model → kimi --yolo --model k2.5" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(build_cli_command "designer")
+    result=$(build_cli_command "architect")
     [ "$result" = "kimi --yolo --model k2.5" ]
 }
 
 @test "build_cli_command: kimi (no model specified) -> kimi --yolo --model k2.5" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(build_cli_command "fixer")
+    result=$(build_cli_command "experimentalist")
     [ "$result" = "kimi --yolo --model k2.5" ]
 }
 
@@ -456,34 +456,34 @@ YAML
     [[ "$result" != *'--prompt'* ]]
 }
 
-@test "build_cli_command: opencode specialist → --agent explorer + pinned tui config" {
+@test "build_cli_command: opencode specialist → --agent surveyor + pinned tui config" {
     load_adapter_with "${TEST_TMP}/settings_opencode.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     expected_tui_config=$(_cli_adapter_shell_quote "${PROJECT_ROOT}/config/opencode-tui.json")
-    [[ "$result" == "OPENCODE_AGENT_ID=explorer OPENCODE_TUI_CONFIG=$expected_tui_config"* ]]
-    [[ "$result" == *'opencode --model moonshot/kimi-k2.5 --agent explorer'* ]]
+    [[ "$result" == "OPENCODE_AGENT_ID=surveyor OPENCODE_TUI_CONFIG=$expected_tui_config"* ]]
+    [[ "$result" == *'opencode --model moonshot/kimi-k2.5 --agent surveyor'* ]]
     [[ "$result" != *'OPENCODE_CONFIG_CONTENT'* ]]
     [[ "$result" != *'--prompt'* ]]
 }
 
-@test "build_cli_command: opencode oracle → --agent oracle + pinned tui config" {
+@test "build_cli_command: opencode critic → --agent critic + pinned tui config" {
     load_adapter_with "${TEST_TMP}/settings_opencode.yaml"
-    result=$(build_cli_command "oracle")
+    result=$(build_cli_command "critic")
     expected_tui_config=$(_cli_adapter_shell_quote "${PROJECT_ROOT}/config/opencode-tui.json")
-    [[ "$result" == "OPENCODE_AGENT_ID=oracle OPENCODE_TUI_CONFIG=$expected_tui_config"* ]]
-    [[ "$result" == *'opencode --model anthropic/claude-opus-4-6 --agent oracle'* ]]
+    [[ "$result" == "OPENCODE_AGENT_ID=critic OPENCODE_TUI_CONFIG=$expected_tui_config"* ]]
+    [[ "$result" == *'opencode --model anthropic/claude-opus-4-6 --agent critic'* ]]
     [[ "$result" != *'OPENCODE_CONFIG_CONTENT'* ]]
     [[ "$result" != *'--prompt'* ]]
 }
 
 @test "build_cli_command: opencode deterministic output" {
     load_adapter_with "${TEST_TMP}/settings_opencode.yaml"
-    first=$(build_cli_command "designer")
-    second=$(build_cli_command "designer")
+    first=$(build_cli_command "architect")
+    second=$(build_cli_command "architect")
     expected_tui_config=$(_cli_adapter_shell_quote "${PROJECT_ROOT}/config/opencode-tui.json")
     [[ "$first" == "$second" ]]
-    [[ "$first" == "OPENCODE_AGENT_ID=designer OPENCODE_TUI_CONFIG=$expected_tui_config"* ]]
-    [[ "$first" == *'opencode --model anthropic/claude-sonnet-4-6 --agent designer'* ]]
+    [[ "$first" == "OPENCODE_AGENT_ID=architect OPENCODE_TUI_CONFIG=$expected_tui_config"* ]]
+    [[ "$first" == *'opencode --model anthropic/claude-sonnet-4-6 --agent architect'* ]]
     [[ "$first" != *'OPENCODE_CONFIG_CONTENT'* ]]
     [[ "$first" != *'--prompt'* ]]
 }
@@ -519,13 +519,13 @@ YAML
 
 @test "build_cli_command: no cli section -> claude fallback" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [[ "$result" == claude*--dangerously-skip-permissions ]]
 }
 
 @test "build_cli_command: settings read failed -> claude fallback" {
     load_adapter_with "/nonexistent/settings.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [[ "$result" == claude*--dangerously-skip-permissions ]]
 }
 
@@ -545,28 +545,28 @@ YAML
     [ "$result" = "instructions/orchestrator.md" ]
 }
 
-@test "get_instruction_file: explorer + claude → instructions/specialist.md" {
+@test "get_instruction_file: surveyor + claude → instructions/surveyor.md" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
-    result=$(get_instruction_file "explorer")
-    [ "$result" = "instructions/specialist.md" ]
+    result=$(get_instruction_file "surveyor")
+    [ "$result" = "instructions/surveyor.md" ]
 }
 
-@test "get_instruction_file: observer + codex → instructions/codex-specialist.md" {
+@test "get_instruction_file: observer + codex → instructions/codex-observer.md" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(get_instruction_file "observer")
-    [ "$result" = "instructions/codex-specialist.md" ]
+    [ "$result" = "instructions/codex-observer.md" ]
 }
 
-@test "get_instruction_file: council + copilot → .github/copilot-instructions-specialist.md" {
+@test "get_instruction_file: council + copilot → .github/copilot-instructions-council.md" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(get_instruction_file "council")
-    [ "$result" = ".github/copilot-instructions-specialist.md" ]
+    [ "$result" = ".github/copilot-instructions-council.md" ]
 }
 
-@test "get_instruction_file: designer + kimi → instructions/generated/kimi-specialist.md" {
+@test "get_instruction_file: architect + kimi → instructions/generated/kimi-architect.md" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(get_instruction_file "designer")
-    [ "$result" = "instructions/generated/kimi-specialist.md" ]
+    result=$(get_instruction_file "architect")
+    [ "$result" = "instructions/generated/kimi-architect.md" ]
 }
 
 @test "get_instruction_file: shogun + kimi → instructions/generated/kimi-shogun.md" {
@@ -592,19 +592,19 @@ YAML
     # claude
     [ "$(get_instruction_file shogun claude)" = "instructions/shogun.md" ]
     [ "$(get_instruction_file orchestrator claude)" = "instructions/orchestrator.md" ]
-    [ "$(get_instruction_file explorer claude)" = "instructions/specialist.md" ]
+    [ "$(get_instruction_file surveyor claude)" = "instructions/surveyor.md" ]
     # codex
     [ "$(get_instruction_file shogun codex)" = "instructions/codex-shogun.md" ]
     [ "$(get_instruction_file orchestrator codex)" = "instructions/codex-orchestrator.md" ]
-    [ "$(get_instruction_file designer codex)" = "instructions/codex-specialist.md" ]
+    [ "$(get_instruction_file architect codex)" = "instructions/codex-architect.md" ]
     # copilot
     [ "$(get_instruction_file shogun copilot)" = ".github/copilot-instructions-shogun.md" ]
     [ "$(get_instruction_file orchestrator copilot)" = ".github/copilot-instructions-orchestrator.md" ]
-    [ "$(get_instruction_file observer copilot)" = ".github/copilot-instructions-specialist.md" ]
+    [ "$(get_instruction_file observer copilot)" = ".github/copilot-instructions-observer.md" ]
     # kimi
     [ "$(get_instruction_file shogun kimi)" = "instructions/generated/kimi-shogun.md" ]
     [ "$(get_instruction_file orchestrator kimi)" = "instructions/generated/kimi-orchestrator.md" ]
-    [ "$(get_instruction_file council kimi)" = "instructions/generated/kimi-specialist.md" ]
+    [ "$(get_instruction_file council kimi)" = "instructions/generated/kimi-council.md" ]
 }
 
 @test "get_instruction_file: unknown agent_id -> empty string + return 1" {
@@ -641,15 +641,15 @@ YAML
     [ -z "$result" ]
 }
 
-@test "get_startup_prompt: opencode oracle → empty (uses --agent, no prompt needed)" {
+@test "get_startup_prompt: opencode critic → empty (uses --agent, no prompt needed)" {
     load_adapter_with "${TEST_TMP}/settings_opencode.yaml"
-    result=$(get_startup_prompt "oracle")
+    result=$(get_startup_prompt "critic")
     [ -z "$result" ]
 }
 
-@test "get_startup_prompt: opencode explorer → empty (uses --agent, no prompt needed)" {
+@test "get_startup_prompt: opencode surveyor → empty (uses --agent, no prompt needed)" {
     load_adapter_with "${TEST_TMP}/settings_opencode.yaml"
-    result=$(get_startup_prompt "explorer")
+    result=$(get_startup_prompt "surveyor")
     [ -z "$result" ]
 }
 
@@ -795,15 +795,15 @@ YAML
     [ "$result" = "opus" ]
 }
 
-@test "get_agent_model: no cli section orchestrator -> sonnet (default)" {
+@test "get_agent_model: no cli section orchestrator -> opus (default)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(get_agent_model "orchestrator")
-    [ "$result" = "sonnet" ]
+    [ "$result" = "opus" ]
 }
 
-@test "get_agent_model: no cli section explorer -> sonnet (default)" {
+@test "get_agent_model: no cli section architect -> sonnet (default)" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
-    result=$(get_agent_model "explorer")
+    result=$(get_agent_model "architect")
     [ "$result" = "sonnet" ]
 }
 
@@ -813,9 +813,9 @@ YAML
     [ "$result" = "sonnet" ]
 }
 
-@test "get_agent_model: YAML specified explorer -> haiku (override)" {
+@test "get_agent_model: YAML specified surveyor -> haiku (override)" {
     load_adapter_with "${TEST_TMP}/settings_with_models.yaml"
-    result=$(get_agent_model "explorer")
+    result=$(get_agent_model "surveyor")
     [ "$result" = "haiku" ]
 }
 
@@ -837,15 +837,15 @@ YAML
     [ "$result" = "sonnet" ]
 }
 
-@test "get_agent_model: kimi CLI designer -> k2.5 (YAML specified)" {
+@test "get_agent_model: kimi CLI architect -> k2.5 (YAML specified)" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(get_agent_model "designer")
+    result=$(get_agent_model "architect")
     [ "$result" = "k2.5" ]
 }
 
-@test "get_agent_model: kimi CLI fixer -> k2.5 (default)" {
+@test "get_agent_model: kimi CLI experimentalist -> k2.5 (default)" {
     load_adapter_with "${TEST_TMP}/settings_kimi.yaml"
-    result=$(get_agent_model "fixer")
+    result=$(get_agent_model "experimentalist")
     [ "$result" = "k2.5" ]
 }
 
@@ -882,13 +882,13 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-sonnet-4-6
       thinking: true
 YAML
     load_adapter_with "${TEST_TMP}/settings_display.yaml"
-    result=$(get_model_display_name "explorer")
+    result=$(get_model_display_name "surveyor")
     [ "$result" = "Sonnet+T" ]
 }
 
@@ -897,13 +897,13 @@ YAML
 cli:
   default: claude
   agents:
-    oracle:
+    critic:
       type: claude
       model: claude-opus-4-6
       thinking: true
 YAML
     load_adapter_with "${TEST_TMP}/settings_display.yaml"
-    result=$(get_model_display_name "oracle")
+    result=$(get_model_display_name "critic")
     [ "$result" = "Opus+T" ]
 }
 
@@ -912,13 +912,13 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-opus-4-8
       effort: max
 YAML
     load_adapter_with "${TEST_TMP}/settings_display_effort.yaml"
-    result=$(get_model_display_name "explorer")
+    result=$(get_model_display_name "surveyor")
     [ "$result" = "Opus+max" ]
 }
 
@@ -927,13 +927,13 @@ YAML
 cli:
   default: claude
   agents:
-    librarian:
+    writer:
       type: claude
       model: claude-haiku-4-5-20251001
       thinking: false
 YAML
     load_adapter_with "${TEST_TMP}/settings_display.yaml"
-    result=$(get_model_display_name "librarian")
+    result=$(get_model_display_name "writer")
     [ "$result" = "Haiku" ]
 }
 
@@ -942,12 +942,12 @@ YAML
 cli:
   default: claude
   agents:
-    designer:
+    architect:
       type: claude
       model: claude-sonnet-4-6
 YAML
     load_adapter_with "${TEST_TMP}/settings_display.yaml"
-    result=$(get_model_display_name "designer")
+    result=$(get_model_display_name "architect")
     [ "$result" = "Sonnet+T" ]
 }
 
@@ -956,12 +956,12 @@ YAML
 cli:
   default: claude
   agents:
-    fixer:
+    experimentalist:
       type: codex
       model: gpt-5.3-codex-spark
 YAML
     load_adapter_with "${TEST_TMP}/settings_display.yaml"
-    result=$(get_model_display_name "fixer")
+    result=$(get_model_display_name "experimentalist")
     [ "$result" = "Spark" ]
 }
 
@@ -984,12 +984,12 @@ YAML
 cli:
   default: kimi
   agents:
-    oracle:
+    critic:
       type: kimi
       model: k2.5
 YAML
     load_adapter_with "${TEST_TMP}/settings_display.yaml"
-    result=$(get_model_display_name "oracle")
+    result=$(get_model_display_name "critic")
     [ "$result" = "Kimi" ]
 }
 
@@ -998,19 +998,19 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-sonnet-4-6
       thinking: true
-    librarian:
+    writer:
       type: claude
       model: claude-opus-4-6
       thinking: false
-    designer:
+    architect:
       type: claude
       model: claude-haiku-4-5-20251001
       thinking: true
-    fixer:
+    experimentalist:
       type: codex
       model: gpt-5.3-codex-spark
     observer:
@@ -1018,10 +1018,10 @@ cli:
       model: gpt-5.3-codex
 YAML
     load_adapter_with "${TEST_TMP}/settings_display_all.yaml"
-    [ "$(get_model_display_name explorer)" = "Sonnet+T" ]
-    [ "$(get_model_display_name librarian)" = "Opus" ]
-    [ "$(get_model_display_name designer)" = "Haiku+T" ]
-    [ "$(get_model_display_name fixer)" = "Spark" ]
+    [ "$(get_model_display_name surveyor)" = "Sonnet+T" ]
+    [ "$(get_model_display_name writer)" = "Opus" ]
+    [ "$(get_model_display_name architect)" = "Haiku+T" ]
+    [ "$(get_model_display_name experimentalist)" = "Spark" ]
     [ "$(get_model_display_name observer)" = "Codex5.3" ]
 }
 
@@ -1034,13 +1034,13 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-sonnet-4-6
       thinking: true
 YAML
     load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [ "$result" = "claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
 }
 
@@ -1049,13 +1049,13 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-opus-4-8
       effort: turbo
 YAML
     load_adapter_with "${TEST_TMP}/settings_effort_invalid.yaml"
-    run build_cli_command "explorer"
+    run build_cli_command "surveyor"
     [ "$status" -eq 0 ]
     [[ "$output" == *"claude --model claude-opus-4-8 --dangerously-skip-permissions"* ]]
     [[ "$output" != *"--effort turbo"* ]]
@@ -1066,13 +1066,13 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-sonnet-4-6
       thinking: false
 YAML
     load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [ "$result" = "MAX_THINKING_TOKENS=0 claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
 }
 
@@ -1081,12 +1081,12 @@ YAML
 cli:
   default: claude
   agents:
-    explorer:
+    surveyor:
       type: claude
       model: claude-sonnet-4-6
 YAML
     load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
-    result=$(build_cli_command "explorer")
+    result=$(build_cli_command "surveyor")
     [ "$result" = "claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
 }
 

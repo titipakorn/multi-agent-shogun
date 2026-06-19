@@ -49,11 +49,11 @@ setup() {
     ashigaru1_pane=$(pane_target 1)
 
     # 1. Place task YAML
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
     # 2. Write task_assigned to inbox
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
 
     # 3. Put agent into busy state for 6 seconds BEFORE sending nudge
@@ -73,7 +73,7 @@ setup() {
     status=$(python3 -c "
 import yaml
 try:
-    with open('$E2E_QUEUE/queue/tasks/explorer.yaml') as f:
+    with open('$E2E_QUEUE/queue/tasks/surveyor.yaml') as f:
         data = yaml.safe_load(f)
     print(data.get('task',{}).get('status',''))
 except: print('')
@@ -81,11 +81,11 @@ except: print('')
     [ "$status" = "assigned" ]
 
     # 7. Wait for busy_hold to end + inbox processing
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 30
     assert_success
 
     # 8. Report should exist
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
 }
 

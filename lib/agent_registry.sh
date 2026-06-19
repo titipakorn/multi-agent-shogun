@@ -13,16 +13,18 @@ AGENT_REGISTRY_SETTINGS="${AGENT_REGISTRY_SETTINGS:-${SHOGUN_SETTINGS_FILE:-${AG
 # shellcheck disable=SC1091
 . "${AGENT_REGISTRY_PROJECT_ROOT}/scripts/shutsujin_v2_constants.sh" 2>/dev/null || true
 
-# Default v2 formation: shogun + orchestrator + 7 specialists (deterministic order)
+# Default v2 formation: shogun + orchestrator + 9 specialists (deterministic order)
 agent_registry_default_agents() {
     printf '%s\n' \
         shogun \
         orchestrator \
-        explorer \
-        librarian \
-        oracle \
-        designer \
-        fixer \
+        architect \
+        experimentalist \
+        analyst \
+        ablation_planner \
+        surveyor \
+        critic \
+        writer \
         observer \
         council
 }
@@ -151,8 +153,8 @@ agent_registry_pane_for_agent() {
 
 # ─── Layer classification (v2) ───────────────────────────────
 # command-layer = receives high-level commands and dispatches (orchestrator)
-# analysis-layer = does deep analysis / evaluation (oracle, council)
-# task-layer = does bounded work (explorer, librarian, designer, fixer, observer)
+# analysis-layer = does deep analysis / evaluation (critic, analyst, ablation_planner, council)
+# task-layer = does bounded work (surveyor, architect, experimentalist, writer, observer)
 command_layer_agents() { echo "orchestrator"; }
-analysis_layer_agents() { echo "oracle council"; }
-task_layer_agents() { echo "explorer librarian designer fixer observer"; }
+analysis_layer_agents() { echo "critic analyst ablation_planner council"; }
+task_layer_agents() { echo "surveyor architect experimentalist writer observer"; }

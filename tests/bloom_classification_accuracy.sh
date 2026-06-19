@@ -14,8 +14,8 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CORPUS="${1:-${PROJECT_ROOT}/tests/fixtures/bloom_task_corpus.yaml}"
 OUTPUT="${PROJECT_ROOT}/queue/reports/bloom_accuracy_report.yaml"
-GUNSHI_TASK_FILE="${PROJECT_ROOT}/queue/tasks/oracle.yaml"
-GUNSHI_REPORT="${PROJECT_ROOT}/queue/reports/gunshi_bloom_test.yaml"
+CRITIC_TASK_FILE="${PROJECT_ROOT}/queue/tasks/critic.yaml"
+CRITIC_REPORT="${PROJECT_ROOT}/queue/reports/critic_bloom_test.yaml"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -46,8 +46,8 @@ from datetime import datetime
 corpus_path = "${CORPUS}"
 output_path = "${OUTPUT}"
 project_root = "${PROJECT_ROOT}"
-gunshi_task_file = "${GUNSHI_TASK_FILE}"
-gunshi_report_file = "${GUNSHI_REPORT}"
+critic_task_file = "${CRITIC_TASK_FILE}"
+critic_report_file = "${CRITIC_REPORT}"
 
 with open(corpus_path) as f:
     corpus = yaml.safe_load(f)
@@ -70,7 +70,7 @@ for task in tasks:
 
     print(f"[{task_id}] expected=L{expected} | {description[:60]}...")
 
-    # Write task to Gunshi
+    # Write task to Critic
     task_yaml = {
         'task': {
             'task_id': f'bloom_test_{task_id}',
@@ -86,17 +86,17 @@ Task:
         }
     }
 
-    with open(gunshi_task_file, 'w') as f:
+    with open(critic_task_file, 'w') as f:
         yaml.dump(task_yaml, f, allow_unicode=True)
 
-    # Send to Gunshi via inbox_write (simulated during test run)
+    # Send to Critic via inbox_write (simulated during test run)
     # In actual VPS E2E, this would call inbox_write and wait for a response
     # This script runs in 'batch decision' mode: simulated via direct CLI call
 
-    # *** For VPS run: uncomment the following to query Gunshi in real-time ***
-    # inbox_cmd = f"bash {project_root}/scripts/inbox_write.sh oracle 'bloom_test_{task_id} Perform decision for' task_assigned orchestrator"
+    # *** For VPS run: uncomment the following to query Critic in real-time ***
+    # inbox_cmd = f"bash {project_root}/scripts/inbox_write.sh critic 'bloom_test_{task_id} Perform decision for' task_assigned orchestrator"
     # subprocess.run(inbox_cmd, shell=True, cwd=project_root)
-    # got = wait_for_gunshi_response(task_id)  # Needs implementation
+    # got = wait_for_critic_response(task_id)  # Needs implementation
 
     # *** Local verification mode: query Claude directly (requires claude CLI) ***
     # Dynamically resolve path to claude CLI (supports environments without PATH set)

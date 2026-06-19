@@ -8,14 +8,14 @@
 # Environment variables:
 #   MOCK_CLI_TYPE          — claude | codex | opencode (default: claude)
 #   MOCK_PROCESSING_DELAY  — seconds to simulate processing (default: 2)
-#   MOCK_AGENT_ID          — agent identifier (e.g., orchestrator, explorer)
+#   MOCK_AGENT_ID          — agent identifier (e.g., orchestrator, surveyor)
 #   MOCK_PROJECT_ROOT      — project root with queue/ directory
 #
 # State machine:
 #   IDLE → (input received) → BUSY → (processing done) → IDLE
 #
 # Usage:
-#   MOCK_AGENT_ID=explorer MOCK_CLI_TYPE=claude MOCK_PROJECT_ROOT=/tmp/e2e mock_cli.sh
+#   MOCK_AGENT_ID=surveyor MOCK_CLI_TYPE=claude MOCK_PROJECT_ROOT=/tmp/e2e mock_cli.sh
 # ═══════════════════════════════════════════════════════════════
 
 set -euo pipefail
@@ -135,7 +135,7 @@ process_inbox() {
 
     # Check for message types
     local msg_types
-    msg_types=$(python3 -c "
+    msg_types=$("$MOCK_PYTHON" -c "
 import yaml
 try:
     with open('$INBOX_FILE') as f:
@@ -162,7 +162,7 @@ except:
     if echo "$msg_types" | grep -q "cmd_new"; then
         echo "[mock] cmd_new detected"
         if [ "$MOCK_AGENT_ID" = "orchestrator" ]; then
-            karo_decompose_cmd
+            orchestrator_decompose_cmd
         fi
     fi
 
@@ -187,11 +187,11 @@ handle_clear() {
     show_prompt "$MOCK_CLI_TYPE"
 }
 
-# ─── Karo-specific: decompose cmd into subtasks ───
-# When orchestrator receives a cmd_new, it reads shogun_to_karo.yaml,
+# ─── Orchestrator-specific: decompose cmd into subtasks ───
+# When orchestrator receives a cmd_new, it reads shogun_to_orchestrator.yaml,
 # creates task YAMLs for specialist, and sends inbox notifications.
-karo_decompose_cmd() {
-    local cmd_file="$MOCK_PROJECT_ROOT/queue/shogun_to_karo.yaml"
+orchestrator_decompose_cmd() {
+    local cmd_file="$MOCK_PROJECT_ROOT/queue/shogun_to_orchestrator.yaml"
     if [ ! -f "$cmd_file" ]; then
         echo "[mock/orchestrator] No cmd file found"
         return 1
@@ -207,8 +207,8 @@ karo_decompose_cmd() {
     echo "[mock/orchestrator] Decomposing cmd: $cmd_id"
     sleep "$MOCK_PROCESSING_DELAY"
 
-    # Create subtask for explorer
-    local subtask_file="$MOCK_PROJECT_ROOT/queue/tasks/explorer.yaml"
+    # Create subtask for surveyor
+    local subtask_file="$MOCK_PROJECT_ROOT/queue/tasks/surveyor.yaml"
     local subtask_id="subtask_${cmd_id}_a"
     cat > "$subtask_file" <<EOF
 task:
@@ -222,17 +222,17 @@ task:
   timestamp: "$(date '+%Y-%m-%dT%H:%M:%S')"
 EOF
 
-    echo "[mock/orchestrator] Created subtask: $subtask_id for explorer"
+    echo "[mock/orchestrator] Created subtask: $subtask_id for surveyor"
 
-    # Send task_assigned to explorer via inbox_write
+    # Send task_assigned to surveyor via inbox_write
     local inbox_write_script="$MOCK_PROJECT_ROOT/scripts/inbox_write.sh"
     if [ ! -f "$inbox_write_script" ]; then
         inbox_write_script="$MOCK_SCRIPT_DIR/../../scripts/inbox_write.sh"
     fi
     if [ -f "$inbox_write_script" ]; then
-        bash "$inbox_write_script" "explorer" \
+        bash "$inbox_write_script" "surveyor" \
             "Read task YAML and start work." "task_assigned" "orchestrator" 2>/dev/null || true
-        echo "[mock/orchestrator] Sent task_assigned to explorer"
+        echo "[mock/orchestrator] Sent task_assigned to surveyor"
     fi
 
     STATE="idle"
@@ -293,9 +293,9 @@ while IFS= read -r input || true; do
             show_prompt "$MOCK_CLI_TYPE"
             ;;
         cmd_new*)
-            # Karo-specific: decompose cmd
+            # Orchestrator-specific: decompose cmd
             if [ "$MOCK_AGENT_ID" = "orchestrator" ]; then
-                karo_decompose_cmd
+                orchestrator_decompose_cmd
             fi
             show_prompt "$MOCK_CLI_TYPE"
             ;;

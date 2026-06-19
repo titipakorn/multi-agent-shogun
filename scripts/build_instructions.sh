@@ -218,7 +218,7 @@ build_instruction_file "antigravity" "telegram" "antigravity-telegram.md"
 # authored as self-contained files at instructions/<role>.md — the YAML
 # frontmatter is already embedded and the body is final. We simply copy the
 # file with the per-CLI filename convention.
-V2_SPECIALIST_ROLES=(explorer librarian oracle designer fixer observer council)
+V2_SPECIALIST_ROLES=(surveyor critic architect experimentalist analyst ablation_planner writer observer council)
 
 for role in "${V2_SPECIALIST_ROLES[@]}"; do
     if [ ! -f "$ROOT_DIR/instructions/${role}.md" ]; then
@@ -399,7 +399,7 @@ generate_opencode_agents() {
     # derive generated file names from git-ignored config/settings.yaml or
     # runtime queue/tasks state.
     local agent_ids
-    agent_ids="shogun orchestrator explorer librarian oracle designer fixer observer council telegram"
+    agent_ids="shogun orchestrator surveyor critic architect experimentalist analyst ablation_planner writer observer council telegram"
 
     for agent_id in $agent_ids; do
         # Each v2 role has a 1:1 prompt file, so role == agent_id
@@ -414,20 +414,26 @@ generate_opencode_agents() {
             orchestrator)
                 role_title="Orchestrator — task decomposition, assignment, and coordination"
                 ;;
-            explorer)
-                role_title="Explorer — code/structure reconnaissance"
+            surveyor)
+                role_title="Surveyor — literature reconnaissance and knowledge gap identification"
                 ;;
-            librarian)
-                role_title="Librarian — documentation and external research"
+            critic)
+                role_title="Critic — rigorous peer reviewer and assumption challenger"
                 ;;
-            oracle)
-                role_title="Oracle — deep analysis (Bloom L4-L6)"
+            architect)
+                role_title="Architect — hypothesis generator and model architecture designer"
                 ;;
-            designer)
-                role_title="Designer — UX/architecture planning"
+            experimentalist)
+                role_title="Experimentalist — turns architecture specs into running experiments"
                 ;;
-            fixer)
-                role_title="Fixer — implementation and code change"
+            analyst)
+                role_title="Analyst — result interpreter (reads numbers against hypotheses)"
+                ;;
+            ablation_planner)
+                role_title="Ablation Planner — systematic attribution specialist (isolates components)"
+                ;;
+            writer)
+                role_title="Writer — academic paper author"
                 ;;
             observer)
                 role_title="Observer — runtime monitoring and verification"
@@ -449,8 +455,9 @@ permissions_file = sys.argv[1]
 agent_id = sys.argv[2]
 
 def role_for_agent(agent_id: str) -> str:
-    if agent_id in {'shogun', 'orchestrator', 'explorer', 'librarian', 'oracle',
-                    'designer', 'fixer', 'observer', 'council', 'telegram'}:
+    if agent_id in {'shogun', 'orchestrator', 'surveyor', 'critic', 'architect',
+                    'experimentalist', 'analyst', 'ablation_planner', 'writer',
+                    'observer', 'council', 'telegram'}:
         return agent_id
     return ''
 
@@ -483,7 +490,13 @@ with open(permissions_file, encoding='utf-8') as fh:
 
 role = role_for_agent(agent_id)
 roles = config.get('roles') or {}
-role_cfg = roles.get(role) or {}
+role_cfg = roles.get(role)
+if role_cfg is None:
+    if role in {'surveyor', 'critic', 'architect', 'experimentalist', 'analyst',
+                'ablation_planner', 'writer', 'observer', 'council'}:
+        role_cfg = roles.get('specialist') or {}
+    else:
+        role_cfg = {}
 
 common_edit_deny = list((config.get('common') or {}).get('edit_deny') or [])
 read_rule = build_rule(role_cfg.get('read_deny'), role_cfg.get('read_allow'))
@@ -544,19 +557,11 @@ def normalize_opencode_model(model: str) -> str:
     return model
 
 def default_model_for(agent: str) -> str:
-    if agent == "shogun":
+    if agent in ("shogun", "orchestrator", "architect", "critic", "council"):
         return "opus"
-    if agent == "orchestrator":
-        return "opus"
-    if agent == "oracle":
-        return "opus"
-    if agent == "council":
-        return "opus"
-    if agent == "explorer":
+    if agent in ("surveyor", "telegram"):
         return "haiku"
-    if agent == "telegram":
-        return "haiku"
-    if agent in ("librarian", "designer", "fixer", "observer"):
+    if agent in ("experimentalist", "analyst", "ablation_planner", "writer", "observer"):
         return "sonnet"
     return "sonnet"
 
@@ -619,7 +624,7 @@ FRONTMATTER
         # v2 specialists use their self-contained prompt at instructions/<role>.md.
         local role_body=""
         case "$agent_id" in
-            explorer|librarian|oracle|designer|fixer|observer|council)
+            surveyor|critic|architect|experimentalist|analyst|ablation_planner|writer|observer|council)
                 if [ -f "$ROOT_DIR/instructions/${agent_id}.md" ]; then
                     role_body="$ROOT_DIR/instructions/${agent_id}.md"
                 else

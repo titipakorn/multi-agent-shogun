@@ -3,8 +3,8 @@
 # E2E-007: blocked_by Dependency Test
 # ═══════════════════════════════════════════════════════════════
 # Validates task dependency ordering:
-#   1. Task A (explorer) has no dependencies → executes immediately
-#   2. Task B (librarian) has blocked_by: [task_A] → waits
+#   1. Task A (surveyor) has no dependencies → executes immediately
+#   2. Task B (critic) has blocked_by: [task_A] → waits
 #   3. After task A completes, orchestrator unblocks task B
 #   4. Task B executes and completes
 #
@@ -50,52 +50,52 @@ setup() {
     ashigaru1_pane=$(pane_target 1)
     ashigaru2_pane=$(pane_target 2)
 
-    # 1. Place task A for explorer (no blocked_by)
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru1_basic.yaml" \
-       "$E2E_QUEUE/queue/tasks/explorer.yaml"
+    # 1. Place task A for surveyor (no blocked_by)
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_surveyor_basic.yaml" \
+       "$E2E_QUEUE/queue/tasks/surveyor.yaml"
 
-    # 2. Place task B for librarian (blocked_by: subtask_test_001a)
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru2_blocked.yaml" \
-       "$E2E_QUEUE/queue/tasks/librarian.yaml"
+    # 2. Place task B for critic (blocked_by: subtask_test_001a)
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_critic_blocked.yaml" \
+       "$E2E_QUEUE/queue/tasks/critic.yaml"
 
-    # 3. Only send task_assigned to explorer (librarian is blocked)
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "explorer" \
+    # 3. Only send task_assigned to surveyor (critic is blocked)
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "surveyor" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
     send_to_pane "$ashigaru1_pane" "inbox1"
 
     # 4. Verify task B is still blocked (not started)
     sleep 2
-    assert_yaml_field "$E2E_QUEUE/queue/tasks/librarian.yaml" "task.status" "blocked"
+    assert_yaml_field "$E2E_QUEUE/queue/tasks/critic.yaml" "task.status" "blocked"
 
     # 5. Wait for task A to complete
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/explorer.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/surveyor.yaml" "task.status" "done" 30
     assert_success
 
     # 6. Simulate orchestrator unblocking task B: change status from blocked → assigned
     python3 -c "
 import yaml, os, tempfile
-with open('$E2E_QUEUE/queue/tasks/librarian.yaml') as f:
+with open('$E2E_QUEUE/queue/tasks/critic.yaml') as f:
     data = yaml.safe_load(f)
 data['task']['status'] = 'assigned'
 tmp_fd, tmp_path = tempfile.mkstemp(dir='$E2E_QUEUE/queue/tasks', suffix='.tmp')
 with os.fdopen(tmp_fd, 'w') as f:
     yaml.dump(data, f, default_flow_style=False, allow_unicode=True, indent=2)
-os.replace(tmp_path, '$E2E_QUEUE/queue/tasks/librarian.yaml')
+os.replace(tmp_path, '$E2E_QUEUE/queue/tasks/critic.yaml')
 "
 
-    # 7. Send task_assigned to librarian
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "librarian" \
+    # 7. Send task_assigned to critic
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "critic" \
         "Read task YAML and start work. Block released." "task_assigned" "orchestrator"
     send_to_pane "$ashigaru2_pane" "inbox1"
 
     # 8. Wait for task B to complete
-    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/librarian.yaml" "task.status" "done" 30
+    run wait_for_yaml_value "$E2E_QUEUE/queue/tasks/critic.yaml" "task.status" "done" 30
     assert_success
 
     # 9. Both reports should exist
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru1_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/surveyor_report.yaml" 10
     assert_success
-    run wait_for_file "$E2E_QUEUE/queue/reports/ashigaru2_report.yaml" 10
+    run wait_for_file "$E2E_QUEUE/queue/reports/critic_report.yaml" 10
     assert_success
 }
 
@@ -107,12 +107,12 @@ os.replace(tmp_path, '$E2E_QUEUE/queue/tasks/librarian.yaml')
     local ashigaru2_pane
     ashigaru2_pane=$(pane_target 2)
 
-    # 1. Place blocked task for librarian
-    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_ashigaru2_blocked.yaml" \
-       "$E2E_QUEUE/queue/tasks/librarian.yaml"
+    # 1. Place blocked task for critic
+    cp "$PROJECT_ROOT/tests/e2e/fixtures/task_critic_blocked.yaml" \
+       "$E2E_QUEUE/queue/tasks/critic.yaml"
 
     # 2. Send task_assigned and nudge (even though task is blocked)
-    bash "$E2E_QUEUE/scripts/inbox_write.sh" "librarian" \
+    bash "$E2E_QUEUE/scripts/inbox_write.sh" "critic" \
         "Read task YAML and start work." "task_assigned" "orchestrator"
     send_to_pane "$ashigaru2_pane" "inbox1"
 
@@ -120,8 +120,8 @@ os.replace(tmp_path, '$E2E_QUEUE/queue/tasks/librarian.yaml')
     sleep 5
 
     # 4. Task should still be blocked (mock_cli skips non-assigned tasks)
-    assert_yaml_field "$E2E_QUEUE/queue/tasks/librarian.yaml" "task.status" "blocked"
+    assert_yaml_field "$E2E_QUEUE/queue/tasks/critic.yaml" "task.status" "blocked"
 
     # 5. No report should be created
-    [ ! -f "$E2E_QUEUE/queue/reports/ashigaru2_report.yaml" ]
+    [ ! -f "$E2E_QUEUE/queue/reports/critic_report.yaml" ]
 }

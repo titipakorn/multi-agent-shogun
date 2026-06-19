@@ -737,17 +737,17 @@ try:
     with open('$SCRIPT_DIR/config/settings.yaml') as f:
         cfg = yaml.safe_load(f) or {}
     roles = cfg.get('roles', {})
-    task_eligible = ['explorer', 'librarian', 'oracle', 'designer', 'fixer', 'observer', 'council']
+    task_eligible = ['surveyor', 'critic', 'architect', 'experimentalist', 'analyst', 'ablation_planner', 'writer', 'observer', 'council']
     found = [r for r in task_eligible if r in roles]
     print(' '.join(found) if found else ' '.join(task_eligible))
 except Exception:
-    print('explorer librarian oracle designer fixer observer council')
+    print('surveyor critic architect experimentalist analyst ablation_planner writer observer council')
 " 2>/dev/null
     else
-        echo "explorer librarian oracle designer fixer observer council"
+        echo "surveyor critic architect experimentalist analyst ablation_planner writer observer council"
     fi
 )
-_SETUP_SPECIALIST_ROLES=${_SETUP_SPECIALIST_ROLES:-"explorer librarian oracle designer fixer observer council"}
+_SETUP_SPECIALIST_ROLES=${_SETUP_SPECIALIST_ROLES:-"surveyor critic architect experimentalist analyst ablation_planner writer observer council"}
 
 # Create specialist task files
 for role in $_SETUP_SPECIALIST_ROLES; do

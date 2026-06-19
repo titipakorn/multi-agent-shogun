@@ -47,10 +47,10 @@ roles:
     model: opus
     pane_target: "multiagent:ops.0"
     prompt_path: "instructions/orchestrator.md"
-  fixer:
+  experimentalist:
     model: sonnet
-    pane_target: "multiagent:ops.1"
-    prompt_path: "instructions/fixer.md"
+    pane_target: "multiagent:ops.2"
+    prompt_path: "instructions/experimentalist.md"
 YAML
 
 # Copy inbox_write.sh but rewrite SCRIPT_DIR to resolve to $TMPDIR
@@ -72,13 +72,13 @@ else
     echo "PASS: valid role 'orchestrator' accepted"
 fi
 
-# ─── Case 2: another valid role (fixer) → exit 0 ──────────────
-if ! bash "$TMPDIR/scripts/inbox_write.sh" fixer "hello fixer" task_assigned orchestrator 2>"$TMPDIR/err2.log"; then
-    echo "FAIL: valid role 'fixer' was rejected" >&2
+# ─── Case 2: another valid role (experimentalist) → exit 0 ──────────────
+if ! bash "$TMPDIR/scripts/inbox_write.sh" experimentalist "hello experimentalist" task_assigned orchestrator 2>"$TMPDIR/err2.log"; then
+    echo "FAIL: valid role 'experimentalist' was rejected" >&2
     cat "$TMPDIR/err2.log" >&2
     FAIL=1
 else
-    echo "PASS: valid role 'fixer' accepted"
+    echo "PASS: valid role 'experimentalist' accepted"
 fi
 
 # ─── Case 3: invalid role (nonexistent) → exit 1 ──────────────

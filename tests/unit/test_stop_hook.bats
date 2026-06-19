@@ -40,7 +40,7 @@ teardown() {
 # Helper: run the REAL hook script with test overrides
 run_hook() {
     local json="$1"
-    local agent_id="${2:-explorer}"
+    local agent_id="${2:-surveyor}"
     __STOP_HOOK_SCRIPT_DIR="$TEST_TMP" \
     __STOP_HOOK_AGENT_ID="$agent_id" \
     run bash "$HOOK_SCRIPT" <<< "$json"
@@ -78,7 +78,7 @@ run_hook_no_agent() {
     [ -f "$TEST_TMP/inbox_write_calls.log" ]
     grep -q "orchestrator" "$TEST_TMP/inbox_write_calls.log"
     grep -q "report_completed" "$TEST_TMP/inbox_write_calls.log"
-    grep -q "explorer" "$TEST_TMP/inbox_write_calls.log"
+    grep -q "surveyor" "$TEST_TMP/inbox_write_calls.log"
 }
 
 @test "T-HOOK-005: error message triggers inbox_write to orchestrator" {
@@ -102,7 +102,7 @@ run_hook_no_agent() {
 }
 
 @test "T-HOOK-008: unread inbox messages produce block JSON" {
-    cat > "$TEST_TMP/queue/inbox/explorer.yaml" << 'YAML'
+    cat > "$TEST_TMP/queue/inbox/surveyor.yaml" << 'YAML'
 messages:
   - id: msg_001
     from: orchestrator
@@ -117,7 +117,7 @@ YAML
 }
 
 @test "T-HOOK-009: no unread + completion message exits 0 with notification" {
-    cat > "$TEST_TMP/queue/inbox/explorer.yaml" << 'YAML'
+    cat > "$TEST_TMP/queue/inbox/surveyor.yaml" << 'YAML'
 messages:
   - id: msg_001
     from: orchestrator
@@ -133,7 +133,7 @@ YAML
 }
 
 @test "T-HOOK-010: unread inbox + completion message blocks AND notifies" {
-    cat > "$TEST_TMP/queue/inbox/explorer.yaml" << 'YAML'
+    cat > "$TEST_TMP/queue/inbox/surveyor.yaml" << 'YAML'
 messages:
   - id: msg_001
     from: orchestrator

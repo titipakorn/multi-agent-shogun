@@ -22,7 +22,7 @@ trap 'rm -rf "$TMPDIR"' EXIT
 
 FAIL=0
 
-# ─── Case 1: valid full v2 settings (9 roles) ──────────────────
+# ─── Case 1: valid full v2 settings (11 roles) ─────────────────
 cat > "$TMPDIR/valid.yaml" <<'YAML'
 topology: v2
 cli:
@@ -36,33 +36,41 @@ roles:
     model: opus
     pane_target: "multiagent:ops.0"
     prompt_path: "instructions/orchestrator.md"
-  explorer:
+  surveyor:
     model: haiku
     pane_target: "multiagent:research.0"
-    prompt_path: "instructions/explorer.md"
-  librarian:
-    model: sonnet
-    pane_target: "multiagent:research.1"
-    prompt_path: "instructions/librarian.md"
-  oracle:
+    prompt_path: "instructions/surveyor.md"
+  critic:
     model: opus
-    pane_target: "multiagent:research.2"
-    prompt_path: "instructions/oracle.md"
-  designer:
+    pane_target: "multiagent:research.1"
+    prompt_path: "instructions/critic.md"
+  architect:
+    model: opus
+    pane_target: "multiagent:ops.1"
+    prompt_path: "instructions/architect.md"
+  experimentalist:
     model: sonnet
     pane_target: "multiagent:ops.2"
-    prompt_path: "instructions/designer.md"
-  fixer:
-    model: sonnet
-    pane_target: "multiagent:ops.1"
-    prompt_path: "instructions/fixer.md"
-  observer:
+    prompt_path: "instructions/experimentalist.md"
+  analyst:
     model: sonnet
     pane_target: "multiagent:ops.3"
+    prompt_path: "instructions/analyst.md"
+  ablation_planner:
+    model: sonnet
+    pane_target: "multiagent:ops.4"
+    prompt_path: "instructions/ablation_planner.md"
+  writer:
+    model: sonnet
+    pane_target: "multiagent:research.2"
+    prompt_path: "instructions/writer.md"
+  observer:
+    model: sonnet
+    pane_target: "multiagent:research.3"
     prompt_path: "instructions/observer.md"
   council:
     model: opus
-    pane_target: "multiagent:research.3"
+    pane_target: "multiagent:research.4"
     prompt_path: "instructions/council.md"
 YAML
 

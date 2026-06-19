@@ -32,7 +32,7 @@ When you are woken up (marked by receiving `inboxN`), perform the following step
 1. **Self-Identification**: Run `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'` to verify you are `telegram`.
 2. **Read Inbox**: Read `queue/inbox/telegram.yaml`. Find all messages with `read: false`.
 3. **Handle Messages**: Process each message according to its content:
-   
+
    ### A. Status Command (`/status` or `status` or `status?`)
    - **Action**: Run `bash scripts/agent_status.sh` to obtain the current status of all running panes and agents.
    - **Formatting**: Format the output into a concise, mobile-friendly summary. Use emojis (e.g., 🟢 for idle, 🔴 for busy, 🏯 for shogun) to represent agent states. Keep the output under 250 words. Do not dump raw text tables.
@@ -40,7 +40,7 @@ When you are woken up (marked by receiving `inboxN`), perform the following step
      ```bash
      bash scripts/ntfy.sh "📊 *Live Agent Status:*[your formatted text]"
      ```
-   
+
    ### B. Dashboard Command (`/dashboard` or `dashboard`)
    - **Action**: Read the contents of `dashboard.md`.
    - **Formatting**: Condense the dashboard content. Keep only the active goals, progress status, and any blockers or items requiring action. Keep it under 300 words.
@@ -48,7 +48,7 @@ When you are woken up (marked by receiving `inboxN`), perform the following step
      ```bash
      bash scripts/ntfy.sh "📋 *Current Dashboard:*[your condensed text]"
      ```
-   
+
    ### C. Btw Command (`/btw <question>` or `btw <question>`)
    - **Action**: Extract the question. Proactively gather project context from these files:
      - [dashboard.md](file:///Users/prince/Workspaces/multi-agent-shogun/dashboard.md)

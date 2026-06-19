@@ -8,23 +8,25 @@
 
 # ─── Read role list in deterministic order ───────────────────
 v2_role_list() {
-    echo "shogun orchestrator explorer librarian oracle designer fixer observer council"
+    echo "shogun orchestrator surveyor critic architect experimentalist analyst ablation_planner writer observer council"
 }
 
 # ─── Read pane target for a role ─────────────────────────────
 v2_pane_for() {
     local role=$1
     case "$role" in
-        shogun)        echo "shogun:main.0" ;;
-        orchestrator)  echo "multiagent:ops.0" ;;
-        fixer)         echo "multiagent:ops.1" ;;
-        designer)      echo "multiagent:ops.2" ;;
-        observer)      echo "multiagent:ops.3" ;;
-        explorer)      echo "multiagent:research.0" ;;
-        librarian)     echo "multiagent:research.1" ;;
-        oracle)        echo "multiagent:research.2" ;;
-        council)       echo "multiagent:research.3" ;;
-        *)             echo "" ;;
+        shogun)            echo "shogun:main.0" ;;
+        orchestrator)      echo "multiagent:ops.0" ;;
+        architect)         echo "multiagent:ops.1" ;;
+        experimentalist)   echo "multiagent:ops.2" ;;
+        analyst)           echo "multiagent:ops.3" ;;
+        ablation_planner)  echo "multiagent:ops.4" ;;
+        surveyor)          echo "multiagent:research.0" ;;
+        critic)            echo "multiagent:research.1" ;;
+        writer)            echo "multiagent:research.2" ;;
+        observer)          echo "multiagent:research.3" ;;
+        council)           echo "multiagent:research.4" ;;
+        *)                 echo "" ;;
     esac
 }
 
@@ -32,10 +34,10 @@ v2_pane_for() {
 v2_model_for() {
     local role=$1
     case "$role" in
-        shogun|orchestrator|oracle|council) echo "opus" ;;
-        explorer)                          echo "haiku" ;;
-        librarian|designer|fixer|observer) echo "sonnet" ;;
-        *)                                 echo "sonnet" ;;
+        shogun|orchestrator|critic|architect|council) echo "opus" ;;
+        surveyor)                                    echo "haiku" ;;
+        experimentalist|analyst|ablation_planner|writer|observer) echo "sonnet" ;;
+        *)                                           echo "sonnet" ;;
     esac
 }
 
@@ -43,16 +45,18 @@ v2_model_for() {
 v2_color_for() {
     local role=$1
     case "$role" in
-        shogun)        echo "#002b36" ;;
-        orchestrator)  echo "#501515" ;;
-        fixer)         echo "#1e3a1e" ;;
-        designer)      echo "#3a1e3a" ;;
-        observer)      echo "#1e3a3a" ;;
-        explorer)      echo "#454510" ;;
-        librarian)     echo "#503515" ;;
-        oracle)        echo "#9e7c0a" ;;
-        council)       echo "#353535" ;;
-        *)             echo "#303030" ;;
+        shogun)            echo "#002b36" ;;
+        orchestrator)      echo "#501515" ;;
+        architect)         echo "#1e3a1e" ;;
+        experimentalist)   echo "#1e3a3a" ;;
+        analyst)           echo "#3a1e3a" ;;
+        ablation_planner)  echo "#503515" ;;
+        surveyor)          echo "#454510" ;;
+        critic)            echo "#9e7c0a" ;;
+        writer)            echo "#353535" ;;
+        observer)          echo "#1c2a38" ;;
+        council)           echo "#2b2b2b" ;;
+        *)                 echo "#303030" ;;
     esac
 }
 

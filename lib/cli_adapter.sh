@@ -128,7 +128,7 @@ _cli_adapter_shell_quote() {
 }
 
 # _cli_adapter_get_agent_env_prefix agent_id
-# Returns KEY=VALUE strings from settings.yaml's cli.agents.{id}.env
+# Returns KEY=VALUE strings from settings.yaml's cli.agents.{id}.env or roles.{id}.env
 # e.g.: "OPENAI_BASE_URL=http://... OPENAI_API_KEY=sk-xxx "
 _cli_adapter_get_agent_env_prefix() {
     local agent_id="$1"
@@ -138,10 +138,13 @@ import yaml, shlex, sys
 try:
     with open('${CLI_ADAPTER_SETTINGS}') as f:
         cfg = yaml.safe_load(f) or {}
-    env = cfg.get('cli', {}).get('agents', {}).get('${agent_id}', {})
-    if not isinstance(env, dict):
+    agents = cfg.get('roles', {})
+    if not agents or not isinstance(agents, dict):
+        agents = cfg.get('cli', {}).get('agents', {})
+    agent_cfg = agents.get('${agent_id}', {})
+    if not isinstance(agent_cfg, dict):
         sys.exit(0)
-    env = env.get('env', {})
+    env = agent_cfg.get('env', {})
     if not isinstance(env, dict):
         sys.exit(0)
     parts = [shlex.quote(f'{k}={v}') for k, v in env.items()]
@@ -191,15 +194,13 @@ try:
         cfg = yaml.safe_load(f) or {}
     cli = cfg.get('cli', {})
     if not isinstance(cli, dict):
-        print('claude'); sys.exit(0)
-    agents = cli.get('agents', {})
-    if not isinstance(agents, dict):
-        default = normalize_cli(cli.get('default', 'claude'))
-        print(default if default in allowed else 'claude')
-        sys.exit(0)
+        cli = {}
+    agents = cfg.get('roles', {})
+    if not isinstance(agents, dict) or not agents:
+        agents = cli.get('agents', {})
     agent_cfg = agents.get('${agent_id}')
     if isinstance(agent_cfg, dict):
-        t = normalize_cli(agent_cfg.get('type', ''))
+        t = normalize_cli(agent_cfg.get('type', agent_cfg.get('cli_variant', '')))
         if t in allowed:
             print(t); sys.exit(0)
     elif isinstance(agent_cfg, str):
@@ -354,7 +355,7 @@ get_instruction_file() {
     case "$agent_id" in
         shogun)        role="shogun" ;;
         orchestrator)  role="orchestrator" ;;
-        explorer|librarian|oracle|designer|fixer|observer|council)
+        surveyor|critic|architect|experimentalist|analyst|ablation_planner|writer|observer|council)
                       role="$agent_id" ;;
         telegram)      role="telegram" ;;
         *)
@@ -437,6 +438,15 @@ validate_cli_availability() {
 get_agent_model() {
     local agent_id="$1"
 
+    # Check roles.{id}.model
+    local model_from_roles
+    model_from_roles=$(_cli_adapter_read_yaml "roles.${agent_id}.model" "")
+
+    if [[ -n "$model_from_roles" ]]; then
+        echo "$model_from_roles"
+        return 0
+    fi
+
     # First check settings.yaml's cli.agents.{id}.model
     local model_from_yaml
     model_from_yaml=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.model" "")
@@ -464,14 +474,14 @@ get_agent_model() {
             # Default model for Kimi CLI
             case "$agent_id" in
                 shogun|orchestrator)               echo "k2.5" ;;
-                explorer|librarian|oracle|designer|fixer|observer|council) echo "k2.5" ;;
+                surveyor|critic|architect|experimentalist|analyst|ablation_planner|writer|observer|council) echo "k2.5" ;;
                 *)                                 echo "k2.5" ;;
             esac
             ;;
         cursor)
             # Default model for Cursor Agent CLI (model name is passed through)
             case "$agent_id" in
-                shogun|orchestrator|oracle|council) echo "claude-sonnet-4-6" ;;
+                shogun|orchestrator|critic|council) echo "claude-sonnet-4-6" ;;
                 *)                                 echo "claude-sonnet-4-6" ;;
             esac
             ;;
@@ -486,9 +496,9 @@ get_agent_model() {
         *)
             # Default model for Claude Code/Codex (v2 specialist team)
             case "$agent_id" in
-                shogun|orchestrator|oracle|council) echo "opus" ;;
-                explorer)                          echo "haiku" ;;
-                librarian|designer|fixer|observer) echo "sonnet" ;;
+                shogun|orchestrator|critic|council) echo "opus" ;;
+                surveyor)                          echo "haiku" ;;
+                architect|experimentalist|analyst|ablation_planner|writer|observer) echo "sonnet" ;;
                 *)                                 echo "sonnet" ;;
             esac
             ;;
@@ -1095,37 +1105,37 @@ print('valid')
 
 # v2_bloom_routing(level)
 # Map a Bloom taxonomy level (L1..L6, or EVAL) to a v2 specialist role.
-#   L1 (remember)    -> explorer  (factual lookup, no analysis)
+#   L1 (remember)    -> surveyor  (factual literature/codebase lookup)
 #   L2 (understand)  -> orchestrator (comprehension / task framing)
 #   L3 (apply)       -> orchestrator (apply known patterns)
-#   L4 (analyze)     -> oracle  (deep analysis)
+#   L4 (analyze)     -> critic  (deep analysis / stress-testing)
 #   L5 (evaluate)    -> council (multi-model evaluation)
-#   L6 (create)      -> oracle  (synthesis) + council (review)
+#   L6 (create)      -> critic  (synthesis review)
 #   EVAL             -> council (pure evaluation)
 v2_bloom_routing() {
     local level="${1:-L1}"
     case "$level" in
-        L1)      echo "explorer" ;;
+        L1)      echo "surveyor" ;;
         L2|L3)   echo "orchestrator" ;;
-        L4|L6)   echo "oracle" ;;
+        L4|L6)   echo "critic" ;;
         L5|EVAL) echo "council" ;;
         *)       echo "orchestrator" ;;
     esac
 }
 
-# should_trigger_bloom_analysis(bloom_routing, bloom_analysis_required, oracle_available)
+# should_trigger_bloom_analysis(bloom_routing, bloom_analysis_required, critic_available)
 # Judge whether to trigger Bloom analysis
 # $1: bloom_routing — "auto" | "manual" | "off"
 # $2: bloom_analysis_required — "true" | "false" (flag in task YAML)
-# $3: oracle_available — "yes" | "no" (defaults to "yes")
+# $3: critic_available — "yes" | "no" (defaults to "yes")
 # Output: "yes" | "no" | "fallback"
 should_trigger_bloom_analysis() {
     local bloom_routing="${1:-off}"
     local bloom_analysis_required="${2:-false}"
-    local oracle_available="${3:-yes}"
+    local critic_available="${3:-yes}"
 
-    # Oracle not started -> Phase 2 fallback
-    if [[ "$oracle_available" = "no" ]]; then
+    # Critic not started -> Phase 2 fallback
+    if [[ "$critic_available" = "no" ]]; then
         echo "fallback"
         return 0
     fi
@@ -1324,7 +1334,7 @@ except Exception:
 #   $1: recommended_model — return value of get_recommended_model()
 #
 # Returns:
-#   Idle specialist ID (e.g. "designer") — exact match or fallback
+#   Idle specialist ID (e.g. "architect") — exact match or fallback
 #   All busy -> "QUEUE"
 #   Error -> "" (empty string)
 #
@@ -1352,9 +1362,10 @@ import yaml, sys
 try:
     with open('${settings}') as f:
         cfg = yaml.safe_load(f) or {}
-    cli_cfg = cfg.get('cli', {})
-    agents = cli_cfg.get('agents', {})
-    task_eligible = {'explorer', 'librarian', 'oracle', 'designer', 'fixer', 'observer', 'council'}
+    agents = cfg.get('roles', {})
+    if not agents or not isinstance(agents, dict):
+        agents = cfg.get('cli', {}).get('agents', {})
+    task_eligible = ['surveyor', 'critic', 'architect', 'experimentalist', 'analyst', 'ablation_planner', 'writer', 'observer', 'council']
 
     results = []
     for agent_id, spec in agents.items():
@@ -1367,7 +1378,7 @@ try:
         if agent_model == '${recommended_model}':
             results.append(agent_id)
 
-    # Stable order: explorer, librarian, oracle, designer, fixer, observer, council
+    # Stable order: surveyor, critic, architect, experimentalist, analyst, ablation_planner, writer, observer, council
     order = {r: i for i, r in enumerate(task_eligible)}
     results.sort(key=lambda x: order.get(x, 99))
     print(' '.join(results))
@@ -1426,8 +1437,10 @@ import yaml
 try:
     with open('${settings}') as f:
         cfg = yaml.safe_load(f) or {}
-    agents = cfg.get('cli', {}).get('agents', {})
-    task_eligible = ['explorer', 'librarian', 'oracle', 'designer', 'fixer', 'observer', 'council']
+    agents = cfg.get('roles', {})
+    if not agents or not isinstance(agents, dict):
+        agents = cfg.get('cli', {}).get('agents', {})
+    task_eligible = ['surveyor', 'critic', 'architect', 'experimentalist', 'analyst', 'ablation_planner', 'writer', 'observer', 'council']
     results = [k for k in agents if k in task_eligible]
     results.sort(key=lambda x: task_eligible.index(x) if x in task_eligible else 99)
     print(' '.join(results))
@@ -1468,9 +1481,9 @@ except Exception:
 }
 
 # get_specialist_ids()
-# Returns the v2 task-eligible specialist list (the 7 specialists: explorer,
-# librarian, oracle, designer, fixer, observer, council) in canonical order.
-# Fallback to the canonical 7 if settings.yaml is absent or malformed.
+# Returns the v2 task-eligible specialist list (the 9 specialists: surveyor,
+# critic, architect, experimentalist, analyst, ablation_planner, writer, observer, council) in canonical order.
+# Fallback to the canonical 9 if settings.yaml is absent or malformed.
 get_specialist_ids() {
     local settings="${CLI_ADAPTER_SETTINGS:-${CLI_ADAPTER_PROJECT_ROOT}/config/settings.yaml}"
     local result
@@ -1479,16 +1492,18 @@ import yaml
 try:
     with open('${settings}') as f:
         cfg = yaml.safe_load(f) or {}
-    agents = cfg.get('cli', {}).get('agents', {})
-    task_eligible = ['explorer', 'librarian', 'oracle', 'designer', 'fixer', 'observer', 'council']
+    agents = cfg.get('roles', {})
+    if not agents or not isinstance(agents, dict):
+        agents = cfg.get('cli', {}).get('agents', {})
+    task_eligible = ['surveyor', 'critic', 'architect', 'experimentalist', 'analyst', 'ablation_planner', 'writer', 'observer', 'council']
     found = [k for k in task_eligible if k in agents]
     print(' '.join(found if found else task_eligible))
 except Exception:
-    print(' '.join(['explorer', 'librarian', 'oracle', 'designer', 'fixer', 'observer', 'council']))
+    print(' '.join(['surveyor', 'critic', 'architect', 'experimentalist', 'analyst', 'ablation_planner', 'writer', 'observer', 'council']))
 " 2>/dev/null)
     if [[ -n "$result" ]]; then
         echo "$result"
     else
-        echo "explorer librarian oracle designer fixer observer council"
+        echo "surveyor critic architect experimentalist analyst ablation_planner writer observer council"
     fi
 }

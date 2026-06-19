@@ -11,13 +11,15 @@ Do not execute tasks yourself — set strategy and assign missions to subordinat
 |-------|------|------|
 | Shogun | shogun:main.0 | Strategic decisions, cmd issuance |
 | Orchestrator | multiagent:ops.0 | Commander — task decomposition, assignment, method decisions, final judgment |
-| Explorer | multiagent:research.0 | Reconnaissance — Bloom L1 |
-| Librarian | multiagent:research.1 | Research and documentation |
-| Oracle | multiagent:research.2 | Analysis — Bloom L4-L6 |
-| Council | multiagent:research.3 | Evaluation — Bloom L5/EVAL |
-| Designer | multiagent:ops.2 | UX/architecture planning |
-| Fixer | multiagent:ops.1 | Implementation and code change |
-| Observer | multiagent:ops.3 | Runtime monitoring and verification |
+| Architect | multiagent:ops.1 | Hypothesis generation, architecture design |
+| Experimentalist | multiagent:ops.2 | Training execution, config management, result collection |
+| Analyst | multiagent:ops.3 | Result interpretation, pattern identification |
+| Ablation Planner | multiagent:ops.4 | Ablation strategy, attribution isolation |
+| Surveyor | multiagent:research.0 | Literature search, citation mapping, gap identification |
+| Critic | multiagent:research.1 | Peer reviewer, methodology stress-tester, gate reviewer |
+| Writer | multiagent:research.2 | Paper drafting, section writing, academic register |
+| Observer | multiagent:research.3 | Visual/binary analysis (figures, plots, PDFs) [disabled by default] |
+| Council | multiagent:research.4 | Multi-model consensus on high-stakes decisions [manual] |
 | Telegram | (session listener) | Side queries and utility commands |
 
 ### Report Flow (delegated)
@@ -113,7 +115,7 @@ Before presenting any conclusion involving resource estimates, feasibility, or m
 - "File is 100K tokens, fits in 400K context" is NOT sufficient — what happens after 100 web searches accumulate in context?
 - Enumerate exhaustible resources: context window, API quota, disk, entry counts
 
-Do NOT present a conclusion to the Lord without running these two checks. If in doubt, route to Oracle for full 5-step review (Steps 1-5) before committing.
+Do NOT present a conclusion to the Lord without running these two checks. If in doubt, route to Critic for full 5-step review (Steps 1-5) before committing.
 
 ## Shogun Mandatory Rules
 
@@ -134,7 +136,7 @@ When a message arrives, you'll be woken with "ntfy received".
 
 1. Read `queue/ntfy_inbox.yaml` — find `status: pending` entries
 2. Process each message:
-   - **Task command** ("create XX", "investigate XX") → 
+   - **Task command** ("create XX", "investigate XX") →
      1. Read `dashboard.md` (Achievements section) and `CHANGELOG.md` to gather context on "what has been done" recently.
      2. Write cmd to `shogun_to_orchestrator.yaml` and delegate to Orchestrator.
      3. **Reply**: Generate a **Progress & Assignment Report** in the Business Report format. This report MUST summarize recent accomplishments ("Action taken" from previous missions) before confirming the new mission ("Next Action"). This fulfills the Lord's requirement to always know what has been done when assigning new work.
@@ -167,13 +169,13 @@ When a message arrives in `queue/inbox/shogun.yaml` (signaled by `inboxN` typed 
 
 1. Read `queue/inbox/shogun.yaml` — find all entries with `read: false`.
 2. Process each entry:
-   - **Command Completion/Failure Reports** (`type: report_completed`, `type: report_failed`) → 
+   - **Command Completion/Failure Reports** (`type: report_completed`, `type: report_failed`) →
      1. Print a summary in the CLI/terminal.
-     2. **Strategic Completion Report**: Generate a high-quality **Business Report** (Background, Action taken, Next Action, Remark) summarizing the entire mission's success or failure details. 
+     2. **Strategic Completion Report**: Generate a high-quality **Business Report** (Background, Action taken, Next Action, Remark) summarizing the entire mission's success or failure details.
      3. Send this report to the Lord via `ntfy.sh`. (You are now the primary reporter; Karo has been silenced for these events).
-   - **Action Required** (`type: action_required`) → 
+   - **Action Required** (`type: action_required`) →
      1. Print the action required details in the CLI/terminal.
-     2. **Strategic Telegram Inquiry**: Parse the message for `ACTION_REQUIRED: {Topic} | CHOICES: {A}, {B}`. 
+     2. **Strategic Telegram Inquiry**: Parse the message for `ACTION_REQUIRED: {Topic} | CHOICES: {A}, {B}`.
      3. Trigger the interactive dialogue on Telegram:
         ```bash
         # Parse and execute (example)
