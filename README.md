@@ -1930,6 +1930,10 @@ Issues and pull requests are welcome.
 
 Based on [Claude-Code-Communication](https://github.com/Akira-Papa/Claude-Code-Communication) by Akira-Papa.
 
+### Academic Research Skills (ARS) Integration
+This workspace integrates academic research skills, including:
+- **Experiment Provenance Intake**: Implements `experiment_intake_declaration` on the Material Passport.
+
 ## License
 
 [MIT](LICENSE)

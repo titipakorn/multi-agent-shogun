@@ -178,7 +178,7 @@ def run_checks() -> list[str]:
     declared = set(BUCKET_A_AGENT_FILES) | set(BUCKET_BCD_AGENT_FILES)
     undeclared = []
     for md in REPO_ROOT.glob("**/agents/*.md"):
-        if ".git" in md.parts:
+        if ".git" in md.parts or ".opencode" in md.parts or ".cursor" in md.parts:
             continue
         # .as_posix() so the comparison uses `/` on every OS (the rosters use `/`).
         rel = md.relative_to(REPO_ROOT).as_posix()
