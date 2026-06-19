@@ -248,7 +248,7 @@ for i in "${!AGENTS[@]}"; do
         pane_target=$(v2_pane_for "$agent" 2>/dev/null || true)
     fi
     if [ -z "$pane_target" ]; then
-        pane_target="multiagent:agents.${pane_idx}"
+        pane_target="multiagent-research:agents.${pane_idx}"
     fi
 
     # CLI type

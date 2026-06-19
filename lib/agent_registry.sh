@@ -125,7 +125,7 @@ agent_registry_multiagent_pane_for_agent() {
                 fi
             fi
             # Fallback: positional layout (legacy fallback)
-            printf 'multiagent%s:agents.%s\n' "${SHOGUN_SESSION_SUFFIX:-}" "$((pane_base + idx))"
+            printf 'multiagent-research%s:agents.%s\n' "${SHOGUN_SESSION_SUFFIX:-}" "$((pane_base + idx))"
             return 0
         fi
         idx=$((idx + 1))
@@ -140,7 +140,7 @@ agent_registry_pane_for_agent() {
     local suffix="${SHOGUN_SESSION_SUFFIX:-}"
 
     if [ "$agent" = "shogun" ]; then
-        printf 'shogun%s:main.%s\n' "$suffix" "$pane_base"
+        printf 'shogun-research%s:main.%s\n' "$suffix" "$pane_base"
         return 0
     fi
 

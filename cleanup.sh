@@ -13,7 +13,7 @@
 
 set -eo pipefail
 
-SESSIONS=("shogun" "multiagent")
+SESSIONS=("shogun-research" "multiagent-research")
 
 for s in "${SESSIONS[@]}"; do
     if tmux has-session -t "$s" 2>/dev/null; then

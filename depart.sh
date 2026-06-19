@@ -37,8 +37,8 @@ Formations (V2 specialist team):
   experimentalist, analyst, ablation_planner, writer, observer → Sonnet (Execution/Writing)
 
 Display:
-  tmux attach -t shogun        # Shogun's camp
-  tmux attach -t multiagent    # Specialists (ops + research windows)
+  tmux attach -t shogun-research        # Shogun's camp
+  tmux attach -t multiagent-research    # Specialists (ops + research windows)
 
 Companion scripts:
   ./cleanup.sh                  # Kill sessions for a fresh restart
@@ -176,7 +176,7 @@ opencode_stagger() {
 # ═════════════════════════════════════════════════════════════════════════════
 log_step "STEP 1: Session setup"
 log_info "♻️  Restarting shogun + multiagent sessions (we own them)..."
-for s in "shogun${SHOGUN_SESSION_SUFFIX:-}" "multiagent${SHOGUN_SESSION_SUFFIX:-}"; do
+for s in "shogun-research${SHOGUN_SESSION_SUFFIX:-}" "multiagent-research${SHOGUN_SESSION_SUFFIX:-}"; do
     tmux kill-session -t "$s" 2>/dev/null && log_info "  └─ killed: $s" || log_info "  └─ not found: $s"
 done
 if [ "$CLEAN_MODE" = true ]; then
@@ -266,8 +266,8 @@ fi
 # STEP 3: Shogun session
 # ═════════════════════════════════════════════════════════════════════════════
 log_step "STEP 3: Shogun main camp"
-if ! tmux has-session -t "shogun${SHOGUN_SESSION_SUFFIX:-}" 2>/dev/null; then
-    tmux new-session -d -s "shogun${SHOGUN_SESSION_SUFFIX:-}" -n main
+if ! tmux has-session -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}" 2>/dev/null; then
+    tmux new-session -d -s "shogun-research${SHOGUN_SESSION_SUFFIX:-}" -n main
 fi
 tmux set-option -g window-size latest
 tmux set-option -g aggressive-resize on
@@ -277,16 +277,16 @@ case "$SHELL_SETTING" in
     zsh) PS1_FORMAT="(%F{magenta}%BShogun%b%f) %F{green}%B%~%b%f%# " ;;
     *)   PS1_FORMAT='(\[\033[1;35m\]Shogun\[\033[0m\]) \[\033[1;32m\]\w\[\033[0m\]\$ ' ;;
 esac
-tmux send-keys -t "shogun${SHOGUN_SESSION_SUFFIX:-}:main" "cd \"$(pwd)\" && export PS1='${PS1_FORMAT}' && clear" Enter
-tmux select-pane -t "shogun${SHOGUN_SESSION_SUFFIX:-}:main" -P 'bg=#002b36'
-tmux set-option -p -t "shogun${SHOGUN_SESSION_SUFFIX:-}:main" @agent_id "shogun"
+tmux send-keys -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}:main" "cd \"$(pwd)\" && export PS1='${PS1_FORMAT}' && clear" Enter
+tmux select-pane -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}:main" -P 'bg=#002b36'
+tmux set-option -p -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}:main" @agent_id "shogun"
 SHOGUN_MODEL_DISPLAY=$(v2_model_for shogun | title_case)
-tmux set-option -p -t "shogun${SHOGUN_SESSION_SUFFIX:-}:main" @model_name "$SHOGUN_MODEL_DISPLAY"
-tmux set-option -p -t "shogun${SHOGUN_SESSION_SUFFIX:-}:main" @current_task ""
+tmux set-option -p -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}:main" @model_name "$SHOGUN_MODEL_DISPLAY"
+tmux set-option -p -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}:main" @current_task ""
 
 # Show model name in pane border
-tmux set-option -t "shogun${SHOGUN_SESSION_SUFFIX:-}" -w pane-border-status top
-tmux set-option -t "shogun${SHOGUN_SESSION_SUFFIX:-}" -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
+tmux set-option -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}" -w pane-border-status top
+tmux set-option -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}" -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
 log_success "👑 Shogun main camp established"
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -294,9 +294,9 @@ log_success "👑 Shogun main camp established"
 # ═════════════════════════════════════════════════════════════════════════════
 log_step "STEP 4: Multiagent camps (ops + research)"
 
-if ! tmux has-session -t "multiagent${SHOGUN_SESSION_SUFFIX:-}" 2>/dev/null; then
-    tmux new-session -d -s "multiagent${SHOGUN_SESSION_SUFFIX:-}" -n ops
-    tmux new-window -t "multiagent${SHOGUN_SESSION_SUFFIX:-}" -n research
+if ! tmux has-session -t "multiagent-research${SHOGUN_SESSION_SUFFIX:-}" 2>/dev/null; then
+    tmux new-session -d -s "multiagent-research${SHOGUN_SESSION_SUFFIX:-}" -n ops
+    tmux new-window -t "multiagent-research${SHOGUN_SESSION_SUFFIX:-}" -n research
 fi
 
 # ponytail: set pane-border-format on BOTH windows explicitly. `set-option -t
@@ -304,8 +304,8 @@ fi
 # the newly-created window current, so it would silently miss `ops`. Without
 # this fix, ops panes show no agent name in the border.
 for w in ops research; do
-    tmux set-option -t "multiagent${SHOGUN_SESSION_SUFFIX:-}:${w}" -w pane-border-status top
-    tmux set-option -t "multiagent${SHOGUN_SESSION_SUFFIX:-}:${w}" -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
+    tmux set-option -t "multiagent-research${SHOGUN_SESSION_SUFFIX:-}:${w}" -w pane-border-status top
+    tmux set-option -t "multiagent-research${SHOGUN_SESSION_SUFFIX:-}:${w}" -w pane-border-format '#{?pane_active,#[reverse],}#[bold]#{@agent_id}#[default] (#{@model_name}) #{@current_task}'
 done
 
 # ─── Pane creation helper ──────────────────────────────────────────────────
@@ -354,17 +354,17 @@ start_specialist_pane() {
 # Ops window: orchestrator, architect, experimentalist, analyst, ablation_planner
 OPS_ROLES=(orchestrator architect experimentalist analyst ablation_planner)
 for idx in "${!OPS_ROLES[@]}"; do
-    start_specialist_pane "${OPS_ROLES[$idx]}" "multiagent${SHOGUN_SESSION_SUFFIX:-}" "ops" "$idx" "$CLI_DEFAULT"
+    start_specialist_pane "${OPS_ROLES[$idx]}" "multiagent-research${SHOGUN_SESSION_SUFFIX:-}" "ops" "$idx" "$CLI_DEFAULT"
 done
-tmux select-layout -t "multiagent${SHOGUN_SESSION_SUFFIX:-}:ops" even-horizontal
+tmux select-layout -t "multiagent-research${SHOGUN_SESSION_SUFFIX:-}:ops" even-horizontal
 log_success "⚔️  ops window: orchestrator, architect, experimentalist, analyst, ablation_planner"
 
 # Research window: surveyor, critic, writer, observer, council
 RESEARCH_ROLES=(surveyor critic writer observer council)
 for idx in "${!RESEARCH_ROLES[@]}"; do
-    start_specialist_pane "${RESEARCH_ROLES[$idx]}" "multiagent${SHOGUN_SESSION_SUFFIX:-}" "research" "$idx" "$CLI_DEFAULT"
+    start_specialist_pane "${RESEARCH_ROLES[$idx]}" "multiagent-research${SHOGUN_SESSION_SUFFIX:-}" "research" "$idx" "$CLI_DEFAULT"
 done
-tmux select-layout -t "multiagent${SHOGUN_SESSION_SUFFIX:-}:research" even-horizontal
+tmux select-layout -t "multiagent-research${SHOGUN_SESSION_SUFFIX:-}:research" even-horizontal
 log_success "🔬 research window: surveyor, critic, writer, observer, council"
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -398,7 +398,7 @@ PY
     # Net: STEP 5 wall time = sum of send-keys + one sleep 1 (≈1s).
 
     # Shogun
-    tmux send-keys -t "shogun${SHOGUN_SESSION_SUFFIX:-}:main" "${CLI_DEFAULT} --model $(v2_model_for shogun) ${PERMISSION_FLAG}" Enter
+    tmux send-keys -t "shogun-research${SHOGUN_SESSION_SUFFIX:-}:main" "${CLI_DEFAULT} --model $(v2_model_for shogun) ${PERMISSION_FLAG}" Enter
     opencode_stagger
 
     # Specialists — fire all 7 in one pass (no per-pane wait)
@@ -582,18 +582,18 @@ echo "  ┌───────────────────────
 echo "  │  📋 Battle Formation Map                                 │"
 echo "  └──────────────────────────────────────────────────────────┘"
 echo ""
-echo "     [shogun\${SHOGUN_SESSION_SUFFIX:-} session] Shogun Main Camp"
+echo "     [shogun-research\${SHOGUN_SESSION_SUFFIX:-} session] Shogun Main Camp"
 echo "     ┌─────────────────────────────┐"
-echo "     │  shogun\${SHOGUN_SESSION_SUFFIX:-}:main.0              │  ← Commander / Project Overseer"
+echo "     │  shogun-research\${SHOGUN_SESSION_SUFFIX:-}:main.0              │  ← Commander / Project Overseer"
 echo "     └─────────────────────────────┘"
 echo ""
-echo "     [multiagent\${SHOGUN_SESSION_SUFFIX:-} session] ops window (5 specialists)"
+echo "     [multiagent-research\${SHOGUN_SESSION_SUFFIX:-} session] ops window (5 specialists)"
 echo "     ┌─────────┬─────────┬─────────┬─────────┬─────────┐"
 echo "     │orchestr.│architect│experim. │ analyst │ablation │"
 echo "     │  (Opus) │  (Opus) │ (Sonnet)│ (Sonnet)│ (Sonnet)│"
 echo "     └─────────┴─────────┴─────────┴─────────┴─────────┘"
 echo ""
-echo "     [multiagent\${SHOGUN_SESSION_SUFFIX:-} session] research window (5 specialists)"
+echo "     [multiagent-research\${SHOGUN_SESSION_SUFFIX:-} session] research window (5 specialists)"
 echo "     ┌─────────┬─────────┬─────────┬─────────┬─────────┐"
 echo "     │surveyor │ critic  │ writer  │observer │ council │"
 echo "     │ (Haiku) │  (Opus) │ (Sonnet)│ (Sonnet)│  (Opus) │"
@@ -606,10 +606,10 @@ echo ""
 echo "  Next steps:"
 echo "  ┌──────────────────────────────────────────────────────────┐"
 echo "  │  Attach to Shogun:                                       │"
-echo "  │     tmux attach-session -t shogun\${SHOGUN_SESSION_SUFFIX:-}   (alias: css)         │"
+echo "  │     tmux attach-session -t shogun-research\${SHOGUN_SESSION_SUFFIX:-}   (alias: css)         │"
 echo "  │                                                          │"
 echo "  │  Attach to specialists:                                  │"
-echo "  │     tmux attach-session -t multiagent\${SHOGUN_SESSION_SUFFIX:-}   (alias: csm)     │"
+echo "  │     tmux attach-session -t multiagent-research\${SHOGUN_SESSION_SUFFIX:-}   (alias: csm)     │"
 echo "  │                                                          │"
 echo "  │  Each agent has already loaded its instructions.         │"
 echo "  │  You can start commanding immediately.                   │"

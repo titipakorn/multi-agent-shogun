@@ -46,17 +46,17 @@ v2_pane_for() {
     local role=$1
     local suffix="${SHOGUN_SESSION_SUFFIX:-}"
     case "$role" in
-        shogun)            echo "shogun${suffix}:main.0" ;;
-        orchestrator)      echo "multiagent${suffix}:ops.0" ;;
-        architect)         echo "multiagent${suffix}:ops.1" ;;
-        experimentalist)   echo "multiagent${suffix}:ops.2" ;;
-        analyst)           echo "multiagent${suffix}:ops.3" ;;
-        ablation_planner)  echo "multiagent${suffix}:ops.4" ;;
-        surveyor)          echo "multiagent${suffix}:research.0" ;;
-        critic)            echo "multiagent${suffix}:research.1" ;;
-        writer)            echo "multiagent${suffix}:research.2" ;;
-        observer)          echo "multiagent${suffix}:research.3" ;;
-        council)           echo "multiagent${suffix}:research.4" ;;
+        shogun)            echo "shogun-research${suffix}:main.0" ;;
+        orchestrator)      echo "multiagent-research${suffix}:ops.0" ;;
+        architect)         echo "multiagent-research${suffix}:ops.1" ;;
+        experimentalist)   echo "multiagent-research${suffix}:ops.2" ;;
+        analyst)           echo "multiagent-research${suffix}:ops.3" ;;
+        ablation_planner)  echo "multiagent-research${suffix}:ops.4" ;;
+        surveyor)          echo "multiagent-research${suffix}:research.0" ;;
+        critic)            echo "multiagent-research${suffix}:research.1" ;;
+        writer)            echo "multiagent-research${suffix}:research.2" ;;
+        observer)          echo "multiagent-research${suffix}:research.3" ;;
+        council)           echo "multiagent-research${suffix}:research.4" ;;
         *)                 echo "" ;;
     esac
 }
