@@ -55,6 +55,10 @@ Every audit round MUST open with a Scope Report that quantifies how many of the 
 
 ---
 
+
+
+Emit a single token: PASSED.
+
 ## Section 1 — Round metadata
 
 ```
