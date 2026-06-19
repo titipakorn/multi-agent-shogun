@@ -624,6 +624,7 @@ send_cli_command() {
                 sleep 0.3
                 timeout 5 tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
                 sleep 3
+                NEW_CONTEXT_SENT=1
                 return 0
             fi
             if [[ "$cmd" == /model* ]]; then
@@ -675,6 +676,7 @@ send_cli_command() {
     # /clear needs extra wait time before follow-up
     if [[ "$actual_cmd" == "/clear" ]]; then
         LAST_CLEAR_TS=$(date +%s)
+        NEW_CONTEXT_SENT=1
         sleep 3
         # Claude: send startup prompt so agent re-runs Session Start after /clear
         if [[ "$effective_cli" == "claude" ]]; then
@@ -970,12 +972,11 @@ send_wakeup() {
         sleep 0.3
         timeout 5 tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
         sleep 0.5
-        if [[ "$effective_cli_for_nudge" == "codex" ]]; then
-            # Codex echoes submitted text in the transcript; seeing inboxN after
-            # Enter does not mean it is still stuck in the input field.
-            echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread, attempt $((attempt+1)), cli=codex)" >&2
-            return 0
-        fi
+        # All interactive CLIs echo submitted text in the transcript/terminal.
+        # Seeing the nudge text in the pane after Enter does not mean it is stuck.
+        # Therefore, we skip prompt verification and return immediately after sending.
+        echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread, attempt $((attempt+1)), cli=$effective_cli_for_nudge)" >&2
+        return 0
         # Verify transmission: check with capture-pane if nudge text remains on the prompt
         local pane_content
         pane_content=$(timeout 3 tmux capture-pane -t "$PANE_TARGET" -p 2>/dev/null | tail -5 || echo "")

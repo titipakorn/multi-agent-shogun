@@ -459,6 +459,8 @@ exit 1
 PYFAIL
     chmod +x "$TEST_TMPDIR/.venv/bin/python3"
 
+    export PYTHON_BIN="$TEST_TMPDIR/.venv/bin/python3"
+
     run bash "$TEST_INBOX_WRITE" "test_agent" "lock failure" "test_type" "other_sender"
     [ "$status" -ne 0 ]
 
