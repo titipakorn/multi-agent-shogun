@@ -259,7 +259,12 @@ logs/
 !/academic-pipeline
 !/academic-paper-reviewer
 !/docs
+!/docs/**
 !/evals
+!/evals/**
+!/audits
+!/audits/**
+
 
 # Shogun Worktrees and Clonedeps
 !skills/shogun-worktrees/
