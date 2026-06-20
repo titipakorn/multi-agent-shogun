@@ -20,6 +20,13 @@ def load_env(env_path):
                     env_vars[key.strip()] = val.strip()
     return env_vars
 
+def escape_markdown(text):
+    if not text:
+        return ""
+    for char in ('_', '*', '[', '`'):
+        text = text.replace(char, f"\\{char}")
+    return text
+
 def make_telegram_request(token, method, payload=None):
     url = f"https://api.telegram.org/bot{token}/{method}"
     headers = {"Content-Type": "application/json"}
@@ -85,9 +92,10 @@ def main():
                 pass
 
     # 1. Send the question
+    escaped_question = escape_markdown(args.question)
     payload = {
         "chat_id": chat_id,
-        "text": f"❓ *Question:*\n{args.question}" if not args.info else f"ℹ️ *Notice:*\n{args.question}",
+        "text": f"❓ *Question:*\n{escaped_question}" if not args.info else f"ℹ️ *Notice:*\n{escaped_question}",
         "parse_mode": "Markdown"
     }
 

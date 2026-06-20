@@ -47,6 +47,13 @@ def get_system_language(script_dir):
         pass
     return "en"
 
+def escape_markdown(text):
+    if not text:
+        return ""
+    for char in ('_', '*', '[', '`'):
+        text = text.replace(char, f"\\{char}")
+    return text
+
 def make_telegram_request(token, method, payload=None):
     url = f"https://api.telegram.org/bot{token}/{method}"
     headers = {"Content-Type": "application/json"}
@@ -428,7 +435,7 @@ def _drain_pending_lord_questions(script_dir, token, chat_id):
     # Send the question to Telegram
     payload = {
         "chat_id": chat_id,
-        "text": f"❓ *Question:*\n{question}",
+        "text": f"❓ *Question:*\n{escape_markdown(question)}",
         "parse_mode": "Markdown",
     }
     if options:
@@ -1531,7 +1538,7 @@ def main():
                                 make_telegram_request(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Please type your response."})
                                 
                                 # Edit original message to remove buttons and prompt for text input
-                                new_text = f"❓ *Question:*\n{active_question.get('question')}\n\n✏️ *Please type your custom reply below:*"
+                                new_text = f"❓ *Question:*\n{escape_markdown(active_question.get('question'))}\n\n✏️ *Please type your custom reply below:*"
                                 make_telegram_request(token, "editMessageText", {
                                     "chat_id": chat_id,
                                     "message_id": active_question.get("message_id"),
@@ -1558,7 +1565,7 @@ def main():
                                 make_telegram_request(token, "answerCallbackQuery", {"callback_query_id": cb["id"], "text": f"Selected: {selected_option}"})
                                 
                                 # Edit original message to show selection
-                                new_text = f"❓ *Question:*\n{active_question.get('question')}\n\n✅ *Selected:* {selected_option}"
+                                new_text = f"❓ *Question:*\n{escape_markdown(active_question.get('question'))}\n\n✅ *Selected:* {escape_markdown(selected_option)}"
                                 make_telegram_request(token, "editMessageText", {
                                     "chat_id": chat_id,
                                     "message_id": active_question.get("message_id"),
@@ -1618,7 +1625,7 @@ def main():
                             reply_text = msg.get("text", "").strip()
                             if reply_text:
                                 # Confirm receipt by editing the original message to show the reply
-                                new_text = f"❓ *Question:*\n{active_question.get('question')}\n\n✅ *Reply:* {reply_text}"
+                                new_text = f"❓ *Question:*\n{escape_markdown(active_question.get('question'))}\n\n✅ *Reply:* {escape_markdown(reply_text)}"
                                 make_telegram_request(token, "editMessageText", {
                                     "chat_id": chat_id,
                                     "message_id": active_question.get("message_id"),
@@ -1665,7 +1672,6 @@ def main():
                             res = make_telegram_request(token, "sendMessage", {
                                 "chat_id": chat_id,
                                 "text": progress_text,
-                                "parse_mode": "Markdown"
                             })
                             print(f"[telegram_listener] sendMessage (/progress) response: {res}")
                             continue
@@ -1823,7 +1829,7 @@ def main():
                                 else "waiting on you to respond"
                             )
                             blinker_text = (
-                                f"❓ *Question:*\n{blinker_question.get('question')}\n\n"
+                                f"❓ *Question:*\n{escape_markdown(blinker_question.get('question'))}\n\n"
                                 f"⏳ _{status_label}..._"
                             )
                             edit_res = make_telegram_request(token, "editMessageText", {

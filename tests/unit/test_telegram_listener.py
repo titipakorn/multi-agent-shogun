@@ -1612,5 +1612,15 @@ class TestAgentStatusShWidth(unittest.TestCase):
         self.assertIn("0/3 active", out)
 
 
+class TestEscapeMarkdown(unittest.TestCase):
+    def test_escape_markdown_chars(self):
+        self.assertEqual(telegram_listener.escape_markdown("hello_world"), "hello\\_world")
+        self.assertEqual(telegram_listener.escape_markdown("hello*world"), "hello\\*world")
+        self.assertEqual(telegram_listener.escape_markdown("hello[world"), "hello\\[world")
+        self.assertEqual(telegram_listener.escape_markdown("hello`world"), "hello\\`world")
+        self.assertEqual(telegram_listener.escape_markdown(""), "")
+        self.assertEqual(telegram_listener.escape_markdown(None), "")
+
+
 if __name__ == '__main__':
     unittest.main()
