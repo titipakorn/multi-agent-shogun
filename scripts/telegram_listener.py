@@ -1654,10 +1654,14 @@ def main():
                                     print(f"[telegram_listener] Error nudging Orchestrator: {e}", file=sys.stderr)
                             continue
                             
-                        # Ignore replies (handled by reply check above)
-                        if "reply_to_message" in msg:
-                            continue
-                            
+                        # Note: replies with `reply_to_message` are allowed to fall
+                        # through here so the Lord can reply to any bot message
+                        # (status, dashboard, completion report, progress ping,
+                        # etc.). The active-question path above already handles
+                        # replies to a pending question via `is_reply_to_question`
+                        # + `continue`. Anything else — including a reply to an
+                        # already-answered question — is treated as a normal
+                        # message and routed to Shogun via inbox_write.sh.
                         msg_text = msg.get("text", "").strip()
                         if not msg_text:
                             continue

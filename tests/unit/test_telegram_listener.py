@@ -1612,6 +1612,274 @@ class TestAgentStatusShWidth(unittest.TestCase):
         self.assertIn("0/3 active", out)
 
 
+class TestReplyBackRouting(unittest.TestCase):
+    """Tests for the reply-back channel: the Lord can reply to ANY bot
+    message (status, dashboard, completion report, progress ping) and the
+    text must reach Shogun via inbox_write.sh. Replies to a pending
+    active question still take the question-handler path. Replies to an
+    already-answered question fall through to the normal inbox path.
+
+    Pre-fix behavior: `if "reply_to_message" in msg: continue` silently
+    dropped every Lord reply unless it matched the active question. This
+    test class pins the post-fix behavior."""
+
+    def setUp(self):
+        os.environ["TELEGRAM_BOT_TOKEN"] = "123456:mock_token"
+        os.environ["TELEGRAM_CHAT_ID"] = "12345"
+        script_dir = os.path.dirname(os.path.abspath(telegram_listener.__file__))
+        qf = os.path.normpath(os.path.join(script_dir, "../queue/current_question.json"))
+        if os.path.exists(qf):
+            os.remove(qf)
+
+    def tearDown(self):
+        script_dir = os.path.dirname(os.path.abspath(telegram_listener.__file__))
+        qf = os.path.normpath(os.path.join(script_dir, "../queue/current_question.json"))
+        if os.path.exists(qf):
+            os.remove(qf)
+        sh = os.path.normpath(os.path.join(script_dir, "../queue/inbox/shogun.yaml"))
+        if os.path.exists(sh):
+            os.remove(sh)
+
+    @patch("subprocess.run")
+    @patch("telegram_listener.append_to_inbox")
+    @patch("telegram_listener.make_telegram_request")
+    @patch("time.sleep")
+    @patch("time.time")
+    def test_reply_to_non_question_message_routes_to_inbox(
+        self, mock_time, mock_sleep, mock_request, mock_append, mock_subprocess
+    ):
+        """Lord replies to a /status message (no active question) - must
+        reach Shogun's inbox as an ordinary ntfy_received entry."""
+        # Time sequence: first poll at t=1000, message buffered at t=1000,
+        # next poll at t=1002 (>1.5s later) triggers buffer flush.
+        time_values = [1000.0, 1000.0, 1000.0, 1002.0, 1002.0, 1002.0]
+        mock_time.side_effect = lambda: time_values.pop(0) if time_values else 1005.0
+
+        responses = [
+            {"ok": True, "result": []},
+            {"ok": True},
+            {"ok": True, "result": [{
+                "update_id": 800,
+                "message": {
+                    "message_id": 9004,
+                    "chat": {"id": 12345},
+                    "text": "looks good, continue",
+                    "reply_to_message": {
+                        "message_id": 9000,
+                        "chat": {"id": 12345},
+                        "text": "Agent Status"
+                    }
+                }
+            }]},
+            {"ok": True, "result": []},
+        ]
+        mock_request.side_effect = lambda *a, **kw: responses.pop(0) if responses else {"ok": True}
+
+        # Break out of the loop once append_to_inbox has been called.
+        def stop_after_append(*args, **kwargs):
+            if mock_append.call_count > 0:
+                raise KeyboardInterrupt("Stop after flush")
+        mock_sleep.side_effect = stop_after_append
+
+        try:
+            telegram_listener.main()
+        except KeyboardInterrupt:
+            pass
+
+        mock_append.assert_called_once()
+        args, _ = mock_append.call_args
+        self.assertEqual(args[1], 9004)
+        self.assertIn("looks good, continue", args[2])
+
+    @patch("subprocess.run")
+    @patch("telegram_listener.append_to_inbox")
+    @patch("telegram_listener.make_telegram_request")
+    @patch("time.sleep")
+    @patch("time.time")
+    def test_reply_to_answered_question_routes_to_inbox(
+        self, mock_time, mock_sleep, mock_request, mock_append, mock_subprocess
+    ):
+        """Lord replies to a question with status='answered' - must
+        still route to inbox. Pre-fix this was silently dropped."""
+        time_values = [1000.0, 1000.0, 1000.0, 1002.0, 1002.0, 1002.0]
+        mock_time.side_effect = lambda: time_values.pop(0) if time_values else 1005.0
+
+        script_dir = os.path.dirname(os.path.abspath(telegram_listener.__file__))
+        question_file = os.path.normpath(
+            os.path.join(script_dir, "../queue/current_question.json")
+        )
+        os.makedirs(os.path.dirname(question_file), exist_ok=True)
+        with open(question_file, "w", encoding="utf-8") as qf:
+            json.dump({
+                "request_id": "rid_001",
+                "question": "Deploy to prod?",
+                "options": ["Yes", "No"],
+                "timestamp": "2026-06-21T10:00:00",
+                "status": "answered",
+                "response": "Yes",
+                "message_id": 8800,
+            }, qf)
+
+        responses = [
+            {"ok": True, "result": []},
+            {"ok": True},
+            {"ok": True, "result": [{
+                "update_id": 810,
+                "message": {
+                    "message_id": 9005,
+                    "chat": {"id": 12345},
+                    "text": "actually, hold on",
+                    "reply_to_message": {
+                        "message_id": 8800,
+                        "chat": {"id": 12345},
+                        "text": "Deploy to prod?"
+                    }
+                }
+            }]},
+            {"ok": True, "result": []},
+        ]
+        mock_request.side_effect = lambda *a, **kw: responses.pop(0) if responses else {"ok": True}
+
+        def stop_after_append(*args, **kwargs):
+            if mock_append.call_count > 0:
+                raise KeyboardInterrupt("Stop after flush")
+        mock_sleep.side_effect = stop_after_append
+
+        try:
+            telegram_listener.main()
+        except KeyboardInterrupt:
+            pass
+
+        mock_append.assert_called_once()
+        args, _ = mock_append.call_args
+        self.assertIn("actually, hold on", args[2])
+
+    @patch("subprocess.run")
+    @patch("telegram_listener.append_to_inbox")
+    @patch("telegram_listener.make_telegram_request")
+    @patch("time.sleep")
+    @patch("time.time")
+    def test_reply_to_active_question_stays_on_question_path(
+        self, mock_time, mock_sleep, mock_request, mock_append, mock_subprocess
+    ):
+        """Lord replies to a still-pending active question - must take
+        the question-handler path and NOT be double-routed to inbox."""
+        time_values = [1000.0, 1000.0, 1000.0, 1002.0, 1002.0, 1002.0]
+        mock_time.side_effect = lambda: time_values.pop(0) if time_values else 1005.0
+
+        script_dir = os.path.dirname(os.path.abspath(telegram_listener.__file__))
+        question_file = os.path.normpath(
+            os.path.join(script_dir, "../queue/current_question.json")
+        )
+        os.makedirs(os.path.dirname(question_file), exist_ok=True)
+        with open(question_file, "w", encoding="utf-8") as qf:
+            json.dump({
+                "request_id": "rid_002",
+                "question": "Deploy to prod?",
+                "options": ["Yes", "No"],
+                "timestamp": "2026-06-21T10:00:00",
+                "status": "pending",
+                "message_id": 8801,
+            }, qf)
+
+        responses = [
+            {"ok": True},                       # 1: setMyCommands
+            {"ok": True, "result": []},         # 2: getUpdates iter 1 (empty)
+            {"ok": True},                       # 3: blinker editMessageText (fires before reply processed)
+            {"ok": True, "result": [{           # 4: getUpdates iter 2 (the reply)
+                "update_id": 820,
+                "message": {
+                    "message_id": 9006,
+                    "chat": {"id": 12345},
+                    "text": "Yes go ahead",
+                    "reply_to_message": {
+                        "message_id": 8801,
+                        "chat": {"id": 12345},
+                        "text": "Deploy to prod?"
+                    }
+                }
+            }]},
+            {"ok": True},                       # 5: question-handler editMessageText
+            {"ok": True, "result": []},         # 6: getUpdates iter 3 (empty)
+            {"ok": True},                       # 7: getUpdates iter 4 (default after exhaustion)
+        ]
+        mock_request.side_effect = lambda *a, **kw: responses.pop(0) if responses else {"ok": True}
+
+        def stop_after_3_sleeps(*args, **kwargs):
+            stop_after_3_sleeps.calls += 1
+            if stop_after_3_sleeps.calls >= 3:
+                raise KeyboardInterrupt("Stop after 3 sleeps")
+        stop_after_3_sleeps.calls = 0
+        mock_sleep.side_effect = stop_after_3_sleeps
+
+        try:
+            telegram_listener.main()
+        except KeyboardInterrupt:
+            pass
+
+        # Question path: NO shadow-log append (would route to inbox).
+        mock_append.assert_not_called()
+        # Question path: the question file must be marked status=answered.
+        # If is_reply_to_question was incorrectly False, the file would
+        # stay at status=pending and the blinker would fire on the next
+        # iteration. We assert on the file state because the question
+        # handler's editMessageText and the blinker's editMessageText
+        # both target the same message_id and can interleave under
+        # mocked time — checking the file is more deterministic.
+        with open(question_file, "r", encoding="utf-8") as qf:
+            final_state = json.load(qf)
+        self.assertEqual(final_state.get("status"), "answered",
+            f"Question handler did not mark reply. State: {final_state!r}")
+        self.assertEqual(final_state.get("response"), "Yes go ahead")
+
+    @patch("subprocess.run")
+    @patch("telegram_listener.append_to_inbox")
+    @patch("telegram_listener.make_telegram_request")
+    @patch("time.sleep")
+    @patch("time.time")
+    def test_reply_with_no_text_skipped(
+        self, mock_time, mock_sleep, mock_request, mock_append, mock_subprocess
+    ):
+        """A reply_to_message with no text (sticker, voice) must NOT be
+        routed to inbox - `if not msg_text: continue` still applies."""
+        time_values = [1000.0, 1000.0, 1000.0, 1002.0, 1002.0, 1002.0]
+        mock_time.side_effect = lambda: time_values.pop(0) if time_values else 1005.0
+
+        responses = [
+            {"ok": True, "result": []},
+            {"ok": True},
+            {"ok": True, "result": [{
+                "update_id": 830,
+                "message": {
+                    "message_id": 9007,
+                    "chat": {"id": 12345},
+                    "sticker": {"emoji": "thumbs up"},
+                    "reply_to_message": {
+                        "message_id": 9000,
+                        "chat": {"id": 12345}
+                    }
+                }
+            }]},
+            {"ok": True, "result": []},
+        ]
+        mock_request.side_effect = lambda *a, **kw: responses.pop(0) if responses else {"ok": True}
+
+        # No buffer flush expected — break on second sleep.
+        call_count = {"n": 0}
+        def sleep_then_stop(*args, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] >= 2:
+                raise KeyboardInterrupt("stop")
+        mock_sleep.side_effect = sleep_then_stop
+
+        try:
+            telegram_listener.main()
+        except KeyboardInterrupt:
+            pass
+
+        mock_append.assert_not_called()
+
+
 class TestEscapeMarkdown(unittest.TestCase):
     def test_escape_markdown_chars(self):
         self.assertEqual(telegram_listener.escape_markdown("hello_world"), "hello\\_world")
