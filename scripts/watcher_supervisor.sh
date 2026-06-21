@@ -54,12 +54,14 @@ start_watcher_if_missing() {
             trap 'rmdir "$lockdir" 2>/dev/null || true' EXIT
         fi
 
-        if pgrep -Ef "scripts/inbox_watcher.sh ${agent} ${pane}( |$)" >/dev/null 2>&1; then
+        if pgrep -f "scripts/inbox_watcher.sh ${agent} ${pane}" >/dev/null 2>&1; then
             return 0
         fi
 
         if pgrep -f "scripts/inbox_watcher.sh ${agent} " >/dev/null 2>&1; then
-            echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] stale watcher detected for ${agent}; starting watcher for expected pane ${pane}" >&2
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] stale watcher detected for ${agent}; killing it and starting watcher for expected pane ${pane}" >&2
+            pkill -f "scripts/inbox_watcher.sh ${agent} " 2>/dev/null || true
+            sleep 0.2
         fi
 
         cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "codex")

@@ -28,3 +28,22 @@ for s in "${SESSIONS[@]}"; do
         echo "[cleanup] no session: $s (skipped)"
     fi
 done
+
+# Kill background watchers and relays of this project
+echo "[cleanup] killing background watchers and relays..."
+pkill -f "inbox_watcher.sh" 2>/dev/null || true
+pkill -f "watcher_supervisor.sh" 2>/dev/null || true
+if [ -f "$SCRIPT_DIR/scripts/shogun_stop_telegram_forward.sh" ]; then
+    bash "$SCRIPT_DIR/scripts/shogun_stop_telegram_forward.sh" || true
+else
+    pkill -f "telegram_listener.py" 2>/dev/null || true
+    pkill -f "shogun_telegram_relay.sh" 2>/dev/null || true
+    pkill -f "listener_watchdog.sh" 2>/dev/null || true
+    pkill -f "ntfy_listener.sh" 2>/dev/null || true
+fi
+
+# Clean up stale idle flags and lock files
+rm -f /tmp/shogun_idle_* 2>/dev/null || true
+rm -f /tmp/shogun_watcher_start_*.lock 2>/dev/null || true
+
+echo "[cleanup] all processes cleaned up."
